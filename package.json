@@ -1,0 +1,29 @@
+{
+  "name": "vizstudio",
+  "version": "1.0.0",
+  "description": "Layered music visualizer video editor that renders in the browser",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "dependencies": {
+    "butterchurn": "^2.6.7",
+    "butterchurn-presets": "^2.4.7",
+    "mediabunny": "^1.60.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "simple-icons": "^16.33.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  },
+  "private": true
+}
