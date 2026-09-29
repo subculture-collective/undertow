@@ -9,7 +9,8 @@ const HISTORY_LIMIT = 100;
 
 export const hasSavedProject = () => { try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; } };
 
-function loadProject(): Project {
+/** The working copy: the open project as last edited in this browser, restored on reload. */
+function loadWorkingCopy(): Project {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) return JSON.parse(raw) as Project;
@@ -31,6 +32,8 @@ interface State {
   undo: () => void;
   redo: () => void;
   replaceProject: (p: Project) => void;
+  /** Opens a different project: replaces the layout and clears undo history and selection. */
+  openProject: (p: Project) => void;
 
   select: (id: string | null) => void;
   setAspect: (a: AspectId) => void;
@@ -54,7 +57,7 @@ const mapLayer = (p: Project, id: string, fn: (l: Layer) => Layer): Project =>
   ({ ...p, layers: p.layers.map((l) => (l.id === id ? fn(l) : l)) });
 
 export const useStore = create<State>((set, get) => ({
-  project: loadProject(),
+  project: loadWorkingCopy(),
   past: [],
   future: [],
   lastPush: 0,
@@ -79,6 +82,7 @@ export const useStore = create<State>((set, get) => ({
     project: s.future[0], future: s.future.slice(1), past: [...s.past, s.project], lastPush: 0,
   } : s),
   replaceProject: (p) => set((s) => ({ project: p, past: [...s.past, s.project], future: [], selectedId: null, lastPush: 0 })),
+  openProject: (p) => set({ project: p, past: [], future: [], selectedId: null, lastPush: 0 }),
 
   select: (id) => set({ selectedId: id }),
   setAspect: (aspect) => set({ aspect }),

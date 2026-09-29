@@ -1,6 +1,50 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import pkg from './package.json' with { type: 'json' };
+import { BRAND, isSet } from './src/brand.ts';
+
+/**
+ * Fills the page title, description, favicon and share-preview tags from
+ * src/brand.ts, so renaming the site is a one-file change. Image and URL tags
+ * need an absolute address and are only added once BRAND.siteUrl is set.
+ */
+function brandMeta(): Plugin {
+  const title = `${BRAND.name}: ${BRAND.tagline}`;
+  const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const meta = (attrs: Record<string, string>): HtmlTagDescriptor => ({ tag: 'meta', attrs, injectTo: 'head' });
+  return {
+    name: 'vizstudio-brand-meta',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html, ctx) {
+        if (!ctx.path.endsWith('/index.html') && ctx.path !== '/') return html;
+        const tags: HtmlTagDescriptor[] = [
+          meta({ name: 'description', content: BRAND.description }),
+          meta({ name: 'theme-color', content: '#07060d' }),
+          { tag: 'link', attrs: { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }, injectTo: 'head' },
+          meta({ property: 'og:type', content: 'website' }),
+          meta({ property: 'og:site_name', content: BRAND.name }),
+          meta({ property: 'og:title', content: title }),
+          meta({ property: 'og:description', content: BRAND.description }),
+          meta({ name: 'twitter:card', content: 'summary_large_image' }),
+        ];
+        if (isSet(BRAND.siteUrl)) {
+          const site = BRAND.siteUrl.replace(/\/$/, '');
+          tags.push(
+            { tag: 'link', attrs: { rel: 'canonical', href: `${site}/` }, injectTo: 'head' },
+            meta({ property: 'og:url', content: `${site}/` }),
+            meta({ property: 'og:image', content: `${site}/og.png` }),
+            meta({ property: 'og:image:width', content: '1200' }),
+            meta({ property: 'og:image:height', content: '630' }),
+            meta({ name: 'twitter:image', content: `${site}/og.png` }),
+          );
+        }
+        return { html: html.replace(/<title>.*<\/title>/, `<title>${escape(title)}</title>`), tags };
+      },
+    },
+  };
+}
 
 /**
  * Dev-only endpoints for /selftest.html: receives results and saves them to
@@ -42,8 +86,18 @@ function selftest(): Plugin {
   };
 }
 
+/** Where the API runs in development (npm run api:dev). The proxy keeps editor and API on one origin, so session cookies just work. */
+const API = process.env.UNDERTOW_API ?? 'http://127.0.0.1:8787';
+
 export default defineConfig({
-  plugins: [react(), selftest()],
+  plugins: [react(), brandMeta(), selftest()],
+  server: {
+    proxy: {
+      '/v1': { target: API, changeOrigin: false },
+      '/docs': { target: API, changeOrigin: false },
+    },
+  },
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   optimizeDeps: {
     // UMD/CommonJS bundles that need pre-bundling for ESM import.
     include: [

@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { exportVideo, type ExportOptions, type ExportProgress } from '../export/exportVideo';
 import { useStore } from '../store';
 import { ASPECTS, ASPECT_IDS, type AspectId } from '../types';
+import { BRAND, visibleLink } from '../brand';
+import { PatreonButton } from './Brand';
 import { Row, Select } from './controls';
 import { audioEl, fmtTime } from './player';
 
@@ -86,6 +88,12 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
             {r.silent && <span className="warn"> · silent: this browser has no audio encoder</span>}
           </p>
         ))}
+        {results.length > 0 && !busy && visibleLink(BRAND.patreon) && (
+          <div className="support-nudge">
+            <p>Happy with the result? {BRAND.name} is free, and Patreon support pays for new features.</p>
+            <PatreonButton small />
+          </div>
+        )}
         <p className="hint">Rendering happens on this computer. Keep this tab open until it finishes.</p>
         <div className="buttons end">
           {busy
