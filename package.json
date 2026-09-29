@@ -6,13 +6,19 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "og-image": "\"${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}\" --headless=new --disable-gpu --hide-scrollbars --window-size=1200,630 --screenshot=\"$PWD/public/og.png\" \"file://$PWD/scripts/og-image.html\"",
+    "api:types": "npm --prefix server run openapi && npx -y openapi-typescript@7.13.0 server/openapi.json -o src/api/schema.d.ts",
+    "api:dev": "npm --prefix server run dev",
+    "api:data": "server/node_modules/.bin/tsx scripts/export-api-data.ts"
   },
   "type": "module",
   "dependencies": {
+    "better-auth": "^1.7.6",
     "butterchurn": "^2.6.7",
     "butterchurn-presets": "^2.4.7",
     "mediabunny": "^1.60.0",
+    "openapi-fetch": "^0.17.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "simple-icons": "^16.33.0",
@@ -25,5 +31,6 @@
     "typescript": "^7.0.2",
     "vite": "^8.3.1"
   },
-  "private": true
+  "private": true,
+  "license": "AGPL-3.0-only"
 }
