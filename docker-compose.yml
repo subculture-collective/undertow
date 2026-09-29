@@ -1,0 +1,20 @@
+# Local development services. `docker compose up -d db` starts Postgres on port 5433
+# (5433 so it doesn't collide with a Postgres already on 5432).
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: undertow
+      POSTGRES_PASSWORD: undertow
+      POSTGRES_DB: undertow
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - undertow-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U undertow"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  undertow-db:
