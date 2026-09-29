@@ -1,0 +1,42 @@
+/* Layout for /styleguide.html only. */
+body.styleguide { overflow: auto; }
+.sg { max-width: 1100px; margin: 0 auto; padding: var(--space-9) var(--space-7) 80px; display: grid; gap: var(--space-9); }
+.sg-head { display: flex; align-items: center; gap: var(--space-6); padding-bottom: var(--space-6); border-bottom: 1px solid var(--line); }
+.sg-section { display: grid; gap: var(--space-6); }
+.sg-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-6); }
+.sg-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-5); }
+.sg-swatch { display: grid; gap: var(--space-1); }
+.sg-swatch > div { height: 56px; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.sg-swatch code, .sg code { font-family: var(--font-mono); font-size: var(--text-xs); }
+.sg-type { display: grid; grid-template-columns: 180px 1fr; align-items: baseline; gap: var(--space-6); }
+.sg-type code { color: var(--text-dim); }
+.sg-space { display: grid; justify-items: center; gap: var(--space-2); }
+.sg-space > div { background: var(--accent); }
+.sg-radius { width: 72px; height: 56px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: var(--space-2); background: var(--surface-raised); border: 1px solid var(--line-strong); }
+.sg-elev { width: 180px; height: 80px; display: flex; align-items: center; justify-content: center; background: var(--surface-raised); border-radius: var(--radius-lg); }
+.sg-panel { display: grid; gap: var(--space-4); max-width: 360px; padding: var(--space-5); background: var(--surface-panel); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+
+.sg-compare { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: var(--space-6); }
+.sg-card {
+  display: grid; overflow: hidden; color: var(--text); font-family: var(--font-ui);
+  background: var(--surface-app); border: 1px solid var(--line-strong); border-radius: var(--radius-xl);
+}
+.sg-card.active { box-shadow: var(--glow-accent); }
+.sg-mock { display: grid; grid-template-rows: auto 1fr; height: 230px; }
+.sg-mock-head { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-5); background: var(--surface-panel); border-bottom: 1px solid var(--line); }
+.sg-mock-head .brand-name { font-size: var(--text-sm); }
+.sg-mock-head .tabs button { font-size: var(--text-xs); padding: 0 var(--space-3); }
+.sg-mock-body { display: grid; grid-template-columns: 130px 1fr 150px; min-height: 0; }
+.sg-mock-body .layer-list { margin: 0; padding: var(--space-3); background: var(--surface-panel); border-right: 1px solid var(--line); font-size: var(--text-xs); }
+.sg-mock-body .layer-list li { padding: var(--space-2); }
+.sg-mock-stage {
+  display: flex; align-items: flex-end; gap: 3px; margin: var(--space-5); padding: var(--space-4);
+  background: #000; box-shadow: var(--shadow-stage);
+}
+.sg-mock-stage i { flex: 1; background: var(--gradient-brand); border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.sg-mock-inspector { display: grid; align-content: start; gap: var(--space-3); padding: var(--space-4); background: var(--surface-panel); border-left: 1px solid var(--line); font-size: var(--text-xs); }
+.sg-mock-inspector .row-label { width: 40px; }
+.sg-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); padding: var(--space-5); background: var(--surface-panel); border-top: 1px solid var(--line); }
+.sg-card-foot strong { font-size: var(--text-md); }
+.sg-mock-inspector > * { min-width: 0; }
+.sg-mock-inspector button { overflow: hidden; text-overflow: ellipsis; }

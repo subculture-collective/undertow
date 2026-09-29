@@ -1,0 +1,376 @@
+/*
+ * Alternative design systems. Each overrides the semantic tokens from tokens.css
+ * (Neon is the default and needs no attribute). Apply one with
+ * <html data-theme="studio">, or on any element to theme just that subtree.
+ * All text/background pairs below meet WCAG AA (4.5:1); see docs/design-system.md.
+ */
+
+/* ---- Studio: calm graphite, one clear blue accent, no glow ----------------------------------- */
+[data-theme="studio"] {
+  --surface-app: #0e0f12;
+  --surface-panel: #15171c;
+  --surface-raised: #1c1f26;
+  --surface-hover: #252933;
+  --surface-sunken: #0e0f12;
+  --surface-overlay: rgb(8 9 12 / 0.7);
+  --line: #242832;
+  --line-strong: #2f3440;
+  --line-hover: #414857;
+  --track: #2f3440;
+
+  --text: #e9ebf0;
+  --text-dim: #9ba1ae;
+  --text-faint: #666c7a;
+  --text-on-accent: #0b0d12;
+
+  --accent: #5b8cff;
+  --accent-hi: #8aadff;
+  --accent-2: #2dd4bf;
+  --accent-3: #7c8cff;
+  --accent-soft: rgb(91 140 255 / 0.12);
+  --focus: #8aadff;
+  --icon: #8a93a6;
+  --warn: #f5a524;
+
+  --brand-1: #5b8cff;
+  --brand-2: #6f7dff;
+  --brand-3: #2dd4bf;
+  --gradient-brand: linear-gradient(90deg, var(--accent), var(--accent));   /* flat: the gradient is kept for the mark only */
+  --font-brand: var(--font-ui);
+  --brand-weight: 650;
+  --brand-case: none;
+  --brand-tracking: -0.01em;
+
+  --glow-accent: 0 0 0 1px var(--accent);
+  --glow-focus: 0 0 0 2px color-mix(in srgb, var(--focus) 45%, transparent);
+  --glow-text: none;
+  --glow-thumb: 0 1px 3px rgb(0 0 0 / 0.5);
+  --glow-select: none;
+  --glow-mark: none;
+  --glow-patreon: 0 0 0 1px var(--patreon);
+  --modal-ring: 0 0 0 1px var(--line);
+  --stage-halo: transparent;
+  --shadow-stage: 0 0 0 1px var(--line), 0 16px 48px rgb(0 0 0 / 0.55);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+/* ---- Analogue: warm charcoal and cream, VU-meter amber to red, serif wordmark --------------------- */
+[data-theme="analogue"] {
+  --surface-app: #110e0b;
+  --surface-panel: #1a1612;
+  --surface-raised: #231d18;
+  --surface-hover: #2e2620;
+  --surface-sunken: #110e0b;
+  --surface-overlay: rgb(12 9 6 / 0.72);
+  --line: #2d251e;
+  --line-strong: #3b3128;
+  --line-hover: #574837;
+  --track: #3b3128;
+
+  --text: #f2e8d5;
+  --text-dim: #bcab8f;
+  --text-faint: #7c6d58;
+  --text-on-accent: #1a1206;
+
+  --accent: #ffa53d;
+  --accent-hi: #ffc37a;
+  --accent-2: #8fc9a8;          /* the green of a VU meter's safe zone */
+  --accent-3: #e2553d;          /* and its red */
+  --accent-soft: rgb(255 165 61 / 0.12);
+  --focus: #ffc37a;
+  --icon: #d49a5a;
+  --warn: #ffcf5c;
+  --patreon: #ff6b4a;
+
+  --brand-1: #ffcf5c;
+  --brand-2: #ff8a3d;
+  --brand-3: #e2553d;
+  --font-display: 'Iowan Old Style', 'Palatino', 'Book Antiqua', Georgia, serif;
+  --font-brand: var(--font-display);
+  --brand-weight: 700;
+  --brand-case: none;
+  --brand-tracking: 0.01em;
+  --tracking-caps: 0.16em;
+
+  --glow-accent: 0 0 0 1px var(--accent), 0 0 14px rgb(255 165 61 / 0.25);
+  --glow-text: 0 0 10px rgb(255 165 61 / 0.35);
+  --glow-thumb: 0 0 6px rgb(255 165 61 / 0.45);
+  --glow-select: 0 0 10px rgb(255 165 61 / 0.25);
+  --glow-mark: drop-shadow(0 0 5px rgb(255 138 61 / 0.35));
+  --stage-halo: rgb(255 165 61 / 0.05);
+  --shadow-stage: 0 0 0 1px var(--line-strong), 0 18px 56px rgb(0 0 0 / 0.65), 0 0 70px rgb(255 138 61 / 0.08);
+
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
+  --radius-xl: 10px;
+}
+
+/* ---- Acid: brutalist black and white, acid lime, square corners, monospace display ----------------- */
+[data-theme="acid"] {
+  --surface-app: #000000;
+  --surface-panel: #0a0a0a;
+  --surface-raised: #141414;
+  --surface-hover: #1f1f1f;
+  --surface-sunken: #000000;
+  --surface-overlay: rgb(0 0 0 / 0.8);
+  --line: #262626;
+  --line-strong: #3a3a3a;
+  --line-hover: #f4f4f4;
+  --track: #3a3a3a;
+
+  --text: #f4f4f4;
+  --text-dim: #a6a6a6;
+  --text-faint: #6b6b6b;
+  --text-on-accent: #000000;
+
+  --accent: #c6ff00;
+  --accent-hi: #dcff5c;
+  --accent-2: #ffffff;
+  --accent-3: #ff4d00;
+  --accent-soft: rgb(198 255 0 / 0.1);
+  --focus: #c6ff00;
+  --icon: #c6ff00;
+  --warn: #ffb800;
+  --patreon: #ff4d00;
+
+  --brand-1: #c6ff00;
+  --brand-2: #c6ff00;
+  --brand-3: #c6ff00;
+  --gradient-brand: linear-gradient(90deg, var(--accent), var(--accent));
+  --font-display: var(--font-mono);
+  --font-brand: var(--font-mono);
+  --brand-weight: 800;
+  --brand-case: uppercase;
+  --brand-tracking: 0.02em;
+  --mark-radius: 0px;
+
+  --glow-accent: 4px 4px 0 var(--accent);            /* hard offset shadows instead of glow */
+  --glow-focus: 0 0 0 2px var(--focus);
+  --glow-text: none;
+  --glow-thumb: none;
+  --glow-select: 4px 4px 0 var(--accent);
+  --glow-mark: none;
+  --glow-patreon: 4px 4px 0 var(--text);
+  --modal-ring: 8px 8px 0 var(--accent);
+  --shadow-panel: none;
+  --stage-halo: transparent;
+  --shadow-stage: 0 0 0 1px var(--line-strong), 10px 10px 0 var(--surface-raised);
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-pill: 0px;
+}
+
+/* A few Acid details that go beyond token values. */
+[data-theme="acid"] h4, [data-theme="acid"] .eyebrow { font-family: var(--font-mono); }
+[data-theme="acid"] button.primary, [data-theme="acid"] .btn.primary { text-transform: uppercase; letter-spacing: 0.06em; }
+[data-theme="acid"] input[type=range]::-webkit-slider-thumb { border-radius: 0; background: var(--accent); border-color: var(--accent); }
+[data-theme="acid"] input[type=range]::-moz-range-thumb { border-radius: 0; background: var(--accent); border-color: var(--accent); }
+[data-theme="acid"] .layer-list li.selected { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
+[data-theme="acid"] .layer-list li.selected .ico,
+[data-theme="acid"] .layer-list li.selected .eye,
+[data-theme="acid"] .layer-list li.selected .actions button { color: var(--text-on-accent); }
+
+/* ---- Glitch: neubrutalist structure, pastel Neon palette, chromatic aberration --------------------- */
+/*
+ * Pastel pink, sky and lilac over violet-dark surfaces. Neubrutalist parts: 2px borders, hard offset
+ * shadows with no blur, pastel fills outlined in ink, buttons that press into their shadow, sticker
+ * headings. Glitch parts: a sky/pink colour split on the wordmark, logomark, stage and dialogs, a
+ * slicing wordmark and a glitch-in for dialogs. No gradients. Motion stops under reduced motion.
+ */
+[data-theme="glitch"] {
+  --pink: #ff9fe0;
+  --sky: #9cecff;
+  --lilac: #c7b3ff;
+  --butter: #ffe28a;
+  --mint: #a8f0c6;
+  --coral: #ffa38f;
+  --ink: #110e1f;               /* outlines and text on pastel fills */
+
+  --surface-app: #0f0c1c;
+  --surface-panel: #171429;
+  --surface-raised: #211d3b;
+  --surface-hover: #2b2650;
+  --surface-sunken: #0f0c1c;
+  --surface-overlay: rgb(10 8 20 / 0.75);
+  --line: #2c2749;
+  --line-strong: #4b4378;
+  --line-hover: var(--lilac);
+  --track: #4b4378;
+
+  --text: #f7f3ff;
+  --text-dim: #bdb4dc;
+  --text-faint: #7d74a3;
+  --text-on-accent: var(--ink);
+
+  --accent: var(--pink);
+  --accent-hi: #ffc6ee;
+  --accent-2: var(--sky);
+  --accent-3: var(--lilac);
+  --accent-soft: rgb(255 159 224 / 0.14);
+  --focus: var(--sky);
+  --icon: var(--lilac);
+  --warn: var(--butter);
+  --danger: var(--coral);
+  --success: var(--mint);
+  --patreon: var(--coral);
+
+  --chroma-a: var(--sky);
+  --chroma-b: var(--pink);
+  /* Neubrutalist hard shadows. Ink would vanish on these dark panels, so they are a muted lilac. */
+  --shadow-c: #6a5fb0;
+  --hard: 3px 3px 0 var(--shadow-c);
+  --hard-lift: 5px 5px 0 var(--shadow-c);
+  --border-w: 2px;
+
+  --gradient-brand: linear-gradient(var(--accent), var(--accent));   /* flat: one colour at both ends */
+  --brand-1: var(--text);
+  --brand-2: var(--text);
+  --brand-3: var(--text);
+  --mark-ab-a: var(--chroma-a);
+  --mark-ab-b: var(--chroma-b);
+  --mark-radius: 0px;
+  --font-display: var(--font-mono);
+  --font-brand: var(--font-mono);
+  --brand-weight: 800;
+  --brand-case: uppercase;
+  --brand-tracking: 0.04em;
+
+  --glow-accent: var(--hard-lift);
+  --glow-focus: 3px 3px 0 var(--focus);
+  --glow-text: -1.5px 0 0 var(--chroma-a), 1.5px 0 0 var(--chroma-b);
+  --glow-thumb: 2px 2px 0 var(--shadow-c);
+  --glow-select: -3px 0 0 var(--chroma-a), 3px 0 0 var(--chroma-b);
+  --glow-mark: none;
+  --glow-patreon: var(--hard-lift);
+  --modal-ring: 8px 8px 0 var(--lilac), -3px 0 0 var(--chroma-a);
+  --shadow-panel: 6px 6px 0 var(--shadow-c);
+  --stage-halo: transparent;
+  --shadow-stage: 0 0 0 2px var(--ink),
+    -6px 0 0 color-mix(in srgb, var(--chroma-a) 70%, transparent),
+    6px 0 0 color-mix(in srgb, var(--chroma-b) 70%, transparent);
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-pill: 0px;
+}
+
+/* Buttons: outlined, hard shadow, lift on hover, press into the shadow on click. */
+[data-theme="glitch"] button, [data-theme="glitch"] .btn, [data-theme="glitch"] .menu summary {
+  font-weight: 600; box-shadow: var(--hard);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+[data-theme="glitch"] button:hover:not(:disabled), [data-theme="glitch"] .btn:hover, [data-theme="glitch"] .menu summary:hover {
+  transform: translate(-1px, -1px); box-shadow: var(--hard-lift); border-color: var(--lilac);
+}
+[data-theme="glitch"] button:active:not(:disabled), [data-theme="glitch"] .btn:active {
+  transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow-c);
+}
+[data-theme="glitch"] button:disabled { box-shadow: none; }
+/* Buttons that shouldn't look like slabs: list controls, tabs, menu items, the brand. */
+[data-theme="glitch"] :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu) button,
+[data-theme="glitch"] button.ghost, [data-theme="glitch"] .brand-button,
+[data-theme="glitch"] :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu) button:hover:not(:disabled),
+[data-theme="glitch"] button.ghost:hover:not(:disabled), [data-theme="glitch"] .brand-button:hover:not(:disabled) {
+  box-shadow: none; transform: none;
+}
+
+[data-theme="glitch"] button.primary, [data-theme="glitch"] .btn.primary {
+  font-family: var(--font-mono); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  border-color: var(--ink); color: var(--ink); box-shadow: 3px 3px 0 var(--sky);
+}
+/* The primary button keeps a glitch on hover: it jitters and its shadow splits sky and lilac. */
+[data-theme="glitch"] button.primary:hover:not(:disabled), [data-theme="glitch"] .btn.primary:hover {
+  border-color: var(--ink); animation: vz-jitter 240ms steps(2) infinite, vz-chroma 480ms steps(3) infinite;
+}
+[data-theme="glitch"] .btn.patreon, [data-theme="glitch"] button.patreon { border-color: var(--ink); }
+[data-theme="glitch"] .transport .play { border-radius: 0; border-color: var(--ink); }
+
+/* Fields: thick outline, a sky shadow on focus. */
+[data-theme="glitch"] :is(input:not([type]), input[type=number], input[type=email], input[type=password], select, textarea):focus { border-color: var(--focus); box-shadow: var(--glow-focus); }
+[data-theme="glitch"] input[type=range]::-webkit-slider-runnable-track { height: 6px; border: 2px solid var(--ink); background: var(--line-strong); }
+[data-theme="glitch"] input[type=range]::-webkit-slider-thumb {
+  width: 14px; height: 18px; margin-top: -8px; border-radius: 0; background: var(--accent); border: 2px solid var(--ink);
+}
+[data-theme="glitch"] input[type=range]::-moz-range-thumb { border-radius: 0; background: var(--accent); border: 2px solid var(--ink); }
+[data-theme="glitch"] input[type=checkbox] { accent-color: var(--pink); }
+
+/* Sticker headings: small pastel labels on panel and section titles. */
+[data-theme="glitch"] h4 {
+  justify-self: start; width: fit-content; padding: 1px var(--space-3); font-family: var(--font-mono); font-weight: 700;
+  color: var(--ink); background: var(--lilac); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow-c);
+}
+[data-theme="glitch"] .eyebrow { font-family: var(--font-mono); }
+[data-theme="glitch"] h3 { font-family: var(--font-mono); text-transform: uppercase; text-shadow: var(--glow-text); }
+
+/* Selection states: solid pastel fills with ink text and an outline. */
+[data-theme="glitch"] .layer-list li { border-width: 2px; }
+[data-theme="glitch"] .layer-list li.selected {
+  background: var(--pink); color: var(--ink); border: 2px solid var(--ink); box-shadow: var(--glow-select);
+}
+[data-theme="glitch"] .layer-list li.selected :is(.ico, .eye, .actions button) { color: var(--ink); }
+[data-theme="glitch"] .tabs button.active { background: var(--sky); color: var(--ink); box-shadow: none; outline: 2px solid var(--ink); outline-offset: -2px; }
+[data-theme="glitch"] .preset-list div.active { background: var(--pink); color: var(--ink); }
+[data-theme="glitch"] .template-card:hover:not(:disabled) { box-shadow: var(--hard-lift), -3px 0 0 var(--chroma-a); }
+[data-theme="glitch"] .support-nudge { border: 2px solid var(--ink); box-shadow: var(--hard); background: rgb(255 159 224 / 0.12); }
+[data-theme="glitch"] .progress .bar { height: 12px; border: 2px solid var(--ink); }
+[data-theme="glitch"] .progress .bar div { box-shadow: none; }
+[data-theme="glitch"] .modal { border-color: var(--ink); }
+[data-theme="glitch"] header::after { height: 2px; opacity: 1; background: var(--ink); }
+
+/* Wordmark: a static colour split, plus sky and pink slices that glitch briefly every few seconds.
+   The slices are copies of the text from data-text (set by BrandLogo). */
+[data-theme="glitch"] .brand-name { position: relative; text-shadow: -1px 0 0 var(--chroma-a), 1px 0 0 var(--chroma-b); }
+[data-theme="glitch"] .brand-name[data-text]::before,
+[data-theme="glitch"] .brand-name[data-text]::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; opacity: 0; text-shadow: none;
+}
+[data-theme="glitch"] .brand-name[data-text]::before { color: var(--chroma-a); animation: vz-slice 4.5s steps(1) infinite; }
+[data-theme="glitch"] .brand-name[data-text]::after { color: var(--chroma-b); animation: vz-slice 4.5s steps(1) 0.12s infinite reverse; }
+[data-theme="glitch"] .brand-button:hover .brand-name[data-text]::before,
+[data-theme="glitch"] .brand-button:hover .brand-name[data-text]::after { animation-duration: 0.6s; }
+
+/* Dialogs glitch in when they open. */
+[data-theme="glitch"] .modal { animation: vz-glitch-in 280ms steps(4) both; }
+
+@keyframes vz-slice {
+  0%, 86% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  88% { opacity: 0.9; clip-path: inset(12% 0 64% 0); transform: translate(-3px, 0); }
+  90% { clip-path: inset(58% 0 18% 0); transform: translate(3px, 0); }
+  92% { clip-path: inset(34% 0 44% 0); transform: translate(-2px, 1px); }
+  94% { clip-path: inset(78% 0 4% 0); transform: translate(2px, 0); }
+  96% { clip-path: inset(0 0 82% 0); transform: translate(-1px, 0); }
+  98%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+}
+@keyframes vz-jitter {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, -1px); }
+  100% { transform: translate(1px, 1px); }
+}
+@keyframes vz-chroma {
+  0% { box-shadow: -3px 0 0 var(--chroma-a), 4px 3px 0 var(--accent-3); }
+  33% { box-shadow: 4px 1px 0 var(--chroma-a), -4px -1px 0 var(--accent-3); }
+  66% { box-shadow: -2px -1px 0 var(--chroma-a), 5px 3px 0 var(--accent-3); }
+}
+@keyframes vz-glitch-in {
+  0% { clip-path: inset(42% 0 42% 0); transform: translateX(-10px); }
+  25% { clip-path: inset(0 0 58% 0); transform: translateX(8px); }
+  50% { clip-path: inset(48% 0 0 0); transform: translateX(-4px); }
+  75% { clip-path: inset(10% 0 20% 0); transform: translateX(2px); }
+  100% { clip-path: inset(0); transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="glitch"] *, [data-theme="glitch"] *::before, [data-theme="glitch"] *::after { animation: none !important; }
+}

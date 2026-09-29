@@ -1,0 +1,28 @@
+/* Element defaults. Built only from tokens.css. */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  font: var(--text-sm) / var(--leading) var(--font-ui);
+  color: var(--text);
+  background: var(--surface-app);
+  -webkit-font-smoothing: antialiased;
+}
+body { margin: 0; overflow: hidden; }
+
+h1, h2, h3, h4 { margin: 0; font-weight: 600; }
+h3 { font-size: var(--text-lg); }
+h4 {
+  font-size: var(--text-2xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--text-dim);
+}
+p { margin: 0; }
+a { color: var(--accent-hi); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button, select, input, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+::selection { background: var(--accent-soft); }
+
+/* Thin, quiet scrollbars so panels don't show chunky grey bars. */
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
