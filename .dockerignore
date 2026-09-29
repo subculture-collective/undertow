@@ -1,0 +1,8 @@
+node_modules
+server/node_modules
+dist
+server/dist
+server/.env
+.env
+selftest-results
+.git

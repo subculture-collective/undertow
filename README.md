@@ -1,8 +1,9 @@
-# vizstudio
+# Undertow
 
-A layered music-visualizer video editor. Everything runs in the browser: audio
-analysis, rendering and MP4 encoding happen on the visitor's machine, so the
-site is static files and uploads never leave the device.
+A layered music-visualizer video editor. Audio analysis, rendering and MP4
+encoding happen in the browser, on the visitor's machine, and media files never
+leave the device. Optional accounts store project layouts and defaults through
+the Undertow API (`server/`), which is also usable by other apps with API keys.
 
 ## Features
 
@@ -26,13 +27,22 @@ site is static files and uploads never leave the device.
 - Undo/redo, autosave (layout in localStorage, files in IndexedDB), layout
   save/load as JSON, snapping guides, keyboard nudging.
 
+- **Accounts** (optional): email and password, Google and Discord sign-in, linked
+  accounts (YouTube channel and Discord name can fill your socials), defaults for
+  new projects (artist name, website, socials, palette, font), and a project
+  library that saves to your account or to this browser. Autosave detects edits
+  from another tab or device instead of overwriting them.
+
 ## Development
 
 ```sh
 npm install
-npm run dev        # http://localhost:5173
+npm run dev        # editor on http://localhost:5173 (works without the API)
 npm run build      # static site in dist/
 ```
+
+For accounts and the API, see [docs/deploy.md](docs/deploy.md#local-development).
+The API is documented in [docs/api.md](docs/api.md) and at `/docs` on a running server.
 
 ## Layout
 
@@ -49,7 +59,30 @@ npm run build      # static site in dist/
 | `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4 encode (Mediabunny) |
 | `src/export/clipReader.ts` | Exact frame decoding for video layers during export |
 | `src/selftest.ts`, `selftest.html` | Browser export self-test (dev server only) |
+| `src/brand.ts`, `src/ui/Brand.tsx`, `src/ui/AboutDialog.tsx` | Brand settings, logomark, social and Patreon links |
+| `src/styles/`, `src/theme.ts`, `src/styleguide.tsx` | Design tokens, themes, components and the style guide (dev server only) |
+| `src/api/` | Typed API client, generated from the API's OpenAPI document (`npm run api:types`), and the auth client |
+| `src/cloud/` | Account state, defaults, project library and autosave, media manifests and relinking |
+| `server/` | The Undertow API: Hono, Better Auth, Postgres via Drizzle. See docs/api.md |
+| `Dockerfile`, `deploy/` | One container serving the editor and API; production compose file |
 | `src/ui/` | Editor components |
+
+## Branding and design system
+
+`src/brand.ts` holds the site name, tagline, Patreon link, social links and
+public URL. The header, About dialog, export dialog, page title, meta tags and
+share previews all read from it. Links that still contain `PLACEHOLDER` show
+with a dashed amber outline in development and are left out of production
+builds.
+
+The UI is styled only through CSS tokens. Five candidate design systems (Neon,
+Studio, Analogue, Acid, Glitch) can be compared at `/styleguide.html` on the dev
+server, or tried in the editor with `?theme=glitch` and similar. See
+[docs/design-system.md](docs/design-system.md).
+
+`npm run og-image` renders `public/og.png` from `scripts/og-image.html` with
+headless Chrome. Set `CHROME` to the browser binary if it isn't at the macOS
+default path.
 
 ## Browser self-test
 
@@ -82,3 +115,9 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
   says so next to the download.
 - Milkdrop output isn't bit-identical between preview and export, because each
   one runs its own Butterchurn instance, but preset choices and timing match.
+
+## License
+
+[GNU Affero General Public License v3.0](LICENSE). If you run a modified
+version of Undertow as a network service, the AGPL requires you to offer that
+version's source code to its users.
