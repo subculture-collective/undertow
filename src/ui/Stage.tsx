@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { registerThumbnailSource } from '../cloud/documents';
 import { Compositor } from '../render/compositor';
 import { loadPresets } from '../render/milkdrop';
 import { useStore } from '../store';
@@ -20,6 +21,8 @@ function snap(v: number, guides: number[]): [number, number | null] {
 export function Stage() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Saves take their preview image from this canvas.
+  useEffect(() => registerThumbnailSource(() => canvasRef.current), []);
   const compRef = useRef<Compositor | null>(null);
   const [area, setArea] = useState({ w: 640, h: 360 });
   const [drag, setDrag] = useState<Drag | null>(null);

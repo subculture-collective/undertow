@@ -5,6 +5,9 @@ import type { AudioTrack } from '../audio/analysis';
 import { ClipReader } from '../export/clipReader';
 import { Compositor, type DecodedFrame } from '../render/compositor';
 import { loadPresets } from '../render/milkdrop';
+import { useAccount } from '../cloud/account';
+import { applyDefaults } from '../cloud/defaults';
+import { newDoc } from '../cloud/documents';
 import { useStore } from '../store';
 import { applyTemplate, TEMPLATES, type Template } from '../templates';
 import { ASPECTS, type AspectId, type Project } from '../types';
@@ -88,6 +91,13 @@ async function renderThumb(project: Project, aspect: AspectId, assets: Record<st
   return canvas.toDataURL('image/jpeg', 0.85);
 }
 
+/** A template filled with the current song and artwork, plus the account's defaults when they apply to new projects. */
+function build(t: Template, current: Project, assets: Record<string, RuntimeAsset>) {
+  const p = applyTemplate(t, current, assets);
+  const d = useAccount.getState().defaults;
+  return d.applyToNewProjects ? applyDefaults(p, d) : p;
+}
+
 export function TemplateGallery({ onClose }: { onClose: () => void }) {
   const aspect = useStore((s) => s.aspect);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
@@ -100,7 +110,7 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
         if (cancelled) return;
         const { project, assets } = useStore.getState();
         try {
-          const url = await renderThumb(applyTemplate(t, project, assets), aspect, assets);
+          const url = await renderThumb(build(t, project, assets), aspect, assets);
           if (!cancelled) setThumbs((m) => ({ ...m, [t.id]: url }));
         } catch (e) {
           console.warn('template thumbnail failed', t.id, e);
@@ -111,8 +121,9 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
   }, [aspect]);
 
   const choose = (t: Template) => {
-    const { project, assets, replaceProject } = useStore.getState();
-    replaceProject(applyTemplate(t, project, assets));
+    const { project, assets } = useStore.getState();
+    // A new project gets its own name; the current one stays in the library under its name.
+    newDoc({ ...build(t, project, assets), name: 'Untitled' });
     onClose();
   };
 
@@ -121,7 +132,7 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
       <div className="modal gallery">
         <h3>Start from a template</h3>
         <p className="hint">
-          Your song, artwork, clip, lyrics, title and socials carry over. Undo (⌘Z) brings back your previous layout.
+          Starts a new project with your song, artwork, clip and lyrics, plus your defaults. The current project stays in Projects.
           Previews show {ASPECTS[aspect].label}.
         </p>
         <div className="gallery-grid">
