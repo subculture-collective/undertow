@@ -1,0 +1,1418 @@
+[
+ {
+  "id": "classic",
+  "name": "Classic",
+  "description": "Milkdrop visuals behind cover art, a spectrum, title and socials.",
+  "data": {
+   "version": 1,
+   "name": "Untitled",
+   "audioAssetId": null,
+   "layers": [
+    {
+     "id": "ickwb4c0",
+     "type": "solid",
+     "name": "Background colour",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "color": "#0b0b12",
+      "color2": "#2a1245",
+      "gradient": true,
+      "angle": 135
+     }
+    },
+    {
+     "id": "v2euoey3",
+     "type": "milkdrop",
+     "name": "Milkdrop visualizer",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "preset": "",
+      "cycle": 0,
+      "blendTime": 2.7,
+      "seed": 1,
+      "gain": 1
+     }
+    },
+    {
+     "id": "a11fd16c",
+     "type": "image",
+     "name": "Image / logo",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.34375,
+       "y": 0.2222222222222222,
+       "w": 0.3125,
+       "h": 0.5555555555555556
+      },
+      "portrait": {
+       "x": 0.17592592592592593,
+       "y": 0.21875,
+       "w": 0.6481481481481481,
+       "h": 0.3645833333333333
+      },
+      "square": {
+       "x": 0.26851851851851855,
+       "y": 0.18518518518518517,
+       "w": 0.46296296296296297,
+       "h": 0.46296296296296297
+      }
+     },
+     "props": {
+      "assetId": null,
+      "fit": "cover",
+      "radius": 0.03,
+      "shadow": 0.5,
+      "pulse": 0,
+      "spin": 0,
+      "circle": false
+     }
+    },
+    {
+     "id": "23pr0xat",
+     "type": "spectrum",
+     "name": "Spectrum",
+     "visible": true,
+     "opacity": 1,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0.1875,
+       "y": 0.6018518518518519,
+       "w": 0.625,
+       "h": 0.16666666666666666
+      },
+      "portrait": {
+       "x": 0.08333333333333333,
+       "y": 0.78125,
+       "w": 0.8333333333333334,
+       "h": 0.11458333333333333
+      },
+      "square": {
+       "x": 0.12962962962962962,
+       "y": 0.7592592592592593,
+       "w": 0.7407407407407407,
+       "h": 0.14814814814814814
+      }
+     },
+     "props": {
+      "style": "bars",
+      "bars": 64,
+      "color": "#4fd1ff",
+      "color2": "#ff4fd8",
+      "gap": 0.3,
+      "rounded": true,
+      "smoothing": 0.6,
+      "minHz": 30,
+      "maxHz": 16000,
+      "glow": 0.4,
+      "sensitivity": 1
+     }
+    },
+    {
+     "id": "uj0bwkwo",
+     "type": "text",
+     "name": "Text",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.1875,
+       "y": 0.7962962962962963,
+       "w": 0.625,
+       "h": 0.08333333333333333
+      },
+      "portrait": {
+       "x": 0.08333333333333333,
+       "y": 0.625,
+       "w": 0.8333333333333334,
+       "h": 0.052083333333333336
+      },
+      "square": {
+       "x": 0.08333333333333333,
+       "y": 0.6851851851851852,
+       "w": 0.8333333333333334,
+       "h": 0.07407407407407407
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 700,
+      "color": "#ffffff",
+      "align": "center",
+      "shadow": 0.4,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "text": "Artist — Song Title"
+     }
+    },
+    {
+     "id": "snzqykob",
+     "type": "socials",
+     "name": "Socials",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.03125,
+       "y": 0.9259259259259259,
+       "w": 0.46875,
+       "h": 0.046296296296296294
+      },
+      "portrait": {
+       "x": 0.12962962962962962,
+       "y": 0.9166666666666666,
+       "w": 0.7407407407407407,
+       "h": 0.057291666666666664
+      },
+      "square": {
+       "x": 0.08333333333333333,
+       "y": 0.9259259259259259,
+       "w": 0.8333333333333334,
+       "h": 0.046296296296296294
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 600,
+      "color": "#ffffff",
+      "shadow": 0.4,
+      "letterSpacing": 0,
+      "items": [
+       {
+        "platform": "instagram",
+        "handle": "@yourname"
+       },
+       {
+        "platform": "spotify",
+        "handle": "Your Artist"
+       }
+      ],
+      "layout": "row",
+      "brandColors": false,
+      "iconColor": "#ffffff"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "vinyl",
+  "name": "Vinyl",
+  "description": "Spinning circular artwork inside a radial spectrum ring, with a song progress bar.",
+  "data": {
+   "version": 1,
+   "name": "Untitled",
+   "audioAssetId": null,
+   "layers": [
+    {
+     "id": "6aeb6hwf",
+     "type": "solid",
+     "name": "Background colour",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "color": "#140d1c",
+      "color2": "#3b1a33",
+      "gradient": true,
+      "angle": 120
+     }
+    },
+    {
+     "id": "yijf2hqp",
+     "type": "particles",
+     "name": "Particles",
+     "visible": true,
+     "opacity": 0.7,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "style": "dust",
+      "count": 120,
+      "color": "#ffd9f0",
+      "color2": "#ffb36b",
+      "size": 0.8,
+      "speed": 0.6,
+      "direction": 270,
+      "react": 0.6,
+      "seed": 1
+     }
+    },
+    {
+     "id": "9xm99juk",
+     "type": "spectrum",
+     "name": "Ring",
+     "visible": true,
+     "opacity": 1,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0.2708333333333333,
+       "y": 0.037037037037037035,
+       "w": 0.4583333333333333,
+       "h": 0.8148148148148148
+      },
+      "portrait": {
+       "x": 0.09259259259259259,
+       "y": 0.19791666666666666,
+       "w": 0.8148148148148148,
+       "h": 0.4583333333333333
+      },
+      "square": {
+       "x": 0.2222222222222222,
+       "y": 0.05555555555555555,
+       "w": 0.5555555555555556,
+       "h": 0.5555555555555556
+      }
+     },
+     "props": {
+      "style": "radial",
+      "bars": 120,
+      "color": "#ff7ab8",
+      "color2": "#ffc46b",
+      "gap": 0.35,
+      "rounded": true,
+      "smoothing": 0.6,
+      "minHz": 30,
+      "maxHz": 16000,
+      "glow": 0.6,
+      "sensitivity": 1.1
+     }
+    },
+    {
+     "id": "juirvvpo",
+     "type": "image",
+     "name": "Artwork",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.3854166666666667,
+       "y": 0.24074074074074073,
+       "w": 0.22916666666666666,
+       "h": 0.4074074074074074
+      },
+      "portrait": {
+       "x": 0.2962962962962963,
+       "y": 0.3125,
+       "w": 0.4074074074074074,
+       "h": 0.22916666666666666
+      },
+      "square": {
+       "x": 0.3611111111111111,
+       "y": 0.19444444444444445,
+       "w": 0.2777777777777778,
+       "h": 0.2777777777777778
+      }
+     },
+     "props": {
+      "assetId": null,
+      "fit": "cover",
+      "radius": 0.03,
+      "shadow": 0.7,
+      "pulse": 0.3,
+      "spin": 8,
+      "circle": true
+     }
+    },
+    {
+     "id": "ufr43xf1",
+     "type": "text",
+     "name": "Title",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.1875,
+       "y": 0.8611111111111112,
+       "w": 0.625,
+       "h": 0.06481481481481481
+      },
+      "portrait": {
+       "x": 0.08333333333333333,
+       "y": 0.6979166666666666,
+       "w": 0.8333333333333334,
+       "h": 0.057291666666666664
+      },
+      "square": {
+       "x": 0.08333333333333333,
+       "y": 0.6666666666666666,
+       "w": 0.8333333333333334,
+       "h": 0.07407407407407407
+      }
+     },
+     "props": {
+      "font": "Avenir Next",
+      "weight": 600,
+      "color": "#ffffff",
+      "align": "center",
+      "shadow": 0.4,
+      "uppercase": false,
+      "letterSpacing": 0.04,
+      "text": "Artist — Song Title"
+     }
+    },
+    {
+     "id": "lou6xp8e",
+     "type": "waveform",
+     "name": "Progress",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.2916666666666667,
+       "y": 0.9398148148148148,
+       "w": 0.4166666666666667,
+       "h": 0.037037037037037035
+      },
+      "portrait": {
+       "x": 0.12962962962962962,
+       "y": 0.78125,
+       "w": 0.7407407407407407,
+       "h": 0.036458333333333336
+      },
+      "square": {
+       "x": 0.17592592592592593,
+       "y": 0.7962962962962963,
+       "w": 0.6481481481481481,
+       "h": 0.05555555555555555
+      }
+     },
+     "props": {
+      "mode": "progress",
+      "style": "bars",
+      "color": "#ffffff55",
+      "playedColor": "#ff7ab8",
+      "thickness": 4,
+      "glow": 0.2,
+      "gain": 1.4
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "karaoke",
+  "name": "Karaoke",
+  "description": "Big word-by-word lyrics over soft Milkdrop, with the artwork and title in the corner.",
+  "data": {
+   "version": 1,
+   "name": "Untitled",
+   "audioAssetId": null,
+   "layers": [
+    {
+     "id": "7uurcjaf",
+     "type": "solid",
+     "name": "Background colour",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "color": "#07070c",
+      "color2": "#141030",
+      "gradient": true,
+      "angle": 90
+     }
+    },
+    {
+     "id": "ekvhs64d",
+     "type": "milkdrop",
+     "name": "Milkdrop visualizer",
+     "visible": true,
+     "opacity": 0.45,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "preset": "Flexi + Martin - astral projection",
+      "cycle": 0,
+      "blendTime": 2.7,
+      "seed": 1,
+      "gain": 0.8
+     }
+    },
+    {
+     "id": "4ogbx6sy",
+     "type": "lyrics",
+     "name": "Lyrics",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.08333333333333333,
+       "y": 0.3333333333333333,
+       "w": 0.8333333333333334,
+       "h": 0.2962962962962963
+      },
+      "portrait": {
+       "x": 0.05555555555555555,
+       "y": 0.3645833333333333,
+       "w": 0.8888888888888888,
+       "h": 0.22916666666666666
+      },
+      "square": {
+       "x": 0.05555555555555555,
+       "y": 0.3333333333333333,
+       "w": 0.8888888888888888,
+       "h": 0.2962962962962963
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 900,
+      "color": "#ffffff",
+      "align": "center",
+      "shadow": 0.6,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "assetId": null,
+      "offset": 0,
+      "mode": "karaoke",
+      "highlight": "#6bf0ff",
+      "dimColor": "#ffffffaa",
+      "fade": 0.25
+     }
+    },
+    {
+     "id": "g7t0t384",
+     "type": "image",
+     "name": "Artwork",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.03125,
+       "y": 0.05555555555555555,
+       "w": 0.08333333333333333,
+       "h": 0.14814814814814814
+      },
+      "portrait": {
+       "x": 0.05555555555555555,
+       "y": 0.041666666666666664,
+       "w": 0.16666666666666666,
+       "h": 0.09375
+      },
+      "square": {
+       "x": 0.037037037037037035,
+       "y": 0.037037037037037035,
+       "w": 0.12962962962962962,
+       "h": 0.12962962962962962
+      }
+     },
+     "props": {
+      "assetId": null,
+      "fit": "cover",
+      "radius": 0.08,
+      "shadow": 0.5,
+      "pulse": 0,
+      "spin": 0,
+      "circle": false
+     }
+    },
+    {
+     "id": "366kyhff",
+     "type": "text",
+     "name": "Title",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.13020833333333334,
+       "y": 0.09259259259259259,
+       "w": 0.46875,
+       "h": 0.07407407407407407
+      },
+      "portrait": {
+       "x": 0.25,
+       "y": 0.06510416666666667,
+       "w": 0.7037037037037037,
+       "h": 0.046875
+      },
+      "square": {
+       "x": 0.18518518518518517,
+       "y": 0.06944444444444445,
+       "w": 0.7777777777777778,
+       "h": 0.06481481481481481
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 600,
+      "color": "#ffffff",
+      "align": "left",
+      "shadow": 0.5,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "text": "Artist — Song Title"
+     }
+    },
+    {
+     "id": "6m4wqyxi",
+     "type": "waveform",
+     "name": "Progress",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.03125,
+       "y": 0.9166666666666666,
+       "w": 0.9375,
+       "h": 0.046296296296296294
+      },
+      "portrait": {
+       "x": 0.05555555555555555,
+       "y": 0.9270833333333334,
+       "w": 0.8888888888888888,
+       "h": 0.036458333333333336
+      },
+      "square": {
+       "x": 0.037037037037037035,
+       "y": 0.9166666666666666,
+       "w": 0.9259259259259259,
+       "h": 0.046296296296296294
+      }
+     },
+     "props": {
+      "mode": "progress",
+      "style": "line",
+      "color": "#ffffff44",
+      "playedColor": "#6bf0ff",
+      "thickness": 3,
+      "glow": 0.4,
+      "gain": 1
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "neon",
+  "name": "Neon",
+  "description": "A starfield warp with a glowing mirrored spectrum, spaced-out title and LED meter.",
+  "data": {
+   "version": 1,
+   "name": "Untitled",
+   "audioAssetId": null,
+   "layers": [
+    {
+     "id": "wzje82c0",
+     "type": "solid",
+     "name": "Background colour",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "color": "#03020a",
+      "color2": "#1b0a3e",
+      "gradient": true,
+      "angle": 90
+     }
+    },
+    {
+     "id": "46ts1cga",
+     "type": "particles",
+     "name": "Particles",
+     "visible": true,
+     "opacity": 1,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "style": "starfield",
+      "count": 350,
+      "color": "#ffffff",
+      "color2": "#b18cff",
+      "size": 1,
+      "speed": 1,
+      "direction": 270,
+      "react": 0.9,
+      "seed": 1
+     }
+    },
+    {
+     "id": "68vsw126",
+     "type": "spectrum",
+     "name": "Spectrum",
+     "visible": true,
+     "opacity": 1,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0.08333333333333333,
+       "y": 0.3055555555555556,
+       "w": 0.8333333333333334,
+       "h": 0.3888888888888889
+      },
+      "portrait": {
+       "x": 0.037037037037037035,
+       "y": 0.3541666666666667,
+       "w": 0.9259259259259259,
+       "h": 0.2708333333333333
+      },
+      "square": {
+       "x": 0.037037037037037035,
+       "y": 0.26851851851851855,
+       "w": 0.9259259259259259,
+       "h": 0.3333333333333333
+      }
+     },
+     "props": {
+      "style": "mirror",
+      "bars": 96,
+      "color": "#00e5ff",
+      "color2": "#ff2bd6",
+      "gap": 0.35,
+      "rounded": true,
+      "smoothing": 0.6,
+      "minHz": 30,
+      "maxHz": 16000,
+      "glow": 0.8,
+      "sensitivity": 1.1
+     }
+    },
+    {
+     "id": "t81um1e2",
+     "type": "text",
+     "name": "Title",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.13541666666666666,
+       "y": 0.7407407407407407,
+       "w": 0.7291666666666666,
+       "h": 0.09259259259259259
+      },
+      "portrait": {
+       "x": 0.05555555555555555,
+       "y": 0.671875,
+       "w": 0.8888888888888888,
+       "h": 0.0625
+      },
+      "square": {
+       "x": 0.05555555555555555,
+       "y": 0.6481481481481481,
+       "w": 0.8888888888888888,
+       "h": 0.08333333333333333
+      }
+     },
+     "props": {
+      "font": "Futura",
+      "weight": 700,
+      "color": "#f2e9ff",
+      "align": "center",
+      "shadow": 0.4,
+      "uppercase": true,
+      "letterSpacing": 0.2,
+      "text": "Artist — Song Title"
+     }
+    },
+    {
+     "id": "ar6fac14",
+     "type": "vu",
+     "name": "VU meter",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.953125,
+       "y": 0.3055555555555556,
+       "w": 0.026041666666666668,
+       "h": 0.3888888888888889
+      },
+      "portrait": {
+       "x": 0.9166666666666666,
+       "y": 0.15625,
+       "w": 0.046296296296296294,
+       "h": 0.16666666666666666
+      },
+      "square": {
+       "x": 0.9351851851851852,
+       "y": 0.26851851851851855,
+       "w": 0.046296296296296294,
+       "h": 0.3333333333333333
+      }
+     },
+     "props": {
+      "style": "led",
+      "orientation": "vertical",
+      "low": "#00e5ff",
+      "mid": "#b18cff",
+      "high": "#ff2bd6",
+      "segments": 24,
+      "peakHold": true,
+      "sensitivity": 1
+     }
+    },
+    {
+     "id": "ols6eqa2",
+     "type": "socials",
+     "name": "Socials",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.23958333333333334,
+       "y": 0.9027777777777778,
+       "w": 0.5208333333333334,
+       "h": 0.046296296296296294
+      },
+      "portrait": {
+       "x": 0.12962962962962962,
+       "y": 0.90625,
+       "w": 0.7407407407407407,
+       "h": 0.057291666666666664
+      },
+      "square": {
+       "x": 0.12962962962962962,
+       "y": 0.8888888888888888,
+       "w": 0.7407407407407407,
+       "h": 0.05555555555555555
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 400,
+      "color": "#d9ccff",
+      "shadow": 0.4,
+      "letterSpacing": 0,
+      "items": [
+       {
+        "platform": "instagram",
+        "handle": "@yourname"
+       },
+       {
+        "platform": "spotify",
+        "handle": "Your Artist"
+       }
+      ],
+      "layout": "row",
+      "brandColors": false,
+      "iconColor": "#d9ccff"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "poster",
+  "name": "Poster",
+  "description": "A light, print-style layout: large artwork, serif title and ink-coloured spectrum.",
+  "data": {
+   "version": 1,
+   "name": "Untitled",
+   "audioAssetId": null,
+   "layers": [
+    {
+     "id": "17weybno",
+     "type": "solid",
+     "name": "Background colour",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "color": "#f3ebe1",
+      "color2": "#dcc8b3",
+      "gradient": true,
+      "angle": 160
+     }
+    },
+    {
+     "id": "5r9h9v9r",
+     "type": "particles",
+     "name": "Particles",
+     "visible": true,
+     "opacity": 0.8,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "style": "bokeh",
+      "count": 30,
+      "color": "#ffffff",
+      "color2": "#ffe2c4",
+      "size": 1.4,
+      "speed": 0.5,
+      "direction": 270,
+      "react": 0.3,
+      "seed": 1
+     }
+    },
+    {
+     "id": "g13wu8j4",
+     "type": "image",
+     "name": "Artwork",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.07291666666666667,
+       "y": 0.17592592592592593,
+       "w": 0.3645833333333333,
+       "h": 0.6481481481481481
+      },
+      "portrait": {
+       "x": 0.12962962962962962,
+       "y": 0.10416666666666667,
+       "w": 0.7407407407407407,
+       "h": 0.4166666666666667
+      },
+      "square": {
+       "x": 0.06481481481481481,
+       "y": 0.12962962962962962,
+       "w": 0.46296296296296297,
+       "h": 0.46296296296296297
+      }
+     },
+     "props": {
+      "assetId": null,
+      "fit": "cover",
+      "radius": 0.02,
+      "shadow": 0.6,
+      "pulse": 0,
+      "spin": 0,
+      "circle": false
+     }
+    },
+    {
+     "id": "a9iyk7w0",
+     "type": "text",
+     "name": "Title",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.4791666666666667,
+       "y": 0.2962962962962963,
+       "w": 0.4479166666666667,
+       "h": 0.1574074074074074
+      },
+      "portrait": {
+       "x": 0.08333333333333333,
+       "y": 0.5625,
+       "w": 0.8333333333333334,
+       "h": 0.078125
+      },
+      "square": {
+       "x": 0.5648148148148148,
+       "y": 0.2037037037037037,
+       "w": 0.3888888888888889,
+       "h": 0.12962962962962962
+      }
+     },
+     "props": {
+      "font": "Georgia",
+      "weight": 700,
+      "color": "#1d1a17",
+      "align": "left",
+      "shadow": 0,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "text": "Song Title"
+     }
+    },
+    {
+     "id": "u0rirogy",
+     "type": "text",
+     "name": "Subtitle",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.4791666666666667,
+       "y": 0.46296296296296297,
+       "w": 0.4479166666666667,
+       "h": 0.05925925925925926
+      },
+      "portrait": {
+       "x": 0.08333333333333333,
+       "y": 0.6458333333333334,
+       "w": 0.8333333333333334,
+       "h": 0.036458333333333336
+      },
+      "square": {
+       "x": 0.5648148148148148,
+       "y": 0.3425925925925926,
+       "w": 0.3888888888888889,
+       "h": 0.046296296296296294
+      }
+     },
+     "props": {
+      "font": "Avenir Next",
+      "weight": 400,
+      "color": "#5b4d40",
+      "align": "left",
+      "shadow": 0,
+      "uppercase": false,
+      "letterSpacing": 0.06,
+      "text": "Artist · Out now"
+     }
+    },
+    {
+     "id": "6wxceb3d",
+     "type": "spectrum",
+     "name": "Spectrum",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.4791666666666667,
+       "y": 0.5925925925925926,
+       "w": 0.4479166666666667,
+       "h": 0.2037037037037037
+      },
+      "portrait": {
+       "x": 0.12962962962962962,
+       "y": 0.7291666666666666,
+       "w": 0.7407407407407407,
+       "h": 0.13541666666666666
+      },
+      "square": {
+       "x": 0.5648148148148148,
+       "y": 0.4351851851851852,
+       "w": 0.3888888888888889,
+       "h": 0.1574074074074074
+      }
+     },
+     "props": {
+      "style": "bars",
+      "bars": 48,
+      "color": "#1d1a17",
+      "color2": "#8a5a33",
+      "gap": 0.45,
+      "rounded": true,
+      "smoothing": 0.6,
+      "minHz": 30,
+      "maxHz": 16000,
+      "glow": 0,
+      "sensitivity": 1
+     }
+    }
+   ]
+  }
+ },
+ {
+  "id": "clip",
+  "name": "Video loop",
+  "description": "Your own looping clip under a dark wash, with a glowing line spectrum and title.",
+  "data": {
+   "version": 1,
+   "name": "Untitled",
+   "audioAssetId": null,
+   "layers": [
+    {
+     "id": "2nnu0vzo",
+     "type": "video",
+     "name": "Video background",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "assetId": null,
+      "fit": "cover",
+      "speed": 1,
+      "offset": 0,
+      "pulse": 0
+     }
+    },
+    {
+     "id": "55mxr8x6",
+     "type": "solid",
+     "name": "Wash",
+     "visible": true,
+     "opacity": 0.45,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      },
+      "square": {
+       "x": 0,
+       "y": 0,
+       "w": 1,
+       "h": 1
+      }
+     },
+     "props": {
+      "color": "#000000",
+      "color2": "#1a0a2a",
+      "gradient": true,
+      "angle": 90
+     }
+    },
+    {
+     "id": "exm246fq",
+     "type": "spectrum",
+     "name": "Spectrum",
+     "visible": true,
+     "opacity": 1,
+     "blend": "screen",
+     "rects": {
+      "landscape": {
+       "x": 0,
+       "y": 0.7037037037037037,
+       "w": 1,
+       "h": 0.2962962962962963
+      },
+      "portrait": {
+       "x": 0,
+       "y": 0.78125,
+       "w": 1,
+       "h": 0.21875
+      },
+      "square": {
+       "x": 0,
+       "y": 0.7407407407407407,
+       "w": 1,
+       "h": 0.25925925925925924
+      }
+     },
+     "props": {
+      "style": "line",
+      "bars": 72,
+      "color": "#ffffff",
+      "color2": "#ffd84d",
+      "gap": 0.3,
+      "rounded": true,
+      "smoothing": 0.7,
+      "minHz": 30,
+      "maxHz": 16000,
+      "glow": 0.7,
+      "sensitivity": 1
+     }
+    },
+    {
+     "id": "8kzvk4xi",
+     "type": "text",
+     "name": "Title",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.13541666666666666,
+       "y": 0.4074074074074074,
+       "w": 0.7291666666666666,
+       "h": 0.12962962962962962
+      },
+      "portrait": {
+       "x": 0.05555555555555555,
+       "y": 0.4270833333333333,
+       "w": 0.8888888888888888,
+       "h": 0.09375
+      },
+      "square": {
+       "x": 0.05555555555555555,
+       "y": 0.42592592592592593,
+       "w": 0.8888888888888888,
+       "h": 0.12037037037037036
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 900,
+      "color": "#ffffff",
+      "align": "center",
+      "shadow": 0.7,
+      "uppercase": false,
+      "letterSpacing": 0,
+      "text": "Artist — Song Title"
+     }
+    },
+    {
+     "id": "hjtvsqmz",
+     "type": "socials",
+     "name": "Socials",
+     "visible": true,
+     "opacity": 1,
+     "blend": "source-over",
+     "rects": {
+      "landscape": {
+       "x": 0.23958333333333334,
+       "y": 0.9074074074074074,
+       "w": 0.5208333333333334,
+       "h": 0.046296296296296294
+      },
+      "portrait": {
+       "x": 0.12962962962962962,
+       "y": 0.9166666666666666,
+       "w": 0.7407407407407407,
+       "h": 0.057291666666666664
+      },
+      "square": {
+       "x": 0.12962962962962962,
+       "y": 0.9166666666666666,
+       "w": 0.7407407407407407,
+       "h": 0.046296296296296294
+      }
+     },
+     "props": {
+      "font": "Helvetica Neue",
+      "weight": 600,
+      "color": "#ffffff",
+      "shadow": 0.4,
+      "letterSpacing": 0,
+      "items": [
+       {
+        "platform": "instagram",
+        "handle": "@yourname"
+       },
+       {
+        "platform": "spotify",
+        "handle": "Your Artist"
+       }
+      ],
+      "layout": "row",
+      "brandColors": false,
+      "iconColor": "#ffffff"
+     }
+    }
+   ]
+  }
+ }
+]

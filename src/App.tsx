@@ -8,6 +8,18 @@ import { Inspector } from './ui/Inspector';
 import { LayerPanel } from './ui/LayerPanel';
 import { Stage } from './ui/Stage';
 import { TemplateGallery } from './ui/TemplateGallery';
+import { Menu } from './ui/Menu';
+import { AboutDialog } from './ui/AboutDialog';
+import { AccountButton } from './ui/AccountButton';
+import { AccountDialog, type AccountTab } from './ui/AccountDialog';
+import { AuthDialog, type AuthMode } from './ui/AuthDialog';
+import { DocBar, SaveStatus } from './ui/DocBar';
+import { ProjectsDialog } from './ui/ProjectsDialog';
+import { useAccount } from './cloud/account';
+import { applyDefaults } from './cloud/defaults';
+import { newDoc, refreshMissing } from './cloud/documents';
+import { BrandLogo, PatreonButton, SocialLinks } from './ui/Brand';
+import { BRAND } from './brand';
 import { audioEl, currentTime, fmtTime, usePlayer } from './ui/player';
 
 /** Puts freshly imported files to work: songs become the soundtrack, images and lyrics fill or create layers. */
@@ -45,6 +57,31 @@ function placeAssets(list: RuntimeAsset[]) {
   }
 }
 
+/** A curved arrow drawn with a thick stroke, so undo and redo read clearly at header size. */
+function HistoryIcon({ redo = false }: { redo?: boolean }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={redo ? { transform: 'scaleX(-1)' } : undefined}>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </svg>
+  );
+}
+
+type Dialog =
+  | { kind: 'export' | 'gallery' | 'about' | 'projects' }
+  | { kind: 'auth'; mode: AuthMode; token?: string }
+  | { kind: 'account'; tab: AccountTab };
+
+/** Readable messages for the error codes Better Auth adds to redirect URLs. */
+const AUTH_ERRORS: Record<string, string> = {
+  INVALID_TOKEN: 'That link has expired or was already used. Request a new one.',
+  TOKEN_EXPIRED: 'That link has expired. Request a new one.',
+  account_already_linked_to_different_user: `That account is already connected to a different ${BRAND.name} account.`,
+  email_not_found: 'The provider didn’t share an email address, so the account couldn’t be created.',
+  access_denied: 'Sign-in was cancelled.',
+};
+
 function Transport() {
   const { playing, toggle, seek, loop, setLoop } = usePlayer();
   const audioId = useStore((s) => s.project.audioAssetId);
@@ -57,7 +94,7 @@ function Transport() {
   const dur = track?.duration ?? 0;
   return (
     <div className="transport">
-      <button className="play" onClick={toggle}>{playing ? '❚❚' : '▶'}</button>
+      <button className="play primary" onClick={toggle} aria-label={playing ? 'Pause' : 'Play'}>{playing ? '❚❚' : '▶'}</button>
       <span className="time">{fmtTime(t)}</span>
       <input type="range" min={0} max={dur || 1} step={0.01} value={Math.min(t, dur || 1)} disabled={!dur} onChange={(e) => seek(Number(e.target.value))} />
       <span className="time">{fmtTime(dur)}</span>
@@ -72,14 +109,31 @@ export default function App() {
   const assets = useStore((s) => s.assets);
   const past = useStore((s) => s.past.length);
   const future = useStore((s) => s.future.length);
-  const { setAspect, undo, redo, importFiles, registerAssets, change, replaceProject } = useStore.getState();
-  const [exporting, setExporting] = useState(false);
-  const [gallery, setGallery] = useState(() => !hasSavedProject());
+  const { setAspect, undo, redo, importFiles, registerAssets, change } = useStore.getState();
+  const signedIn = useAccount((s) => s.status === 'signed-in');
+  const [dialog, setDialog] = useState<Dialog | null>(() => (hasSavedProject() ? null : { kind: 'gallery' }));
+  const [toast, setToast] = useState('');
+  const close = () => setDialog(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const projectInput = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { loadStoredAssets().then(registerAssets); }, [registerAssets]);
+  useEffect(() => { loadStoredAssets().then((list) => { registerAssets(list); refreshMissing(); }); }, [registerAssets]);
+
+  // Account state, and the links that bring people back from email and OAuth.
+  useEffect(() => {
+    void useAccount.getState().refresh();
+    const q = new URLSearchParams(location.search);
+    const token = q.get('token'), error = q.get('error');
+    if (token) setDialog({ kind: 'auth', mode: 'reset', token });
+    else if (error) setToast(AUTH_ERRORS[error] ?? `Sign-in didn't complete (${error.toLowerCase().replace(/_/g, ' ')}).`);
+    else if (q.has('verified')) setToast('Email confirmed. You’re signed in.');
+    else if (q.get('account') === 'connections') setDialog({ kind: 'account', tab: 'connections' });
+    // Keep only the theme choice in the address bar.
+    const theme = q.get('theme');
+    if ([...q.keys()].some((k) => k !== 'theme')) history.replaceState(null, '', theme ? `/?theme=${theme}` : '/');
+  }, []);
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 6000); return () => clearTimeout(t); }, [toast]);
 
   // Keep the player pointed at the project's song.
   const audioUrl = project.audioAssetId ? assets[project.audioAssetId]?.url ?? null : null;
@@ -109,12 +163,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [undo, redo]);
 
-  const onFiles = async (files: File[]) => placeAssets(await importFiles(files));
+  const onFiles = async (files: File[]) => { placeAssets(await importFiles(files)); refreshMissing(); };
 
   const saveProject = () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' }));
-    a.download = `${project.name || 'project'}.vizstudio.json`;
+    a.download = `${project.name || 'project'}.undertow.json`;
     a.click();
   };
 
@@ -126,44 +180,63 @@ export default function App() {
       onDrop={(e) => { e.preventDefault(); setDragOver(false); void onFiles([...e.dataTransfer.files]); }}
     >
       <header>
-        <strong className="logo">vizstudio</strong>
-        <input className="project-name" value={project.name} onChange={(e) => change((p) => ({ ...p, name: e.target.value }))} />
+        <button className="ghost brand-button" onClick={() => setDialog({ kind: 'about' })} aria-label={`About ${BRAND.name}`}><BrandLogo /></button>
+        <label className="project-field" title="Project name">
+          <span className="pencil" aria-hidden="true">✎</span>
+          <input className="project-name" aria-label="Project name" placeholder="Project name" value={project.name}
+            onChange={(e) => change((p) => ({ ...p, name: e.target.value }))} />
+        </label>
+        <SaveStatus />
         <div className="tabs">
           {ASPECT_IDS.map((a) => (
             <button key={a} className={a === aspect ? 'active' : ''} onClick={() => setAspect(a)}>{ASPECTS[a].label}</button>
           ))}
         </div>
         <div className="spacer" />
-        <button onClick={undo} disabled={!past} title="Undo (⌘Z)">↶</button>
-        <button onClick={redo} disabled={!future} title="Redo (⇧⌘Z)">↷</button>
+        <button className="icon history" onClick={undo} disabled={!past} title="Undo (⌘Z)" aria-label="Undo"><HistoryIcon /></button>
+        <button className="icon history" onClick={redo} disabled={!future} title="Redo (⇧⌘Z)" aria-label="Redo"><HistoryIcon redo /></button>
+        <span className="divider" />
         <button onClick={() => fileInput.current?.click()}>Add files…</button>
         <input ref={fileInput} type="file" multiple hidden accept="audio/*,image/*,video/*,.svg,.lrc,.srt,.vtt,.mov,.webm,.ttf,.otf,.woff,.woff2"
           onChange={(e) => { void onFiles([...(e.target.files ?? [])]); e.target.value = ''; }} />
-        <details className="menu">
-          <summary>Project</summary>
-          <div>
-            <button onClick={(e) => { e.currentTarget.closest('details')?.removeAttribute('open'); setGallery(true); }}>New from template…</button>
-            <button onClick={saveProject}>Save layout (.json)</button>
-            <button onClick={() => projectInput.current?.click()}>Open layout…</button>
-          </div>
-        </details>
+        <Menu label="Project">
+          <button onClick={() => setDialog({ kind: 'projects' })}>Projects…</button>
+          <button onClick={() => setDialog({ kind: 'gallery' })}>New from template…</button>
+          <button onClick={() => change((p) => applyDefaults(p, useAccount.getState().defaults))}>Apply my defaults</button>
+          {!signedIn && <button onClick={() => setDialog({ kind: 'account', tab: 'defaults' })}>Edit defaults…</button>}
+          <button onClick={saveProject}>Download layout (.json)</button>
+          <button onClick={() => projectInput.current?.click()}>Import layout (.json)…</button>
+        </Menu>
         <input ref={projectInput} type="file" hidden accept=".json" onChange={async (e) => {
           const f = e.target.files?.[0];
           if (f) {
-            try { replaceProject(JSON.parse(await f.text()) as Project); } catch { alert('That file is not a vizstudio layout.'); }
+            try { newDoc(JSON.parse(await f.text()) as Project); } catch { alert(`That file is not an ${BRAND.name} layout.`); }
           }
           e.target.value = '';
         }} />
-        <button className="primary" onClick={() => { audioEl.pause(); setExporting(true); }}>Export</button>
+        <button className="primary" onClick={() => { audioEl.pause(); setDialog({ kind: 'export' }); }}>Export</button>
+        <span className="divider" />
+        <div className="header-socials"><SocialLinks /></div>
+        <PatreonButton label="Support" small />
+        <AccountButton onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })}
+          onAccount={(tab) => setDialog({ kind: 'account', tab })} onProjects={() => setDialog({ kind: 'projects' })} />
       </header>
       <LayerPanel />
       <main>
+        <DocBar onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} />
         <Stage />
         <Transport />
       </main>
       <Inspector />
-      {exporting && <ExportDialog onClose={() => setExporting(false)} />}
-      {gallery && <TemplateGallery onClose={() => setGallery(false)} />}
+      {dialog?.kind === 'export' && <ExportDialog onClose={close} />}
+      {dialog?.kind === 'gallery' && <TemplateGallery onClose={close} />}
+      {dialog?.kind === 'about' && <AboutDialog onClose={close} />}
+      {dialog?.kind === 'auth' && <AuthDialog initial={dialog.mode} resetToken={dialog.token} onClose={close} />}
+      {dialog?.kind === 'account' && <AccountDialog initialTab={dialog.tab} onClose={close} />}
+      {dialog?.kind === 'projects' && (
+        <ProjectsDialog onClose={close} onNew={() => setDialog({ kind: 'gallery' })} onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} />
+      )}
+      {toast && <div className="toast" role="status" onClick={() => setToast('')}>{toast}</div>}
       {dragOver && <div className="drop-hint">Drop songs, images, video clips, fonts or lyric files</div>}
     </div>
   );

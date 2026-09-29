@@ -1,0 +1,51 @@
+<!doctype html>
+<!-- Source for public/og.png (1200x630 share preview). Deliberately text-free so renaming the site
+     doesn't require a new image. Regenerate with: npm run og-image -->
+<html><head><style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #07060d; }
+  svg { display: block; }
+</style></head><body>
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff2bd6"/><stop offset="0.55" stop-color="#8b5cff"/><stop offset="1" stop-color="#00e5ff"/>
+    </linearGradient>
+    <radialGradient id="glowL" cx="0.2" cy="0.3" r="0.6"><stop offset="0" stop-color="#ff2bd6" stop-opacity="0.35"/><stop offset="1" stop-color="#ff2bd6" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowR" cx="0.85" cy="0.8" r="0.6"><stop offset="0" stop-color="#00e5ff" stop-opacity="0.28"/><stop offset="1" stop-color="#00e5ff" stop-opacity="0"/></radialGradient>
+    <filter id="blur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="#07060d"/>
+  <rect width="1200" height="630" fill="url(#glowL)"/>
+  <rect width="1200" height="630" fill="url(#glowR)"/>
+  <g id="bars"></g>
+  <g transform="translate(510 225) scale(5.625)">
+    <rect x="1" y="1" width="30" height="30" rx="8" fill="#0d0b17" stroke="url(#g)" stroke-width="1.2"/>
+    <g fill="url(#g)">
+      <rect x="6.5" y="17" width="3" height="8" rx="1.5"/><rect x="11" y="11" width="3" height="14" rx="1.5"/>
+      <rect x="15.5" y="6" width="3" height="19" rx="1.5"/><rect x="20" y="13" width="3" height="12" rx="1.5"/>
+      <rect x="24.5" y="19" width="3" height="6" rx="1.5"/>
+    </g>
+  </g>
+</svg>
+<script>
+  // A mirrored spectrum across the card, behind the mark: glow pass then crisp pass.
+  const g = document.getElementById('bars'), n = 72, cy = 315, ns = 'http://www.w3.org/2000/svg';
+  const hs = Array.from({ length: n }, (_, i) => {
+    const x = i / (n - 1), env = Math.sin(Math.PI * x);
+    return 30 + 230 * env * (0.55 + 0.45 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.43)));
+  });
+  for (const pass of ['blur', '']) {
+    const layer = document.createElementNS(ns, 'g');
+    layer.setAttribute('fill', 'url(#g)');
+    layer.setAttribute('opacity', pass ? '0.8' : '0.55');
+    if (pass) layer.setAttribute('filter', 'url(#blur)');
+    hs.forEach((h, i) => {
+      const r = document.createElementNS(ns, 'rect');
+      r.setAttribute('x', 24 + i * (1152 / n)); r.setAttribute('width', 1152 / n * 0.55);
+      r.setAttribute('y', cy - h / 2); r.setAttribute('height', h); r.setAttribute('rx', 4);
+      layer.append(r);
+    });
+    g.append(layer);
+  }
+</script>
+</body></html>

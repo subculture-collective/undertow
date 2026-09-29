@@ -1,6 +1,7 @@
 import { decodeAudio, type AudioTrack } from './audio/analysis';
 import { parseLyrics, type LyricCue } from './audio/lyrics';
 import { uid } from './defaults';
+import { tx } from './idb';
 import type { AssetKind, AssetMeta } from './types';
 
 export interface RuntimeAsset {
@@ -18,27 +19,6 @@ export interface RuntimeAsset {
 export const fontFamily = (assetId: string) => `vz-${assetId}`;
 /** A readable name for an uploaded font, from its file name. */
 export const fontLabel = (a: RuntimeAsset) => a.meta.name.replace(/\.(ttf|otf|woff2?)$/i, '');
-
-// ---- IndexedDB persistence ------------------------------------------------
-const DB = 'vizstudio', STORE = 'assets';
-let dbp: Promise<IDBDatabase> | null = null;
-function db() {
-  dbp ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB, 1);
-    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbp;
-}
-async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const d = await db();
-  return new Promise((resolve, reject) => {
-    const req = fn(d.transaction(STORE, mode).objectStore(STORE));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
 
 // ---- loading --------------------------------------------------------------
 export function kindOf(file: { name: string; type: string }): AssetKind | null {
@@ -104,12 +84,12 @@ export async function importFile(file: File): Promise<RuntimeAsset> {
   if (kind === 'image' && (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name))) blob = await normaliseSvg(file);
   const meta: AssetMeta = { id: uid(), kind, name: file.name, mime: blob.type || file.type };
   const asset = await hydrate(meta, blob);
-  await tx('readwrite', (s) => s.put({ meta, blob }, meta.id));
+  await tx('assets', 'readwrite', (s) => s.put({ meta, blob }, meta.id));
   return asset;
 }
 
 export async function loadStoredAssets(): Promise<RuntimeAsset[]> {
-  const rows = await tx<{ meta: AssetMeta; blob: Blob }[]>('readonly', (s) => s.getAll());
+  const rows = await tx<{ meta: AssetMeta; blob: Blob }[]>('assets', 'readonly', (s) => s.getAll());
   const out: RuntimeAsset[] = [];
   for (const r of rows) {
     try { out.push(await hydrate(r.meta, r.blob)); } catch (e) { console.warn('could not load asset', r.meta.name, e); }
@@ -118,5 +98,5 @@ export async function loadStoredAssets(): Promise<RuntimeAsset[]> {
 }
 
 export async function deleteStoredAsset(id: string) {
-  await tx('readwrite', (s) => s.delete(id));
+  await tx('assets', 'readwrite', (s) => s.delete(id));
 }
