@@ -13,6 +13,8 @@ export type RenderJob = Schemas['RenderJob'];
 export type RenderOptions = Schemas['RenderOptions'];
 export type Usage = Schemas['Usage'];
 
+const CHUNK = 48 * 1024 * 1024;
+
 const ACTIVE = new Set(['awaiting_upload', 'queued', 'running']);
 export const isActive = (j: RenderJob) => ACTIVE.has(j.status);
 
@@ -84,8 +86,13 @@ export async function submitRender(
   const total = job.uploads.reduce((s, u) => s + u.size, 0);
   let done = 0;
   for (const u of job.uploads) {
-    await uploadWithProgress(`/v1/renders/${job.id}/media/${encodeURIComponent(u.mediaId)}`, assets[u.mediaId].blob, (n) => onUpload(done + n, total));
-    done += u.size;
+    // Chunks stay under the 100 MB request limit of the Cloudflare tunnel in front of the API.
+    const blob = assets[u.mediaId].blob;
+    for (let offset = 0; offset === 0 || offset < blob.size; offset += CHUNK) {
+      const chunk = blob.slice(offset, offset + CHUNK);
+      await uploadWithProgress(`/v1/renders/${job.id}/media/${encodeURIComponent(u.mediaId)}?offset=${offset}`, chunk, (n) => onUpload(done + n, total));
+      done += chunk.size;
+    }
   }
   const started = await unwrap(api.POST('/v1/renders/{id}/start', { params: { path: { id: job.id } } }));
   await useRenders.getState().refresh();

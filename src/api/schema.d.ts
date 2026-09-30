@@ -1753,10 +1753,15 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Upload one of the job's files (raw bytes, exactly the declared size) */
+        /**
+         * Upload one of the job's files, whole or in chunks
+         * @description Send the raw bytes. For large files, send consecutive chunks with `offset` set to the bytes already sent (the `Upload-Offset` response header). Chunks must be under 100 MB when the API is behind Cloudflare. A mismatched offset returns 409 with the current `Upload-Offset`; offset 0 starts the file over.
+         */
         put: {
             parameters: {
-                query?: never;
+                query?: {
+                    offset?: number | null;
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -1770,7 +1775,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Stored */
+                /** @description Stored. `Upload-Offset` is the bytes received so far; the file is complete when it equals the declared size. */
                 204: {
                     headers: {
                         [name: string]: unknown;
