@@ -9,7 +9,8 @@ services:
     environment:
       DATABASE_URL: postgres://undertow:${POSTGRES_PASSWORD}@db:5432/undertow
     ports:
-      - "127.0.0.1:8787:8787"   # the edge proxies to this; not exposed to the LAN directly
+      # The edge proxies to this. Loopback by default; set UNDERTOW_BIND (e.g. 10.0.0.57:3040) when the edge is another host.
+      - "${UNDERTOW_BIND:-127.0.0.1:8787}:8787"
     volumes:
       - undertow-renders:/app/server/data/renders
     depends_on:

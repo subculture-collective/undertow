@@ -111,28 +111,40 @@ renders.openapi(createRoute({
 
 renders.openapi(createRoute({
   method: 'put', path: '/renders/{id}/media/{mediaId}', tags: ['Rendering'], security: secured,
-  summary: 'Upload one of the job\'s files (raw bytes, exactly the declared size)',
+  summary: 'Upload one of the job\'s files, whole or in chunks',
+  description: 'Send the raw bytes. For large files, send consecutive chunks with `offset` set to the bytes already sent (the `Upload-Offset` response header). Chunks must be under 100 MB when the API is behind Cloudflare. A mismatched offset returns 409 with the current `Upload-Offset`; offset 0 starts the file over.',
   request: {
     params: IdParam.extend({ mediaId: z.string().min(1).max(64).openapi({ param: { name: 'mediaId', in: 'path' } }) }),
+    query: z.object({ offset: z.coerce.number().int().min(0).default(0) }),
     body: { content: { 'application/octet-stream': { schema: z.string().openapi({ format: 'binary' }) } }, required: true },
   },
-  responses: { 204: { description: 'Stored' }, ...problems(401, 404, 409, 413, 422, 429) },
+  responses: { 204: { description: 'Stored. `Upload-Offset` is the bytes received so far; the file is complete when it equals the declared size.' }, ...problems(401, 404, 409, 413, 422, 429) },
 }), async (c) => {
   const { id, mediaId } = c.req.valid('param');
+  const { offset } = c.req.valid('query');
   const job = await own(id, c.get('caller').userId);
   if (job.status !== 'awaiting_upload') fail(409, `The job is ${job.status}; files can only be uploaded before it starts.`);
   const m = await db.query.renderMedia.findFirst({ where: and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId)) });
   if (!m) fail(404, 'This job has no file with that id.');
   if (!c.req.raw.body) fail(422, 'Send the file as the request body.');
+  const key = `${id}/media-${mediaId}`;
+  if (offset > 0) {
+    const have = await storage.size(key);
+    if (have !== offset) fail(409, `This file has ${have} bytes so far; send the next chunk with offset=${have}.`, { 'Upload-Offset': String(have) });
+  }
+  const where = and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId));
+  // Not startable while the file is being written; set again below from the size actually stored.
+  await db.update(renderMedia).set({ uploaded: false }).where(where);
   let bytes: number;
   try {
-    bytes = await storage.put(`${id}/media-${mediaId}`, c.req.raw.body, m.size);
+    bytes = await storage.put(key, c.req.raw.body, m.size - offset, offset > 0);
   } catch {
-    fail(413, `The file is larger than the ${m.size} bytes declared.`);
+    await db.update(renderMedia).set({ uploaded: (await storage.size(key)) === m.size }).where(where);
+    fail(413, `That would make the file larger than the ${m.size} bytes declared.`);
   }
-  if (bytes !== m.size) fail(422, `Received ${bytes} bytes; ${m.size} were declared.`);
-  await db.update(renderMedia).set({ uploaded: true }).where(and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId)));
-  return c.body(null, 204);
+  const total = offset + bytes;
+  await db.update(renderMedia).set({ uploaded: total === m.size }).where(where);
+  return c.body(null, 204, { 'Upload-Offset': String(total) });
 });
 
 renders.openapi(createRoute({

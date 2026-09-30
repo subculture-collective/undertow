@@ -5,7 +5,7 @@ Cloud rendering produces the same MP4 as "Export" in the editor, but on a server
 ## How a render runs
 
 1. The client creates a job with `POST /v1/renders`. It sends the layout, the export options, and the files the layout uses with their exact sizes. The server checks the plan (resolution, length, minutes left, upload size). At most three renders can be in progress per account.
-2. The client uploads each file with `PUT /v1/renders/{id}/media/{mediaId}`. Uploads must match the declared size.
+2. The client uploads each file with `PUT /v1/renders/{id}/media/{mediaId}`, whole or in chunks with `?offset=`. Each response's `Upload-Offset` header gives the bytes received so far. A file is complete when that equals its declared size.
 3. `POST /v1/renders/{id}/start` queues the job.
 4. A worker claims it. The claim is atomic (`FOR UPDATE SKIP LOCKED`), so several workers can run at once. The claim issues a token scoped to that one job.
 5. The worker opens `render.html?job=…&token=…` in headless Google Chrome. The page downloads the layout and files with the token, then renders with the editor's own `exportVideo`, video only. The worker receives the MP4 as a download.
