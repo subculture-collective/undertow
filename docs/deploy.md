@@ -26,6 +26,15 @@ After deploying, update the canonical host notes (see the homelab documentation 
 4. Check `https://<host>/healthz` and `/docs`.
 5. Back up the `undertow-db` volume, for example a nightly `pg_dump` shipped to the backup target. It holds accounts, projects and API keys. Media isn't stored server-side.
 
+## Cloud rendering
+
+The `worker` service in `deploy/compose.yml` renders queued jobs. How it works and how it fails are covered in [rendering.md](rendering.md).
+
+- Set `WORKER_SECRET` in `deploy/undertow.env` (`openssl rand -hex 24`). The API and the worker must share the same value.
+- The worker image is amd64 only, because Google publishes Chrome for Linux on amd64 only. Dozor is amd64.
+- Render files live in the `undertow-renders` volume. Include it in backups only if you want finished videos to survive a restore. Outputs expire after `RENDER_OUTPUT_DAYS` anyway.
+- The worker is capped at 2 CPUs and 2 GB of memory and runs one job at a time. To render faster or in parallel, run more workers on a host with spare capacity. They only need to reach the API.
+
 ## Sign-in providers
 
 Leave a provider's variables empty to hide it. The editor only shows providers that `/v1/meta` reports as enabled.
@@ -57,7 +66,8 @@ cp server/.env.example server/.env   # then set AUTH_SECRET
 npm --prefix server install
 npm --prefix server run db:migrate
 npm run api:dev                      # API on :8787
-npm run dev                          # editor on :5173; /v1 and /docs are proxied to the API
+npm run dev                          # editor on :5173; /v1, /internal and /docs are proxied to the API
+EDITOR_URL=http://localhost:5173 npm --prefix server run worker   # cloud render worker (uses local Chrome)
 ```
 
 Confirmation and reset links appear in the API log.

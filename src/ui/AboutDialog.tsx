@@ -13,7 +13,8 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
         <p>
           {BRAND.name} runs in your browser. Songs, images, clips and fonts stay on your device, and your computer
           encodes the video. If you sign in, your account stores project layouts and defaults so you can open them
-          anywhere; your media is never uploaded.
+          anywhere. Media is only uploaded if you choose to render in the cloud, and it's deleted when that render
+          finishes.
         </p>
         {visibleLink(BRAND.patreon) && (
           <div className="support-nudge">

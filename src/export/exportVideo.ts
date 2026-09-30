@@ -62,6 +62,8 @@ export interface ExportOptions {
   start: number;
   end: number;
   quality: 'high' | 'very-high';
+  /** Encode the song into the file (default). Cloud renders skip this and mux the original song afterwards. */
+  includeAudio?: boolean;
 }
 
 export interface ExportProgress { frame: number; frames: number; fps: number; eta: number }
@@ -104,7 +106,7 @@ export async function exportVideo(
 
   let audio: AudioBufferSource | null = null;
   let audioCodec: AudioCodec | null = null;
-  if (track) {
+  if (track && o.includeAudio !== false) {
     audioCodec = await getFirstEncodableAudioCodec(['aac', 'opus'], {
       numberOfChannels: track.buffer.numberOfChannels, sampleRate: track.sampleRate,
     });

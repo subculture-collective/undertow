@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useAccount } from '../cloud/account';
+import { loadUsage, submitRender, useRenders, type RenderJob, type Usage } from '../cloud/renders';
 import { exportVideo, type ExportOptions, type ExportProgress } from '../export/exportVideo';
 import { useStore } from '../store';
 import { ASPECTS, ASPECT_IDS, type AspectId } from '../types';
@@ -6,10 +8,13 @@ import { BRAND, visibleLink } from '../brand';
 import { PatreonButton } from './Brand';
 import { Row, Select } from './controls';
 import { audioEl, fmtTime } from './player';
+import { RenderRow } from './RendersDialog';
 
 interface Result { aspect: AspectId; url: string; size: number; silent: boolean }
 
-export function ExportDialog({ onClose }: { onClose: () => void }) {
+type Where = 'local' | 'cloud';
+
+export function ExportDialog({ onClose, onSignIn }: { onClose: () => void; onSignIn: () => void }) {
   const project = useStore((s) => s.project);
   const assets = useStore((s) => s.assets);
   const current = useStore((s) => s.aspect);
@@ -25,6 +30,21 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const [results, setResults] = useState<Result[]>([]);
   const [error, setError] = useState('');
   const abort = useRef<AbortController | null>(null);
+
+  // Cloud rendering: signed in, and a plan with render minutes.
+  const signedIn = useAccount((s) => s.status === 'signed-in');
+  const retentionDays = useAccount((s) => s.renderOutputDays);
+  const [where, setWhere] = useState<Where>('local');
+  const [usage, setUsage] = useState<Usage | null>(null);
+  const [upload, setUpload] = useState<{ sent: number; total: number; aspect: AspectId } | null>(null);
+  const [submitted, setSubmitted] = useState<string[]>([]);
+  const jobs = useRenders((s) => s.jobs);
+  useEffect(() => {
+    if (where === 'cloud' && signedIn) loadUsage().then(setUsage).catch((e) => setError((e as Error).message));
+  }, [where, signedIn]);
+  const limits = usage?.limits;
+  const minutesLeft = usage && limits ? Math.max(0, limits.renderMinutesPerMonth * 60 - usage.renderSecondsThisMonth) / 60 : 0;
+  const cloudAllowed = !!limits && limits.renderMinutesPerMonth > 0;
 
   const start = range === 'full' ? 0 : Math.min(audioEl.currentTime || 0, Math.max(0, duration - 1));
   const end = range === 'full' ? duration : Math.min(duration, start + 15);
@@ -48,13 +68,53 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
+  const runCloud = async () => {
+    setError(''); setSubmitted([]);
+    try {
+      for (const aspect of aspects) {
+        const job = await submitRender(project, assets, { aspect, shortSide, fps, quality, start, end },
+          (sent, total) => setUpload({ sent, total, aspect }));
+        setSubmitted((s) => [...s, job.id]);
+      }
+      setUsage(await loadUsage());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setUpload(null);
+    }
+  };
+
   const base = project.name.replace(/[^\w\- ]+/g, '').trim() || 'visualizer';
-  const busy = !!progress;
+  const busy = !!progress || !!upload;
+  const cloudSeconds = Math.ceil(end - start) * aspects.length;
+  const tooBig = where === 'cloud' && !!limits && shortSide > limits.renderMaxShortSide;
+  const tooLong = where === 'cloud' && !!limits && end - start > limits.renderMaxSeconds;
+  const noMinutes = where === 'cloud' && !!usage && cloudSeconds > minutesLeft * 60;
+  const myJobs = jobs.filter((j): j is RenderJob => submitted.includes(j.id));
 
   return (
     <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
       <div className="modal">
         <h3>Export video</h3>
+        <div className="tabs export-where">
+          <button className={where === 'local' ? 'active' : ''} disabled={busy} onClick={() => setWhere('local')}>On this computer</button>
+          <button className={where === 'cloud' ? 'active' : ''} disabled={busy} onClick={() => setWhere('cloud')}>In the cloud</button>
+        </div>
+        {where === 'cloud' && !signedIn && (
+          <div className="support-nudge">
+            <p>Cloud rendering runs on {BRAND.name}'s servers, so you can close the tab while it works. Sign in to use it.</p>
+            <button className="sm primary" onClick={() => { onClose(); onSignIn(); }}>Sign in</button>
+          </div>
+        )}
+        {where === 'cloud' && signedIn && usage && !cloudAllowed && (
+          <p className="warn">Cloud rendering isn't included in the {usage.plan} plan. Rendering on this computer is always available.</p>
+        )}
+        {where === 'cloud' && cloudAllowed && limits && (
+          <p className="hint">
+            {minutesLeft.toFixed(1)} of {limits.renderMinutesPerMonth} cloud minutes left this month.
+            {' '}This export uses {Math.ceil(cloudSeconds / 60 * 10) / 10} min. Your files are uploaded for this render only and deleted when it finishes.
+          </p>
+        )}
         {!track && <p className="warn">No song loaded. The video will be silent and 15 seconds long.</p>}
         <Row label="Formats">
           <span className="checks">
@@ -74,6 +134,16 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
         <Select label="Length" value={range} onChange={setRange}
           options={[['full', `Whole song (${fmtTime(duration)})`], ['preview', `15 s from playhead (${fmtTime(start)})`]] as const} />
 
+        {upload && (
+          <div className="progress">
+            <div className="bar"><div style={{ width: `${(upload.sent / Math.max(1, upload.total)) * 100}%` }} /></div>
+            <span>{ASPECTS[upload.aspect].label}: uploading files · {(upload.sent / 1e6).toFixed(1)} of {(upload.total / 1e6).toFixed(1)} MB</span>
+          </div>
+        )}
+        {myJobs.length > 0 && <ul className="render-list">{myJobs.map((j) => <RenderRow key={j.id} job={j} />)}</ul>}
+        {tooBig && <p className="warn">Your plan renders up to {limits!.renderMaxShortSide}p in the cloud.</p>}
+        {tooLong && <p className="warn">Your plan renders up to {Math.floor(limits!.renderMaxSeconds / 60)} minutes per video in the cloud.</p>}
+        {noMinutes && <p className="warn">Not enough cloud minutes left this month for this export.</p>}
         {progress && (
           <div className="progress">
             <div className="bar"><div style={{ width: `${(progress.frame / progress.frames) * 100}%` }} /></div>
@@ -94,13 +164,21 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
             <PatreonButton small />
           </div>
         )}
-        <p className="hint">Rendering happens on this computer. Keep this tab open until it finishes.</p>
+        <p className="hint">
+          {where === 'local'
+            ? 'Rendering happens on this computer. Keep this tab open until it finishes.'
+            : `Cloud renders keep going if you close this. Find them under your account menu, Renders. Videos are kept for ${retentionDays} days.`}
+        </p>
         <div className="buttons end">
-          {busy
+          {progress
             ? <button onClick={() => abort.current?.abort()}>Cancel</button>
             : <>
-                <button onClick={onClose}>Close</button>
-                <button className="primary" disabled={!aspects.length} onClick={run}>Render</button>
+                <button onClick={onClose} disabled={!!upload}>Close</button>
+                {where === 'local'
+                  ? <button className="primary" disabled={!aspects.length} onClick={run}>Render</button>
+                  : <button className="primary" disabled={!aspects.length || !cloudAllowed || busy || tooBig || tooLong || noMinutes} onClick={runCloud}>
+                      {upload ? 'Uploading…' : 'Render in the cloud'}
+                    </button>}
               </>}
         </div>
       </div>

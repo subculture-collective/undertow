@@ -161,8 +161,61 @@ export const Usage = z.object({
   limits: z.object({
     requestsPerMinute: z.number().int(), maxProjects: z.number().int(), maxTemplates: z.number().int(),
     maxApiKeys: z.number().int(), renderMinutesPerMonth: z.number().int(),
+    renderMaxShortSide: z.number().int(), renderMaxSeconds: z.number().int(), renderMaxUploadBytes: z.number().int(),
   }),
+  /** Cloud-rendered seconds so far this calendar month (UTC). */
+  renderSecondsThisMonth: z.number().int(),
   days: z.array(UsageDay),
 }).openapi('Usage');
 
 export const IdParam = z.object({ id: z.string().min(1).max(64).openapi({ param: { name: 'id', in: 'path' } }) });
+
+// ---- cloud rendering ------------------------------------------------------------------------------------
+
+export const RenderOptions = z.object({
+  aspect: z.enum(['landscape', 'portrait', 'square']),
+  /** Output height for landscape, width for portrait: the short side. */
+  shortSide: z.union([z.literal(720), z.literal(1080), z.literal(1440), z.literal(2160)]),
+  fps: z.union([z.literal(24), z.literal(30), z.literal(60)]),
+  /** Seconds into the song. */
+  start: z.number().min(0),
+  end: z.number().positive(),
+  quality: z.enum(['high', 'very-high']).default('high'),
+}).refine((o) => o.end > o.start, { message: 'end must be after start', path: ['end'] }).openapi('RenderOptions');
+
+export const RenderUpload = z.object({
+  mediaId: z.string(),
+  kind: MediaRef.shape.kind,
+  name: z.string(),
+  size: z.number().int(),
+  uploaded: z.boolean(),
+}).openapi('RenderUpload');
+
+export const RenderStatus = z.enum(['awaiting_upload', 'queued', 'running', 'done', 'failed', 'cancelled', 'expired']).openapi('RenderStatus');
+
+export const RenderJob = z.object({
+  id: z.string(),
+  status: RenderStatus,
+  /** 0 to 100 while running. */
+  progress: z.number().int(),
+  name: z.string(),
+  options: RenderOptions,
+  durationSeconds: z.number().int(),
+  error: z.string().nullable(),
+  /** Files still to upload with PUT /v1/renders/{id}/media/{mediaId} before POST /v1/renders/{id}/start. */
+  uploads: z.array(RenderUpload),
+  outputBytes: z.number().int().nullable(),
+  createdAt: z.string().datetime(),
+  finishedAt: z.string().datetime().nullable(),
+  /** When the output is deleted. */
+  expiresAt: z.string().datetime().nullable(),
+}).openapi('RenderJob');
+
+export const CreateRender = z.object({
+  /** A saved project to render, or the layout itself in `data`. */
+  projectId: z.string().optional(),
+  data: ProjectData.optional(),
+  /** Every file the layout uses, with its exact size and type. These are uploaded next. */
+  media: z.array(MediaRef.extend({ size: z.number().int().positive(), mime: z.string().max(120).default('application/octet-stream') })).max(50),
+  options: RenderOptions,
+}).refine((b) => !!b.projectId !== !!b.data, { message: 'Send exactly one of projectId or data' }).openapi('CreateRender');

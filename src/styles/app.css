@@ -209,3 +209,18 @@ header .menu summary:has(.avatar) { padding: 0 var(--space-3); }
 
 .crash { display: grid; justify-items: start; gap: var(--space-5); max-width: 560px; margin: 15vh auto; padding: var(--space-8); }
 .crash pre { max-width: 100%; overflow: auto; color: var(--text-dim); }
+
+/* ---- cloud renders ---------------------------------------------------------------------------------------- */
+.export-where { align-self: start; }
+.modal.renders { width: min(720px, calc(100vw - 40px)); }
+.render-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.render-row {
+  display: grid; grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-5); align-items: center;
+  padding: var(--space-4); background: var(--surface-raised); border: var(--border-w) solid var(--line); border-radius: var(--radius-md);
+}
+.render-meta { display: grid; min-width: 0; }
+.render-meta strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.render-state { grid-column: 1; display: grid; gap: var(--space-2); }
+.render-row > .buttons { grid-column: 2; grid-row: 1 / span 2; }
+.render-row.done { border-color: var(--success); }
+.render-row.failed { border-color: var(--danger); }

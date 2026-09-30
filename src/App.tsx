@@ -15,6 +15,8 @@ import { AccountDialog, type AccountTab } from './ui/AccountDialog';
 import { AuthDialog, type AuthMode } from './ui/AuthDialog';
 import { DocBar, SaveStatus } from './ui/DocBar';
 import { ProjectsDialog } from './ui/ProjectsDialog';
+import { RendersDialog } from './ui/RendersDialog';
+import { useRenders } from './cloud/renders';
 import { useAccount } from './cloud/account';
 import { applyDefaults } from './cloud/defaults';
 import { newDoc, refreshMissing } from './cloud/documents';
@@ -69,7 +71,7 @@ function HistoryIcon({ redo = false }: { redo?: boolean }) {
 }
 
 type Dialog =
-  | { kind: 'export' | 'gallery' | 'about' | 'projects' }
+  | { kind: 'export' | 'gallery' | 'about' | 'projects' | 'renders' }
   | { kind: 'auth'; mode: AuthMode; token?: string }
   | { kind: 'account'; tab: AccountTab };
 
@@ -133,6 +135,13 @@ export default function App() {
     const theme = q.get('theme');
     if ([...q.keys()].some((k) => k !== 'theme')) history.replaceState(null, '', theme ? `/?theme=${theme}` : '/');
   }, []);
+  // Cloud renders: resume following active ones after sign-in, and say when one finishes.
+  useEffect(() => {
+    useRenders.setState({
+      onFinished: (j) => setToast(j.status === 'done' ? `Cloud render ready: ${j.name}. Open Renders to download.` : `Cloud render failed: ${j.name}.`),
+    });
+  }, []);
+  useEffect(() => { if (signedIn) void useRenders.getState().refresh().catch(() => {}); }, [signedIn]);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 6000); return () => clearTimeout(t); }, [toast]);
 
   // Keep the player pointed at the project's song.
@@ -219,7 +228,8 @@ export default function App() {
         <div className="header-socials"><SocialLinks /></div>
         <PatreonButton label="Support" small />
         <AccountButton onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })}
-          onAccount={(tab) => setDialog({ kind: 'account', tab })} onProjects={() => setDialog({ kind: 'projects' })} />
+          onAccount={(tab) => setDialog({ kind: 'account', tab })} onProjects={() => setDialog({ kind: 'projects' })}
+          onRenders={() => setDialog({ kind: 'renders' })} />
       </header>
       <LayerPanel />
       <main>
@@ -228,7 +238,8 @@ export default function App() {
         <Transport />
       </main>
       <Inspector />
-      {dialog?.kind === 'export' && <ExportDialog onClose={close} />}
+      {dialog?.kind === 'export' && <ExportDialog onClose={close} onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} />}
+      {dialog?.kind === 'renders' && <RendersDialog onClose={close} />}
       {dialog?.kind === 'gallery' && <TemplateGallery onClose={close} />}
       {dialog?.kind === 'about' && <AboutDialog onClose={close} />}
       {dialog?.kind === 'auth' && <AuthDialog initial={dialog.mode} resetToken={dialog.token} onClose={close} />}

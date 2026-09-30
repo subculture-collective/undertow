@@ -88,13 +88,24 @@ export async function importFile(file: File): Promise<RuntimeAsset> {
   return asset;
 }
 
+const LOAD_TIMEOUT_MS = 20_000;
+
+/**
+ * Loads the saved library. Files load in parallel, each with a time limit, so
+ * one that never finishes decoding (a corrupt clip, or an image in a hidden
+ * tab) can't hold back the rest; it is skipped with a warning.
+ */
 export async function loadStoredAssets(): Promise<RuntimeAsset[]> {
   const rows = await tx<{ meta: AssetMeta; blob: Blob }[]>('assets', 'readonly', (s) => s.getAll());
-  const out: RuntimeAsset[] = [];
-  for (const r of rows) {
-    try { out.push(await hydrate(r.meta, r.blob)); } catch (e) { console.warn('could not load asset', r.meta.name, e); }
-  }
-  return out;
+  const results = await Promise.allSettled(rows.map((r) => Promise.race([
+    hydrate(r.meta, r.blob),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timed out')), LOAD_TIMEOUT_MS)),
+  ])));
+  return results.flatMap((res, i) => {
+    if (res.status === 'fulfilled') return [res.value];
+    console.warn('could not load asset', rows[i].meta.name, res.reason);
+    return [];
+  });
 }
 
 export async function deleteStoredAsset(id: string) {
