@@ -26,6 +26,21 @@ To compare them, run `npm run dev` and open `/styleguide.html`. The top section 
 5. New UI goes into `/styleguide.html` so every system can be checked at once.
 6. Animation must stop under `prefers-reduced-motion`. Glitch keeps its static colour split and drops the slicing, jitter and glitch-in.
 
+## Screen sizes
+
+The editor layout has four tiers, defined at the end of `src/styles/app.css`:
+
+| Width | Layout |
+|---|---|
+| 1200px and up | Layers, stage and inspector in three columns. Everything in the header |
+| 900 to 1199px | Narrower side panels. "Add files…" and Support move into the Project menu. Below 1024px the logo loses its name and the save status hides |
+| Under 900px | One column: header, stage and transport, a Layers / Edit switch, then the chosen panel. Picking a layer opens Edit. The format tabs take a second header row |
+| Under 600px | The header's second row holds undo, redo and the format tabs, shortened to ratios. Project becomes a ☰ menu. Dialogs fill the screen |
+
+Phones held sideways (under 900px wide and under 560px tall) keep the stage and the panel side by side under a one-row header. On touch screens, the stage shows only the four corner handles, at 18px, and layer rows are taller.
+
+Controls that exist in two places for different widths use `.wide-only` and `.narrow-only`. Check new header items at 390, 768, 1024 and 1280px wide.
+
 ## Token groups
 
 | Group | Tokens |
