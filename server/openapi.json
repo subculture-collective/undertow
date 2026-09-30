@@ -3313,7 +3313,8 @@
             "bearer": []
           }
         ],
-        "summary": "Upload one of the job's files (raw bytes, exactly the declared size)",
+        "summary": "Upload one of the job's files, whole or in chunks",
+        "description": "Send the raw bytes. For large files, send consecutive chunks with `offset` set to the bytes already sent (the `Upload-Offset` response header). Chunks must be under 100 MB when the API is behind Cloudflare. A mismatched offset returns 409 with the current `Upload-Offset`; offset 0 starts the file over.",
         "parameters": [
           {
             "schema": {
@@ -3334,6 +3335,19 @@
             "required": true,
             "name": "mediaId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -3349,7 +3363,7 @@
         },
         "responses": {
           "204": {
-            "description": "Stored"
+            "description": "Stored. `Upload-Offset` is the bytes received so far; the file is complete when it equals the declared size."
           },
           "401": {
             "description": "Sign in or send an API key",

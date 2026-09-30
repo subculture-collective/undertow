@@ -31,7 +31,7 @@ export function createApp() {
     credentials: true,
     allowHeaders: ['content-type', 'authorization', 'x-api-key'],
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    exposeHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'Retry-After'],
+    exposeHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'Retry-After', 'Upload-Offset'],
     maxAge: 600,
   }));
 

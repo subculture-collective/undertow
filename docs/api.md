@@ -43,6 +43,18 @@ curl -X POST -H "Authorization: Bearer $UNDERTOW_KEY" https://undertow.example/v
 curl -L -H "Authorization: Bearer $UNDERTOW_KEY" -o video.mp4 https://undertow.example/v1/renders/rnd_…/output
 ```
 
+Files over 100 MB must go up in chunks when the API is behind Cloudflare. Send consecutive pieces with `?offset=` set to the bytes already sent; the `Upload-Offset` response header reports the running total:
+
+```sh
+split -b 48m song.wav part.
+offset=0
+for p in part.*; do
+  curl -X PUT -H "Authorization: Bearer $UNDERTOW_KEY" --data-binary @"$p" \
+    "https://undertow.example/v1/renders/rnd_…/media/song1?offset=$offset"
+  offset=$((offset + $(wc -c < "$p")))
+done
+```
+
 Files uploaded for a render are deleted when it finishes. This is the only part of the API that receives media.
 
 ## Projects store layouts, not media
