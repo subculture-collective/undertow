@@ -11,7 +11,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/db/migrate.ts",
-    "openapi": "tsx --env-file-if-exists=.env src/scripts/openapi.ts"
+    "openapi": "tsx --env-file-if-exists=.env src/scripts/openapi.ts",
+    "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
+    "worker:start": "node --env-file-if-exists=.env dist/worker/index.js"
   },
   "dependencies": {
     "@better-auth/api-key": "^1.7.6",
@@ -23,6 +25,7 @@
     "hono": "^4.13.11",
     "nodemailer": "^10.0.12",
     "pg": "^8.23.0",
+    "playwright-core": "^1.63.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {

@@ -95,9 +95,12 @@ export default defineConfig({
     proxy: {
       '/v1': { target: API, changeOrigin: false },
       '/docs': { target: API, changeOrigin: false },
+      '/internal': { target: API, changeOrigin: false },
     },
   },
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  // The render page is part of production builds: the cloud render worker loads it.
+  build: { rollupOptions: { input: { main: 'index.html', render: 'render.html' } } },
   optimizeDeps: {
     // UMD/CommonJS bundles that need pre-bundling for ESM import.
     include: [
