@@ -1,13 +1,13 @@
 /* Editor layout and editor-only pieces. Built from tokens.css and the components in components.css. */
 
 .app {
-  display: grid; height: 100vh;
-  grid-template: "head head head" 52px "layers main inspector" 1fr / 256px 1fr 304px;
+  display: grid; height: 100vh; height: 100dvh;
+  grid-template: "head head head" 52px "layers main inspector" minmax(0, 1fr) / 256px minmax(0, 1fr) 304px;
 }
 
 /* ---- header ---------------------------------------------------------------------------- */
 header {
-  grid-area: head; display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-5);
+  grid-area: head; display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-5); min-width: 0;
   background: var(--surface-panel); border-bottom: 1px solid var(--line); position: relative;
 }
 /* A hairline of the brand gradient under the header. */
@@ -18,7 +18,7 @@ header .brand-button { margin-right: var(--space-2); }
 /* The project name is an editable field, so it looks like one: sunken, bordered, with a pencil. */
 .project-field { position: relative; display: flex; align-items: center; }
 .project-field .pencil { position: absolute; left: var(--space-4); color: var(--text-dim); pointer-events: none; font-size: var(--text-xs); }
-.project-name { width: 180px; min-height: var(--control-h) !important; padding-left: 26px !important; font-weight: 600; }
+.project-name { width: 180px; min-width: 0; min-height: var(--control-h) !important; padding-left: 26px !important; font-weight: 600; }
 /* Undo and redo: bordered buttons with thick drawn arrows, readable at a glance. */
 header .history { color: var(--text); }
 .spacer { flex: 1; }
@@ -224,3 +224,105 @@ header .menu summary:has(.avatar) { padding: 0 var(--space-3); }
 .render-row > .buttons { grid-column: 2; grid-row: 1 / span 2; }
 .render-row.done { border-color: var(--success); }
 .render-row.failed { border-color: var(--danger); }
+
+/* ---- screen sizes --------------------------------------------------------------------------------------------
+ * Wide (1200px and up): three columns, everything in the header.
+ * Medium (900 to 1199px): narrower panels; the header drops labels and moves "Add files…" and Support into the
+ *   Project menu.
+ * Narrow (under 900px): one column. The header wraps the format tabs onto a second row, and the layer list and
+ *   inspector sit under the stage, one at a time, chosen with the Layers / Edit switch.
+ */
+.panel-switch, .narrow-only, .row-break, .menu-icon { display: none; }
+.menu[open] > div .btn { justify-content: flex-start; background: transparent; border-color: transparent; color: var(--text); box-shadow: none; }
+.menu[open] > div .btn:hover { background: var(--surface-hover); }
+
+@media (max-width: 1199px) {
+  .app { grid-template-columns: 224px minmax(0, 1fr) 272px; }
+  .layers { padding: var(--space-4); }
+  .inspector { padding: var(--space-4) var(--space-5); }
+  header { gap: var(--space-3); padding: 0 var(--space-4); }
+  .project-name { width: 150px; }
+  .wide-only { display: none; }
+  .menu[open] > div .narrow-only { display: flex; }
+  .stage-wrap { padding: var(--space-5); }
+}
+
+@media (max-width: 1023px) {
+  .app { grid-template-columns: 200px minmax(0, 1fr) 248px; }
+  header .brand-name { display: none; }
+  .save-status { display: none; }
+}
+
+@media (max-width: 899px) {
+  .app {
+    grid-template: "head" auto "main" minmax(0, 1fr) "switch" auto "panel" minmax(0, 0.85fr) / minmax(0, 1fr);
+  }
+  header { flex-wrap: wrap; row-gap: var(--space-3); padding: var(--space-3) var(--space-4); }
+  header .spacer { display: none; }
+  .project-field { flex: 1; min-width: 0; }
+  .project-name { width: 100%; }
+  /* The format tabs get their own full-width row. */
+  header .tabs { order: 10; flex: 1 0 100%; }
+  header .tabs button { flex: 1; }
+  header .divider { display: none; }
+  .header-socials { display: none; }
+
+  .panel-switch {
+    grid-area: switch; display: flex; margin: 0; border-width: var(--border-w) 0 0; border-radius: 0;
+  }
+  .panel-switch button { flex: 1; min-height: var(--control-h); }
+  .layers, .inspector { grid-area: panel; border: 0; }
+  .app[data-panel="layers"] .inspector, .app[data-panel="inspector"] .layers { display: none; }
+
+  .stage-wrap { padding: var(--space-4); }
+  .transport { gap: var(--space-4); padding: var(--space-3) var(--space-4); }
+  .transport .play { width: 36px; height: 36px; }
+}
+
+/* Phones held sideways: too short to stack, so the stage and the panel sit side by side under a one-row header. */
+@media (max-width: 899px) and (max-height: 560px) and (orientation: landscape) {
+  .app {
+    grid-template: "head head" auto "main switch" auto "main panel" minmax(0, 1fr) / minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+  header { flex-wrap: nowrap; }
+  header .tabs { order: 0; flex: none; }
+  .aspect-name { display: none; }
+  .panel-switch { border-width: 0 0 0 var(--border-w); }
+  .layers, .inspector { border-left: var(--border-w) solid var(--line); }
+  .stage-wrap { padding: var(--space-3); }
+}
+
+/* Phones: two header rows. Logo, name, menu, Export and account; then undo, redo and the format tabs. */
+@media (max-width: 600px) {
+  header { gap: var(--space-2); }
+  header .brand-button { margin-right: 0; }
+  .row-break { display: block; order: 8; flex: 1 0 100%; height: 0; }
+  header .history { order: 9; }
+  header .tabs { order: 10; flex: 1 1 0; }
+  .aspect-name { display: none; }
+  /* Hidden from sight but still read out, so the icon-only menu keeps its name. */
+  header .menu .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  header .menu .menu-icon { display: inline; }
+}
+
+/* Fingers need bigger targets than a mouse pointer. */
+@media (pointer: coarse) {
+  /* Corners only: on a short text box, eight finger-sized handles would cover it. */
+  .handle { width: 18px; height: 18px; margin: -9px; border-radius: 50%; }
+  .handle.n, .handle.s, .handle.e, .handle.w { display: none; }
+  .layer-list li { padding: var(--space-4) var(--space-3); }
+  .layer-list li.selected .actions { display: flex; }
+  .layer-list .eye, .layer-list .actions button, .asset-list button { min-height: 32px; min-width: 32px; }
+}
+
+/* Dialogs fill small screens instead of floating. */
+@media (max-width: 600px) {
+  .modal-back { align-items: stretch; }
+  .modal-back > .modal {
+    width: 100%; max-height: none; height: 100%; align-content: start; padding: var(--space-6) var(--space-5);
+    border: 0; border-radius: 0; box-shadow: none;
+  }
+  .gallery-grid { grid-template-columns: 1fr; }
+  .template-card .thumb { height: auto; aspect-ratio: 16 / 9; }
+  .social-row { grid-template-columns: 90px minmax(0, 1fr) auto; }
+}

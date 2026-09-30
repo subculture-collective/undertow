@@ -26,8 +26,8 @@ export function Menu({ label, children }: { label: ReactNode; children: ReactNod
   return (
     <details className="menu" ref={ref}>
       <summary>{label}</summary>
-      {/* Any button inside closes the menu after it runs. */}
-      <div onClick={(e) => { if ((e.target as Element).closest('button')) ref.current?.removeAttribute('open'); }}>
+      {/* Any button or link inside closes the menu after it runs. */}
+      <div onClick={(e) => { if ((e.target as Element).closest('button, a')) ref.current?.removeAttribute('open'); }}>
         {children}
       </div>
     </details>

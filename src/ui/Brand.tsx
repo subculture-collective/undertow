@@ -60,10 +60,10 @@ export function SocialLinks() {
 export function PatreonButton({ label = 'Support on Patreon', small = false }: { label?: string; small?: boolean }) {
   if (!visibleLink(BRAND.patreon)) return null;
   return (
-    <a href={BRAND.patreon} {...external} className={`btn patreon ${small ? 'sm' : ''} ${isSet(BRAND.patreon) ? '' : 'unset'}`}
+    <a href={BRAND.patreon} {...external} className={`btn patreon ${small ? 'sm' : ''} ${isSet(BRAND.patreon) ? '' : 'unset'}`} aria-label={label}
       title={isSet(BRAND.patreon) ? `Support ${BRAND.name} on Patreon` : unsetTitle}>
       <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="currentColor"><path d={SOCIAL_ICONS.patreon.path} /></svg>
-      {label}
+      <span className="label">{label}</span>
     </a>
   );
 }

@@ -21,7 +21,7 @@ import { useAccount } from './cloud/account';
 import { applyDefaults } from './cloud/defaults';
 import { newDoc, refreshMissing } from './cloud/documents';
 import { BrandLogo, PatreonButton, SocialLinks } from './ui/Brand';
-import { BRAND } from './brand';
+import { BRAND, visibleLink } from './brand';
 import { audioEl, currentTime, fmtTime, usePlayer } from './ui/player';
 
 /** Puts freshly imported files to work: songs become the soundtrack, images and lyrics fill or create layers. */
@@ -57,6 +57,13 @@ function placeAssets(list: RuntimeAsset[]) {
       else s.addLayer('lyrics', { assetId: a.meta.id });
     }
   }
+}
+
+/** "Landscape 16:9" with the name dropped on phones, where only the ratio fits. */
+function AspectLabel({ label }: { label: string }) {
+  const i = label.lastIndexOf(' ');
+  // One wrapper, because buttons are flex containers and would put a gap between the parts.
+  return <span><span className="aspect-name">{label.slice(0, i)} </span>{label.slice(i + 1)}</span>;
 }
 
 /** A curved arrow drawn with a thick stroke, so undo and redo read clearly at header size. */
@@ -117,6 +124,10 @@ export default function App() {
   const [toast, setToast] = useState('');
   const close = () => setDialog(null);
   const [dragOver, setDragOver] = useState(false);
+  // Which panel shows on narrow screens. Picking a layer opens its settings.
+  const [panel, setPanel] = useState<'layers' | 'inspector'>('layers');
+  const selectedId = useStore((s) => s.selectedId);
+  useEffect(() => { if (selectedId) setPanel('inspector'); }, [selectedId]);
   const fileInput = useRef<HTMLInputElement>(null);
   const projectInput = useRef<HTMLInputElement>(null);
 
@@ -183,7 +194,7 @@ export default function App() {
 
   return (
     <div
-      className={`app ${dragOver ? 'drag-over' : ''}`}
+      className={`app ${dragOver ? 'drag-over' : ''}`} data-panel={panel}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOver(false); }}
       onDrop={(e) => { e.preventDefault(); setDragOver(false); void onFiles([...e.dataTransfer.files]); }}
@@ -198,23 +209,30 @@ export default function App() {
         <SaveStatus />
         <div className="tabs">
           {ASPECT_IDS.map((a) => (
-            <button key={a} className={a === aspect ? 'active' : ''} onClick={() => setAspect(a)}>{ASPECTS[a].label}</button>
+            <button key={a} className={a === aspect ? 'active' : ''} onClick={() => setAspect(a)} aria-label={ASPECTS[a].label}>
+              <AspectLabel label={ASPECTS[a].label} />
+            </button>
           ))}
         </div>
         <div className="spacer" />
+        {/* Starts the header's second row on phones. */}
+        <span className="row-break" aria-hidden="true" />
         <button className="icon history" onClick={undo} disabled={!past} title="Undo (⌘Z)" aria-label="Undo"><HistoryIcon /></button>
         <button className="icon history" onClick={redo} disabled={!future} title="Redo (⇧⌘Z)" aria-label="Redo"><HistoryIcon redo /></button>
         <span className="divider" />
-        <button onClick={() => fileInput.current?.click()}>Add files…</button>
+        <button className="wide-only" onClick={() => fileInput.current?.click()}>Add files…</button>
         <input ref={fileInput} type="file" multiple hidden accept="audio/*,image/*,video/*,.svg,.lrc,.srt,.vtt,.mov,.webm,.ttf,.otf,.woff,.woff2"
           onChange={(e) => { void onFiles([...(e.target.files ?? [])]); e.target.value = ''; }} />
-        <Menu label="Project">
+        <Menu label={<><span className="menu-icon" aria-hidden="true">☰</span><span className="label">Project</span></>}>
+          {/* On narrow screens the header drops "Add files…" and Support; they live here instead. */}
+          <button className="narrow-only" onClick={() => fileInput.current?.click()}>Add files…</button>
           <button onClick={() => setDialog({ kind: 'projects' })}>Projects…</button>
           <button onClick={() => setDialog({ kind: 'gallery' })}>New from template…</button>
           <button onClick={() => change((p) => applyDefaults(p, useAccount.getState().defaults))}>Apply my defaults</button>
           {!signedIn && <button onClick={() => setDialog({ kind: 'account', tab: 'defaults' })}>Edit defaults…</button>}
           <button onClick={saveProject}>Download layout (.json)</button>
           <button onClick={() => projectInput.current?.click()}>Import layout (.json)…</button>
+          {visibleLink(BRAND.patreon) && <a className="btn narrow-only" href={BRAND.patreon} target="_blank" rel="noopener noreferrer">Support on Patreon</a>}
         </Menu>
         <input ref={projectInput} type="file" hidden accept=".json" onChange={async (e) => {
           const f = e.target.files?.[0];
@@ -224,13 +242,18 @@ export default function App() {
           e.target.value = '';
         }} />
         <button className="primary" onClick={() => { audioEl.pause(); setDialog({ kind: 'export' }); }}>Export</button>
-        <span className="divider" />
+        <span className="divider wide-only" />
         <div className="header-socials"><SocialLinks /></div>
-        <PatreonButton label="Support" small />
+        <span className="wide-only"><PatreonButton label="Support" small /></span>
         <AccountButton onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })}
           onAccount={(tab) => setDialog({ kind: 'account', tab })} onProjects={() => setDialog({ kind: 'projects' })}
           onRenders={() => setDialog({ kind: 'renders' })} />
       </header>
+      {/* Narrow screens stack the panels under the stage and show one at a time. */}
+      <div className="panel-switch tabs" role="tablist" aria-label="Panels">
+        <button role="tab" aria-selected={panel === 'layers'} className={panel === 'layers' ? 'active' : ''} onClick={() => setPanel('layers')}>Layers</button>
+        <button role="tab" aria-selected={panel === 'inspector'} className={panel === 'inspector' ? 'active' : ''} onClick={() => setPanel('inspector')}>Edit</button>
+      </div>
       <LayerPanel />
       <main>
         <DocBar onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} />
