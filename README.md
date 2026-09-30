@@ -124,3 +124,8 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
 [GNU Affero General Public License v3.0](LICENSE). If you run a modified
 version of Undertow as a network service, the AGPL requires you to offer that
 version's source code to its users.
+
+The built-in fonts (Inter, Nunito Sans, Jost, Gelasio, Anton and Courier
+Prime) are bundled from [Fontsource](https://fontsource.org) under the
+[SIL Open Font License 1.1](https://openfontlicense.org). Each font's license
+file is in its package under `node_modules/@fontsource*/`.
