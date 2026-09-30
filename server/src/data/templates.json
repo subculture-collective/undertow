@@ -183,7 +183,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 700,
       "color": "#ffffff",
       "align": "center",
@@ -221,7 +221,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 600,
       "color": "#ffffff",
       "shadow": 0.4,
@@ -432,7 +432,7 @@
       }
      },
      "props": {
-      "font": "Avenir Next",
+      "font": "Nunito Sans",
       "weight": 600,
       "color": "#ffffff",
       "align": "center",
@@ -588,7 +588,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 900,
       "color": "#ffffff",
       "align": "center",
@@ -668,7 +668,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 600,
       "color": "#ffffff",
       "align": "left",
@@ -869,7 +869,7 @@
       }
      },
      "props": {
-      "font": "Futura",
+      "font": "Jost",
       "weight": 700,
       "color": "#f2e9ff",
       "align": "center",
@@ -945,7 +945,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 400,
       "color": "#d9ccff",
       "shadow": 0.4,
@@ -1115,7 +1115,7 @@
       }
      },
      "props": {
-      "font": "Georgia",
+      "font": "Gelasio",
       "weight": 700,
       "color": "#1d1a17",
       "align": "left",
@@ -1153,7 +1153,7 @@
       }
      },
      "props": {
-      "font": "Avenir Next",
+      "font": "Nunito Sans",
       "weight": 400,
       "color": "#5b4d40",
       "align": "left",
@@ -1354,7 +1354,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 900,
       "color": "#ffffff",
       "align": "center",
@@ -1392,7 +1392,7 @@
       }
      },
      "props": {
-      "font": "Helvetica Neue",
+      "font": "Inter",
       "weight": 600,
       "color": "#ffffff",
       "shadow": 0.4,

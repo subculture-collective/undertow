@@ -56,7 +56,7 @@ export const TEMPLATES: Template[] = [
       }),
       layer('text', {
         name: 'Title',
-        props: { text: 'Artist — Song Title', font: 'Avenir Next', weight: 600, letterSpacing: 0.04 },
+        props: { text: 'Artist — Song Title', font: 'Nunito Sans', weight: 600, letterSpacing: 0.04 },
         at: [L(360, 930, 1200, 70), P(90, 1340, 900, 110), S(90, 720, 900, 80)],
       }),
       layer('waveform', {
@@ -74,7 +74,7 @@ export const TEMPLATES: Template[] = [
       layer('solid', { props: { color: '#07070c', color2: '#141030', gradient: true, angle: 90 } }),
       layer('milkdrop', { props: { preset: 'Flexi + Martin - astral projection', gain: 0.8 }, opacity: 0.45 }),
       layer('lyrics', {
-        props: { mode: 'karaoke', font: 'Helvetica Neue', weight: 900, highlight: '#6bf0ff', dimColor: '#ffffffaa', shadow: 0.6 },
+        props: { mode: 'karaoke', font: 'Inter', weight: 900, highlight: '#6bf0ff', dimColor: '#ffffffaa', shadow: 0.6 },
         at: [L(160, 360, 1600, 320), P(60, 700, 960, 440), S(60, 360, 960, 320)],
       }),
       layer('image', {
@@ -108,7 +108,7 @@ export const TEMPLATES: Template[] = [
       }),
       layer('text', {
         name: 'Title',
-        props: { text: 'Artist — Song Title', font: 'Futura', weight: 700, uppercase: true, letterSpacing: 0.2, color: '#f2e9ff' },
+        props: { text: 'Artist — Song Title', font: 'Jost', weight: 700, uppercase: true, letterSpacing: 0.2, color: '#f2e9ff' },
         at: [L(260, 800, 1400, 100), P(60, 1290, 960, 120), S(60, 700, 960, 90)],
       }),
       layer('vu', {
@@ -135,12 +135,12 @@ export const TEMPLATES: Template[] = [
       }),
       layer('text', {
         name: 'Title',
-        props: { text: 'Song Title', font: 'Georgia', weight: 700, color: '#1d1a17', align: 'left', shadow: 0 },
+        props: { text: 'Song Title', font: 'Gelasio', weight: 700, color: '#1d1a17', align: 'left', shadow: 0 },
         at: [L(920, 320, 860, 170), P(90, 1080, 900, 150), S(610, 220, 420, 140)],
       }),
       layer('text', {
         name: 'Subtitle',
-        props: { text: 'Artist · Out now', font: 'Avenir Next', weight: 400, color: '#5b4d40', align: 'left', shadow: 0, letterSpacing: 0.06 },
+        props: { text: 'Artist · Out now', font: 'Nunito Sans', weight: 400, color: '#5b4d40', align: 'left', shadow: 0, letterSpacing: 0.06 },
         at: [L(920, 500, 860, 64), P(90, 1240, 900, 70), S(610, 370, 420, 50)],
       }),
       layer('spectrum', {
