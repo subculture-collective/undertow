@@ -12,6 +12,8 @@ interface AccountState {
   /** The defaults in effect: the account's when signed in, this browser's otherwise. */
   defaults: Defaults;
   providers: { google: boolean; discord: boolean };
+  /** Days a finished cloud render is kept, from the server. */
+  renderOutputDays: number;
   /** Set when the API can't be reached; the editor keeps working on this device. */
   offline: boolean;
 
@@ -25,12 +27,13 @@ export const useAccount = create<AccountState>((set, get) => ({
   me: null,
   defaults: loadLocalDefaults(),
   providers: { google: false, discord: false },
+  renderOutputDays: 7,
   offline: false,
 
   refresh: async () => {
     try {
       const meta = await unwrap(api.GET('/v1/meta'));
-      set({ providers: meta.providers, offline: false });
+      set({ providers: meta.providers, renderOutputDays: meta.renderOutputDays, offline: false });
     } catch {
       set({ status: 'signed-out', offline: true });
       return;
