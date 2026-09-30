@@ -3,7 +3,7 @@
  * verification, apikey) are generated into auth-schema.ts.
  */
 import { sql } from 'drizzle-orm';
-import { bigserial, customType, index, integer, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { bigserial, boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth-schema.js';
 
 const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
@@ -70,3 +70,42 @@ export const usageEvent = pgTable('usage_event', {
   units: integer().notNull().default(1),
   createdAt: now(),
 }, (t) => [index('usage_user_created_idx').on(t.userId, t.createdAt)]);
+
+/**
+ * Cloud render jobs. Lifecycle: awaiting_upload -> queued -> running -> done | failed | cancelled.
+ * `spec` holds the layout and export options; media files live in storage (see lib/storage.ts),
+ * are deleted when the job finishes, and the output is kept until `expiresAt`.
+ */
+export const renderJob = pgTable('render_job', {
+  id: text().primaryKey(),
+  userId: text().notNull().references(() => user.id, { onDelete: 'cascade' }),
+  apiKeyId: text(),
+  status: text().notNull().default('awaiting_upload'),
+  spec: jsonb().notNull(),
+  /** Seconds of video requested; counted against the plan's monthly render minutes. */
+  durationSeconds: integer().notNull(),
+  progress: integer().notNull().default(0),
+  error: text(),
+  /** SHA-256 of the token issued to the worker when it claims the job; the token itself is never stored. */
+  tokenHash: text(),
+  /** Claims so far; a job whose worker stops responding is retried, then failed. */
+  attempts: integer().notNull().default(0),
+  outputBytes: integer(),
+  workerId: text(),
+  heartbeatAt: timestamp({ withTimezone: true }),
+  createdAt: now(),
+  startedAt: timestamp({ withTimezone: true }),
+  finishedAt: timestamp({ withTimezone: true }),
+  expiresAt: timestamp({ withTimezone: true }),
+}, (t) => [index('render_job_user_idx').on(t.userId, t.createdAt), index('render_job_status_idx').on(t.status, t.createdAt)]);
+
+/** Files a render job needs, uploaded one by one before the job starts. */
+export const renderMedia = pgTable('render_media', {
+  jobId: text().notNull().references(() => renderJob.id, { onDelete: 'cascade' }),
+  mediaId: text().notNull(),
+  kind: text().notNull(),
+  name: text().notNull(),
+  mime: text().notNull().default('application/octet-stream'),
+  size: integer().notNull(),
+  uploaded: boolean().notNull().default(false),
+}, (t) => [primaryKey({ columns: [t.jobId, t.mediaId] })]);

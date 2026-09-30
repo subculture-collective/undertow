@@ -24,9 +24,26 @@ curl -H "Authorization: Bearer $UNDERTOW_KEY" https://undertow.example/v1/projec
 | Templates | `GET /v1/templates?scope=all\|builtin\|public\|mine`, `GET /v1/templates/{id}`, `POST /v1/templates`, `DELETE /v1/templates/{id}` |
 | Palettes | `GET`/`POST /v1/palettes`, `DELETE /v1/palettes/{id}` |
 | Presets | `GET /v1/presets/milkdrop?q=` |
+| Rendering | `GET`/`POST /v1/renders`, `GET`/`DELETE /v1/renders/{id}`, `PUT /v1/renders/{id}/media/{mediaId}`, `POST /v1/renders/{id}/start`, `GET /v1/renders/{id}/output`. See [rendering.md](rendering.md) |
 | Keys and usage | `GET`/`POST /v1/keys`, `DELETE /v1/keys/{id}`, `GET /v1/usage?days=30` |
 | Service | `GET /v1/meta` (no auth), `GET /healthz` |
 | Sign-in | `/v1/auth/*`, handled by Better Auth. Listed under "Auth" in `/docs` |
+
+## Rendering in the cloud
+
+```sh
+# 1. Create the job: layout (or projectId), options, and every file the layout uses.
+curl -X POST -H "Authorization: Bearer $UNDERTOW_KEY" -H 'content-type: application/json' \
+  https://undertow.example/v1/renders -d @job.json
+# 2. Upload each file listed in "uploads".
+curl -X PUT -H "Authorization: Bearer $UNDERTOW_KEY" --data-binary @song.mp3 \
+  https://undertow.example/v1/renders/rnd_…/media/song1
+# 3. Start, then poll GET /v1/renders/rnd_… until status is "done", then download.
+curl -X POST -H "Authorization: Bearer $UNDERTOW_KEY" https://undertow.example/v1/renders/rnd_…/start
+curl -L -H "Authorization: Bearer $UNDERTOW_KEY" -o video.mp4 https://undertow.example/v1/renders/rnd_…/output
+```
+
+Files uploaded for a render are deleted when it finishes. This is the only part of the API that receives media.
 
 ## Projects store layouts, not media
 
@@ -55,9 +72,10 @@ Validation failures are `422`. `detail` lists each failing field.
 
 Each API key, or each signed-in user without a key, gets a per-minute request budget from its plan. Every response carries `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` (seconds). Past the limit the API returns `429` with a `Retry-After` header.
 
-| Plan | Requests/min | Projects | Templates | API keys | Cloud render minutes/month |
-|---|---|---|---|---|---|
-| free | 120 | 50 | 20 | 3 | 0 (rendering isn't built yet) |
+| Plan | Requests/min | Projects | Templates | API keys | Cloud render minutes/month | Max resolution | Max length |
+|---|---|---|---|---|---|---|---|
+| free | 120 | 50 | 20 | 3 | 0 | none | none |
+| creator | 600 | 500 | 200 | 10 | 120 | 4K | 15 min |
 
 Plans are defined in `server/src/lib/plans.ts`. A paid plan is a new row there plus a billing integration that sets `profile.plan`. Every authenticated request is recorded in `usage_event`, and `GET /v1/usage` summarises it per day. That table is the basis for metered billing.
 

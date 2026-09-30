@@ -15,6 +15,12 @@ const schema = z.object({
   SMTP_URL: z.string().default(''),
   MAIL_FROM: z.string().default('Undertow <no-reply@localhost>'),
   STATIC_DIR: z.string().default(''),
+  /** Where render inputs and outputs are kept. */
+  RENDER_DIR: z.string().default('./data/renders'),
+  /** Days a finished render stays downloadable. */
+  RENDER_OUTPUT_DAYS: z.coerce.number().int().min(1).default(7),
+  /** Shared secret the render worker uses to claim jobs. Empty disables the worker endpoints. */
+  WORKER_SECRET: z.string().default(''),
 });
 
 const parsed = schema.safeParse(process.env);

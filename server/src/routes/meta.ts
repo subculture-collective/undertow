@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { providers } from '../env.js';
+import { env, providers } from '../env.js';
 import { json, router } from '../lib/router.js';
 
 /** Public, unauthenticated facts clients need before signing in. */
@@ -11,6 +11,8 @@ meta.openapi(createRoute({
     200: json(z.object({
       apiVersion: z.string(),
       providers: z.object({ google: z.boolean(), discord: z.boolean() }),
+      /** Days a finished cloud render stays downloadable. */
+      renderOutputDays: z.number().int(),
     }).openapi('Meta'), 'Service information'),
   },
-}), (c) => c.json({ apiVersion: '1', providers }, 200));
+}), (c) => c.json({ apiVersion: '1', providers, renderOutputDays: env.RENDER_OUTPUT_DAYS }, 200));

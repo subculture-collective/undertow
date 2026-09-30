@@ -9,6 +9,7 @@ import { requireCaller } from '../lib/caller.js';
 import { fail, problems } from '../lib/problem.js';
 import { iso, json, router, secured } from '../lib/router.js';
 import { ApiKey, CreateApiKey, CreatedApiKey, IdParam, Usage } from '../schemas.js';
+import { renderSecondsThisMonth } from './renders.js';
 
 export const keys = router();
 keys.use('/keys/*', requireCaller); // also matches '/keys'
@@ -73,5 +74,5 @@ keys.openapi(createRoute({
   const rows = await db.select({ date: day, requests: count(), units: sql<number>`coalesce(sum(${usageEvent.units}), 0)::int` })
     .from(usageEvent).where(and(eq(usageEvent.userId, userId), gte(usageEvent.createdAt, since)))
     .groupBy(day).orderBy(day);
-  return c.json({ plan: planName, limits: plan, days: rows }, 200);
+  return c.json({ plan: planName, limits: plan, renderSecondsThisMonth: await renderSecondsThisMonth(userId), days: rows }, 200);
 });
