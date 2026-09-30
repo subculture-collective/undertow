@@ -8,6 +8,7 @@ import { Compositor, type DecodedFrame } from '../render/compositor';
 import { clipTime } from '../render/layers';
 import { loadPresets } from '../render/milkdrop';
 import { ASPECTS, type AspectId, type Project, type VideoLayer } from '../types';
+import { builtinFontsReady } from '../fonts';
 import { ClipReader } from './clipReader';
 
 /** Yields a macrotask so the page stays responsive; encoder promises can resolve without ever doing so. */
@@ -92,6 +93,7 @@ export async function exportVideo(
   if (!videoCodec) throw new Error(`This browser cannot encode ${W}x${H} video. Try a lower resolution or Chrome.`);
 
   if (project.layers.some((l) => l.type === 'milkdrop' && l.visible)) await loadPresets();
+  await builtinFontsReady();
 
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;

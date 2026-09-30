@@ -77,7 +77,9 @@ export interface ImageProps {
   circle: boolean;
 }
 
-export const BUILTIN_FONTS = ['Helvetica Neue', 'system-ui', 'Avenir Next', 'Futura', 'Georgia', 'Impact', 'Courier New'] as const;
+/** Bundled with the app (see fonts.ts), so text looks the same on every platform. */
+export const BUILTIN_FONTS = ['Inter', 'Nunito Sans', 'Jost', 'Gelasio', 'Anton', 'Courier Prime'] as const;
+export type BuiltinFont = (typeof BUILTIN_FONTS)[number];
 
 export interface TextStyle {
   /** A built-in family name, or the family registered for an uploaded font asset (see `fontFamily`). */

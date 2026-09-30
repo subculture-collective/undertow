@@ -14,6 +14,8 @@ Cloud rendering produces the same MP4 as "Export" in the editor, but on a server
 
 Using the editor's export code means cloud and local renders look the same: layer drawing, particles, Milkdrop, fonts and video backgrounds. There's no second renderer to keep in sync.
 
+The built-in fonts (Inter, Nunito Sans, Jost, Gelasio, Anton and Courier Prime) ship with the app, so the worker draws the same text as any browser. Exports wait for them to load. Uploaded fonts travel with the job. Text outside the Latin and Latin Extended ranges falls back to the platform's fonts, which differ between macOS and the worker's Noto set.
+
 ## Minutes and billing
 
 - A job counts against the month's minutes from the moment it's created. Cancelled and failed jobs are refunded.
@@ -67,7 +69,6 @@ These were measured on 2026-09-29 on an Apple M3.
 
 In the production images, Chrome encoded H.264 itself, so ffmpeg only copied the video and added AAC audio. Expect different numbers on the deployment host.
 
-## Known differences from local renders
+## Worker notes
 
-- **Fonts.** The editor's built-in fonts (Helvetica Neue, Avenir Next, Futura and others) are system fonts, and most are macOS-only. The Linux worker has DejaVu and Noto instead, so text in a cloud render uses a fallback font. Uploaded fonts match exactly because they travel with the job. The fix is to ship open-licensed web fonts for the built-in choices, so every platform draws the same text.
 - **Secure context.** WebCodecs needs a secure context. The worker loads the render page from an internal `http://` address, so it tells Chrome to trust exactly that origin (`--unsafely-treat-insecure-origin-as-secure`). Without the flag, every render fails with "This browser cannot encode".

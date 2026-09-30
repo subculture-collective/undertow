@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { authClient, YOUTUBE_SCOPE } from '../api/auth';
 import { api, unwrap, type Schemas } from '../api/client';
 import { fontFamily, fontLabel } from '../assets';
+import { resolveFont } from '../fonts';
 import { useAccount } from '../cloud/account';
 import { EMPTY_DEFAULTS, type Defaults } from '../cloud/defaults';
 import { BUILTIN_PALETTES } from '../cloud/palettes';
@@ -143,7 +144,7 @@ function DefaultsTab() {
       </div>
 
       <label className="field">Font
-        <select value={d.font} onChange={(e) => set({ font: e.target.value })}>
+        <select value={resolveFont(d.font)} onChange={(e) => set({ font: e.target.value })}>
           <option value="">Keep template fonts</option>
           <optgroup label="Built in">{BUILTIN_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
           {fonts.length > 0 && <optgroup label="Uploaded on this device">{fonts.map((a) => <option key={a.meta.id} value={fontFamily(a.meta.id)}>{fontLabel(a)}</option>)}</optgroup>}
