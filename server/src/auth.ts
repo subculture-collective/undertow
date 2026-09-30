@@ -70,7 +70,12 @@ export const auth = betterAuth({
     },
   },
 
-  advanced: { cookiePrefix: 'ut', useSecureCookies: isProd },
+  advanced: {
+    cookiePrefix: 'ut',
+    useSecureCookies: isProd,
+    // Behind Cloudflare and Caddy, the socket address is the proxy's; rate limits need the visitor's.
+    ipAddress: { ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'] },
+  },
 
   plugins: [
     // Keys are verified and rate limited by our own middleware (per plan), not the plugin's defaults.
