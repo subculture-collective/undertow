@@ -363,12 +363,13 @@
   33% { box-shadow: 4px 1px 0 var(--chroma-a), -4px -1px 0 var(--accent-3); }
   66% { box-shadow: -2px -1px 0 var(--chroma-a), 5px 3px 0 var(--accent-3); }
 }
+/* Transform and opacity only: clip-path would also clip hit-testing, so an early click could land on the backdrop. */
 @keyframes vz-glitch-in {
-  0% { clip-path: inset(42% 0 42% 0); transform: translateX(-10px); }
-  25% { clip-path: inset(0 0 58% 0); transform: translateX(8px); }
-  50% { clip-path: inset(48% 0 0 0); transform: translateX(-4px); }
-  75% { clip-path: inset(10% 0 20% 0); transform: translateX(2px); }
-  100% { clip-path: inset(0); transform: none; }
+  0% { opacity: 0; transform: translateX(-10px) skewX(8deg); }
+  25% { opacity: 1; transform: translateX(8px) skewX(-6deg); }
+  50% { transform: translateX(-4px) skewX(3deg); }
+  75% { transform: translateX(2px); }
+  100% { opacity: 1; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
