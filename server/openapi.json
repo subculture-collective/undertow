@@ -328,11 +328,15 @@
               "google",
               "discord"
             ]
+          },
+          "renderOutputDays": {
+            "type": "integer"
           }
         },
         "required": [
           "apiVersion",
-          "providers"
+          "providers",
+          "renderOutputDays"
         ]
       },
       "Me": {
@@ -1023,6 +1027,15 @@
               },
               "renderMinutesPerMonth": {
                 "type": "integer"
+              },
+              "renderMaxShortSide": {
+                "type": "integer"
+              },
+              "renderMaxSeconds": {
+                "type": "integer"
+              },
+              "renderMaxUploadBytes": {
+                "type": "integer"
               }
             },
             "required": [
@@ -1030,8 +1043,14 @@
               "maxProjects",
               "maxTemplates",
               "maxApiKeys",
-              "renderMinutesPerMonth"
+              "renderMinutesPerMonth",
+              "renderMaxShortSide",
+              "renderMaxSeconds",
+              "renderMaxUploadBytes"
             ]
+          },
+          "renderSecondsThisMonth": {
+            "type": "integer"
           },
           "days": {
             "type": "array",
@@ -1043,6 +1062,7 @@
         "required": [
           "plan",
           "limits",
+          "renderSecondsThisMonth",
           "days"
         ]
       },
@@ -1064,6 +1084,258 @@
           "date",
           "requests",
           "units"
+        ]
+      },
+      "RenderJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RenderStatus"
+          },
+          "progress": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "options": {
+            "$ref": "#/components/schemas/RenderOptions"
+          },
+          "durationSeconds": {
+            "type": "integer"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "uploads": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RenderUpload"
+            }
+          },
+          "outputBytes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "progress",
+          "name",
+          "options",
+          "durationSeconds",
+          "error",
+          "uploads",
+          "outputBytes",
+          "createdAt",
+          "finishedAt",
+          "expiresAt"
+        ]
+      },
+      "RenderStatus": {
+        "type": "string",
+        "enum": [
+          "awaiting_upload",
+          "queued",
+          "running",
+          "done",
+          "failed",
+          "cancelled",
+          "expired"
+        ]
+      },
+      "RenderOptions": {
+        "type": "object",
+        "properties": {
+          "aspect": {
+            "type": "string",
+            "enum": [
+              "landscape",
+              "portrait",
+              "square"
+            ]
+          },
+          "shortSide": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  720
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  1080
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  1440
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  2160
+                ]
+              }
+            ]
+          },
+          "fps": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  24
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  30
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  60
+                ]
+              }
+            ]
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "high",
+              "very-high"
+            ],
+            "default": "high"
+          }
+        },
+        "required": [
+          "aspect",
+          "shortSide",
+          "fps",
+          "start",
+          "end"
+        ]
+      },
+      "RenderUpload": {
+        "type": "object",
+        "properties": {
+          "mediaId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "audio",
+              "lyrics",
+              "video",
+              "font"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "uploaded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "mediaId",
+          "kind",
+          "name",
+          "size",
+          "uploaded"
+        ]
+      },
+      "CreateRender": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProjectData"
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/MediaRef"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "size": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "mime": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "default": "application/octet-stream"
+                    }
+                  },
+                  "required": [
+                    "size"
+                  ]
+                }
+              ],
+              "description": "A file the layout uses. Files stay on the device; this lets another device ask for them by name."
+            },
+            "maxItems": 50
+          },
+          "options": {
+            "$ref": "#/components/schemas/RenderOptions"
+          }
+        },
+        "required": [
+          "media",
+          "options"
         ]
       }
     },
@@ -2869,6 +3141,551 @@
           },
           "401": {
             "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/renders": {
+      "post": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a render job",
+        "description": "Returns the job with the files to upload. Upload each with PUT /v1/renders/{id}/media/{mediaId}, then POST /v1/renders/{id}/start. Counts against the plan's monthly render minutes from creation; cancelled and failed jobs are refunded.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRender"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The job, awaiting uploads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJob"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your 50 most recent render jobs",
+        "responses": {
+          "200": {
+            "description": "Jobs, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RenderJob"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/renders/{id}/media/{mediaId}": {
+      "put": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload one of the job's files (raw bytes, exactly the declared size)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "mediaId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Stored"
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/renders/{id}/start": {
+      "post": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Queue the job once every file is uploaded",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The queued job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJob"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/renders/{id}": {
+      "get": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A render job's status and progress",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The job",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderJob"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel a render, or delete a finished one and its output",
+        "description": "Cancelling refunds the job's minutes. Deleting a finished render removes the output but keeps its minutes counted.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cancelled or deleted"
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/renders/{id}/output": {
+      "get": {
+        "tags": [
+          "Rendering"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Download the finished MP4",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The video",
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {

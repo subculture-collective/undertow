@@ -15,6 +15,8 @@ import { library } from './routes/library.js';
 import { me } from './routes/me.js';
 import { meta } from './routes/meta.js';
 import { projects } from './routes/projects.js';
+import { renders } from './routes/renders.js';
+import { worker } from './routes/worker.js';
 
 const problem = (status: number, detail?: string, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(problemBody(status, detail)), { status, headers: { 'content-type': 'application/problem+json', ...headers } });
@@ -45,6 +47,9 @@ export function createApp() {
   app.route('/v1', projects);
   app.route('/v1', library);
   app.route('/v1', keys);
+  app.route('/v1', renders);
+  // Worker and render-page routes: not versioned, not in the public docs.
+  app.route('/internal', worker);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'session', {
     type: 'apiKey', in: 'cookie', name: `${isProd ? '__Secure-' : ''}ut.session_token`,
@@ -80,7 +85,7 @@ export function createApp() {
     // Single-container deployments: serve the built editor, falling back to index.html for client routes.
     const index = readFileSync(join(env.STATIC_DIR, 'index.html'), 'utf8');
     app.use('/*', serveStatic({ root: env.STATIC_DIR }));
-    app.get('*', (c) => (c.req.path.startsWith('/v1/') ? c.notFound() : c.html(index)));
+    app.get('*', (c) => (/^\/(v1|internal)\//.test(c.req.path) ? c.notFound() : c.html(index)));
   }
 
   app.notFound(() => problem(404, 'No such endpoint.'));
