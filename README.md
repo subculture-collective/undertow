@@ -32,6 +32,8 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   new projects (artist name, website, socials, palette, font), and a project
   library that saves to your account or to this browser. Autosave detects edits
   from another tab or device instead of overwriting them.
+- **Cloud rendering** (paid plans): export on the server instead of the browser,
+  using the same rendering code. See [docs/rendering.md](docs/rendering.md).
 
 ## Development
 
@@ -65,6 +67,7 @@ The API is documented in [docs/api.md](docs/api.md) and at `/docs` on a running 
 | `src/cloud/` | Account state, defaults, project library and autosave, media manifests and relinking |
 | `server/` | The Undertow API: Hono, Better Auth, Postgres via Drizzle. See docs/api.md |
 | `Dockerfile`, `deploy/` | One container serving the editor and API; production compose file |
+| `server/src/worker/`, `Dockerfile.worker`, `render.html` | Cloud render worker (headless Chrome + ffmpeg) and the page it drives |
 | `src/ui/` | Editor components |
 
 ## Branding and design system
