@@ -28,7 +28,7 @@ export const DEFAULT_RECTS: Record<LayerType, Rects> = {
 };
 
 const TEXT: TextStyle = {
-  font: 'Helvetica Neue', weight: 700, color: '#ffffff', align: 'center', shadow: 0.4, uppercase: false, letterSpacing: 0,
+  font: 'Inter', weight: 700, color: '#ffffff', align: 'center', shadow: 0.4, uppercase: false, letterSpacing: 0,
 };
 
 export const DEFAULT_PROPS: { [T in LayerType]: PropsOf<T> } = {
@@ -42,7 +42,7 @@ export const DEFAULT_PROPS: { [T in LayerType]: PropsOf<T> } = {
   text: { ...TEXT, text: 'Artist — Song Title' },
   lyrics: { ...TEXT, assetId: null, offset: 0, mode: 'karaoke', highlight: '#ffd84d', dimColor: '#8d8d9c', fade: 0.25 },
   socials: {
-    font: 'Helvetica Neue', weight: 600, color: '#ffffff', shadow: 0.4, letterSpacing: 0,
+    font: 'Inter', weight: 600, color: '#ffffff', shadow: 0.4, letterSpacing: 0,
     items: [{ platform: 'instagram', handle: '@yourname' }, { platform: 'spotify', handle: 'Your Artist' }],
     layout: 'row', brandColors: false, iconColor: '#ffffff',
   },

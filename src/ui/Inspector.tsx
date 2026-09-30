@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fontFamily, fontLabel } from '../assets';
+import { resolveFont } from '../fonts';
 import { getPresetNames, loadPresets } from '../render/milkdrop';
 import { SOCIAL_ICONS } from '../render/icons';
 import { useSelectedLayer, useStore } from '../store';
@@ -72,7 +73,8 @@ function PresetPicker({ layerId, value, onChange }: { layerId: string; value: st
   );
 }
 
-function FontPicker({ value, onChange }: { value: string; onChange: (font: string) => void }) {
+function FontPicker({ value: stored, onChange }: { value: string; onChange: (font: string) => void }) {
+  const value = resolveFont(stored);
   const assets = useStore((s) => s.assets);
   const importFiles = useStore((s) => s.importFiles);
   const input = useRef<HTMLInputElement>(null);

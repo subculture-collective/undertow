@@ -3,6 +3,7 @@ import { cueAt, type LyricCue } from '../audio/lyrics';
 import type {
   ImageProps, VideoProps, LyricsProps, SocialsProps, SolidProps, SpectrumProps, TextStyle, TextProps, VuProps, WaveformProps,
 } from '../types';
+import { resolveFont } from '../fonts';
 import { SOCIAL_ICONS, iconPath } from './icons';
 
 export interface Box { x: number; y: number; w: number; h: number }
@@ -141,7 +142,7 @@ export function drawImage(d: DrawCtx, b: Box, p: ImageProps, img: HTMLImageEleme
 
 // ---- text helpers -----------------------------------------------------------
 function applyFont(ctx: CanvasRenderingContext2D, s: Pick<TextStyle, 'font' | 'weight' | 'letterSpacing'>, size: number) {
-  ctx.font = `${s.weight} ${size}px "${s.font}", system-ui, sans-serif`;
+  ctx.font = `${s.weight} ${size}px "${resolveFont(s.font)}", system-ui, sans-serif`;
   ctx.letterSpacing = `${s.letterSpacing * size}px`;
 }
 function textShadow(d: DrawCtx, shadow: number) {
