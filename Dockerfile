@@ -6,7 +6,7 @@ FROM node:24-alpine AS web
 WORKDIR /web
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY index.html vite.config.ts tsconfig.json ./
+COPY index.html render.html vite.config.ts tsconfig.json ./
 COPY public ./public
 COPY src ./src
 # Dev-only pages (selftest, styleguide) are not part of the production build.
@@ -30,6 +30,8 @@ COPY --from=api /api/dist ./dist
 COPY --from=api /api/package.json ./
 COPY server/drizzle ./drizzle
 COPY --from=web /web/dist /app/web
+# Render inputs and outputs (RENDER_DIR). Owned by the runtime user so a fresh volume mounted here is writable.
+RUN mkdir -p /app/server/data/renders && chown -R node:node /app/server/data
 USER node
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:8787/healthz || exit 1

@@ -1,0 +1,22 @@
+# Undertow cloud render worker: Node, Google Chrome and ffmpeg.
+# Google Chrome is used rather than Chromium because it decodes H.264/AAC media and encodes H.264.
+# Chrome for Linux is published for amd64 only, so this image is amd64.
+# Build: docker build -f Dockerfile.worker --platform linux/amd64 -t undertow-worker .
+FROM --platform=linux/amd64 node:24-bookworm-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ffmpeg ca-certificates fonts-dejavu-core fonts-noto-color-emoji \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY server/package.json server/package-lock.json ./
+RUN npm ci
+# Installs Google Chrome stable and the system libraries it needs.
+RUN npx playwright-core install --with-deps chrome
+COPY server/tsconfig.json ./
+COPY server/src ./src
+RUN npm run build && npm prune --omit=dev
+
+ENV NODE_ENV=production CHROME_CHANNEL=chrome
+USER node
+CMD ["node", "dist/worker/index.js"]
