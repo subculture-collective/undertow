@@ -89,7 +89,16 @@ Each API key, or each signed-in user without a key, gets a per-minute request bu
 | free | 120 | 50 | 20 | 3 | 0 | none | none |
 | creator | 600 | 500 | 200 | 10 | 120 | 4K | 15 min |
 
-Plans are defined in `server/src/lib/plans.ts`. A paid plan is a new row there plus a billing integration that sets `profile.plan`. Every authenticated request is recorded in `usage_event`, and `GET /v1/usage` summarises it per day. That table is the basis for metered billing.
+Plans are defined in `server/src/lib/plans.ts`. Stripe reconciliation updates
+`profile.plan`, and request authorization checks the stored subscription status
+and paid-period expiry. Every authenticated request is recorded in `usage_event`,
+and `GET /v1/usage` summarises it per day. No metered overage billing is enabled.
+
+`GET /v1/billing` reconciles the current subscription and reports its state and
+price. `POST /v1/billing/checkout` starts or resumes Checkout, while
+`POST /v1/billing/portal` opens subscription management. These routes require a
+browser session, and POST requests require a trusted Origin. API keys cannot
+initiate billing actions. Stripe posts signed events to `/v1/billing/webhook`.
 
 The limiter keeps its counts in memory, which is correct for one API instance. Running several instances needs a shared store behind `take()` in `server/src/lib/rate-limit.ts`.
 
