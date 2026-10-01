@@ -60,7 +60,12 @@ Leave a provider's variables empty to hide it. The editor only shows providers t
 
 ## Email
 
-Password reset and email confirmation need outgoing mail. Set `SMTP_URL` (for example `smtps://user:pass@smtp.example.com:465`) and `MAIL_FROM`. Without `SMTP_URL`, emails are printed to the API log. That's fine for development, but in production nobody could confirm their address.
+Password reset and email confirmation need outgoing mail. Set `MAIL_FROM` and one of:
+
+- `BREVO_API_KEY`: sends through Brevo's transactional API. The `MAIL_FROM` domain must be authenticated in Brevo, and the address must be an active sender. Brevo's free plan sends 300 emails a day.
+- `SMTP_URL`: any SMTP server, for example `smtps://user:pass@smtp.example.com:465`.
+
+`BREVO_API_KEY` wins if both are set. With neither, emails are printed to the API log. That's fine for development, but in production nobody could confirm their address.
 
 ## Local development
 

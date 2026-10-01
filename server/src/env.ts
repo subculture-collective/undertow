@@ -13,6 +13,8 @@ const schema = z.object({
   DISCORD_CLIENT_ID: z.string().default(''),
   DISCORD_CLIENT_SECRET: z.string().default(''),
   SMTP_URL: z.string().default(''),
+  /** Brevo transactional email API key. Takes precedence over SMTP_URL. */
+  BREVO_API_KEY: z.string().default(''),
   MAIL_FROM: z.string().default('Undertow <no-reply@localhost>'),
   STATIC_DIR: z.string().default(''),
   /** Where render inputs and outputs are kept. */
