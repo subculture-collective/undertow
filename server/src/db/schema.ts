@@ -17,6 +17,25 @@ export const profile = pgTable('profile', {
   updatedAt: now(),
 });
 
+/** Stripe identifiers belong to the authenticated owner, never to a request body. */
+export const billingCustomer = pgTable('billing_customer', {
+  userId: text().primaryKey().references(() => user.id, { onDelete: 'cascade' }),
+  customerId: text().unique(),
+  subscriptionId: text(),
+  status: text().notNull().default('none'),
+  periodEnd: timestamp({ withTimezone: true }),
+  cancelAtPeriodEnd: boolean().notNull().default(false),
+  paused: boolean().notNull().default(false),
+  deleting: boolean().notNull().default(false),
+  updatedAt: now(),
+});
+
+/** Stored only after the state update commits; failures remain retryable. */
+export const billingEvent = pgTable('billing_event', {
+  id: text().primaryKey(),
+  processedAt: now(),
+});
+
 /**
  * A saved layout. Media stays on the user's devices; `media` lists the files
  * the layout refers to (id, kind, name, size) so another device can ask for them.

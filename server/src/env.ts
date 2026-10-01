@@ -16,6 +16,12 @@ const schema = z.object({
   /** Brevo transactional email API key. Takes precedence over SMTP_URL. */
   BREVO_API_KEY: z.string().default(''),
   MAIL_FROM: z.string().default('Undertow <no-reply@localhost>'),
+  STRIPE_API_KEY: z.string().default(''),
+  STRIPE_WEBHOOK_SECRET: z.string().default(''),
+  STRIPE_CREATOR_PRICE_ID: z.string().default(''),
+  STRIPE_PORTAL_CONFIGURATION_ID: z.string().default(''),
+  /** Explicit opt-in required before accepting live payments. */
+  STRIPE_LIVE_MODE: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   STATIC_DIR: z.string().default(''),
   /** Where render inputs and outputs are kept. */
   RENDER_DIR: z.string().default('./data/renders'),

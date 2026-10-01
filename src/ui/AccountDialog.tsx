@@ -10,16 +10,17 @@ import { SOCIAL_ICONS } from '../render/icons';
 import { useStore } from '../store';
 import { BUILTIN_FONTS, type SocialPlatform } from '../types';
 
-export type AccountTab = 'profile' | 'defaults' | 'connections' | 'keys' | 'danger';
+export type AccountTab = 'profile' | 'billing' | 'defaults' | 'connections' | 'keys' | 'danger';
 
 const TABS: [AccountTab, string][] = [
-  ['profile', 'Profile'], ['defaults', 'Defaults'], ['connections', 'Connected accounts'], ['keys', 'API keys'], ['danger', 'Delete account'],
+  ['profile', 'Profile'], ['billing', 'Billing'], ['defaults', 'Defaults'], ['connections', 'Connected accounts'], ['keys', 'API keys'], ['danger', 'Delete account'],
 ];
 
 /** Account settings. Signed out, only the defaults tab is shown, saved in this browser. */
 export function AccountDialog({ initialTab = 'profile', onClose }: { initialTab?: AccountTab; onClose: () => void }) {
   const signedIn = useAccount((s) => s.status === 'signed-in');
-  const [tab, setTab] = useState<AccountTab>(signedIn ? initialTab : 'defaults');
+  const [selectedTab, setTab] = useState<AccountTab>(initialTab);
+  const tab = signedIn ? selectedTab : 'defaults';
   return (
     <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal account" role="dialog" aria-labelledby="account-title">
@@ -31,6 +32,7 @@ export function AccountDialog({ initialTab = 'profile', onClose }: { initialTab?
         )}
         <div className="account-body">
           {tab === 'profile' && <ProfileTab />}
+          {tab === 'billing' && <BillingTab />}
           {tab === 'defaults' && <DefaultsTab />}
           {tab === 'connections' && <ConnectionsTab />}
           {tab === 'keys' && <KeysTab />}
@@ -81,6 +83,45 @@ function ProfileTab() {
 
 // ---- defaults ------------------------------------------------------------------------------------------------------
 const PLATFORMS = Object.keys(SOCIAL_ICONS) as SocialPlatform[];
+
+function BillingTab() {
+  const [billing, setBilling] = useState<Schemas['BillingStatus'] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const refresh = useAccount((s) => s.refresh);
+  const { run, view } = useStatus();
+  const load = async () => {
+    setBilling(await unwrap(api.GET('/v1/billing')));
+    await refresh();
+  };
+  useEffect(() => { void run(load); }, []);
+  const redirect = (action: 'checkout' | 'portal') => run(async () => {
+    setBusy(true);
+    try {
+      const result = action === 'checkout' ? await unwrap(api.POST('/v1/billing/checkout')) : await unwrap(api.POST('/v1/billing/portal'));
+      window.location.assign(result.url);
+    } finally { setBusy(false); }
+  });
+  const price = billing?.amount != null ? new Intl.NumberFormat(undefined, { style: 'currency', currency: billing.currency }).format(billing.amount / 100) : null;
+  return <section className="form">
+    <p>Editing, templates and watermark-free exports on your device are free.</p>
+    <p>Creator includes 120 cloud-rendered minutes per calendar month, up to 4K, 15 minutes per job and seven-day downloads. Unused minutes do not roll over.</p>
+    {view}
+    {!billing && <p className="hint">Loading billing…</p>}
+    {billing && !billing.enabled && <p className="hint">Creator subscriptions are not available yet.</p>}
+    {billing?.enabled && <>
+      {billing.sandbox && <p className="warn">Sandbox billing. Use test payment details only. No real charges.</p>}
+      <p>Creator: {price} per month. Automatically renews until cancelled.</p>
+      <p className="hint">Subscription: {billing.status.replaceAll('_', ' ')}.</p>
+      {billing.cancelAtPeriodEnd && billing.periodEnd && <p className="hint">Cancels on {new Date(billing.periodEnd).toLocaleDateString()}. Paid access remains until then.</p>}
+      {!billing.creator && <p className="hint">After Checkout, refresh billing if payment confirmation is still pending.</p>}
+      <div className="buttons">
+        {billing.subscribed ? <button className="primary" disabled={busy} onClick={() => void redirect('portal')}>Manage subscription</button>
+          : <button className="primary" disabled={busy} onClick={() => void redirect('checkout')}>Subscribe to Creator</button>}
+        <button disabled={busy} onClick={() => void run(load)}>Refresh billing</button>
+      </div>
+    </>}
+  </section>;
+}
 
 function DefaultsTab() {
   const saved = useAccount((s) => s.defaults);

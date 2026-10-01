@@ -15,6 +15,7 @@ export function AccountButton({ onSignIn, onAccount, onProjects, onRenders }: {
       <div className="menu-head"><strong>{me.name}</strong><span className="hint">{me.email}</span></div>
       <button onClick={onProjects}>Projects…</button>
       <button onClick={onRenders}>Cloud renders…</button>
+      <button onClick={() => onAccount('billing')}>Billing…</button>
       <button onClick={() => onAccount('defaults')}>Defaults…</button>
       <button onClick={() => onAccount('connections')}>Connected accounts…</button>
       <button onClick={() => onAccount('keys')}>API keys…</button>

@@ -6,6 +6,10 @@ import { db, schema } from './db/index.js';
 import { profile } from './db/schema.js';
 import { env, isProd, providers, trustedOrigins } from './env.js';
 import { sendMail } from './lib/mail.js';
+import { billing } from './lib/billing.js';
+import { APIError } from 'better-auth/api';
+import { eq } from 'drizzle-orm';
+import { billingCustomer } from './db/schema.js';
 
 export const AUTH_BASE_PATH = '/v1/auth';
 
@@ -53,7 +57,13 @@ export const auth = betterAuth({
   },
 
   // People can delete their account; projects, templates, palettes, keys and usage go with it (foreign keys cascade).
-  user: { deleteUser: { enabled: true } },
+  user: { deleteUser: { enabled: true, beforeDelete: async (u) => {
+    const row = await db.query.billingCustomer.findFirst({ where: eq(billingCustomer.userId, u.id) });
+    if (!billing && !row?.customerId) return;
+    if (!billing) throw new APIError('SERVICE_UNAVAILABLE', { message: 'Billing must be available before deleting this account.' });
+    try { await billing.beforeDelete(u.id); }
+    catch (error) { throw new APIError('CONFLICT', { message: error instanceof Error ? error.message : 'Could not check billing.' }); }
+  } } },
 
   account: {
     // Linked accounts ("attach Discord") often use a different email than the sign-in one.
