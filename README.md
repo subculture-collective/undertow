@@ -53,6 +53,8 @@ database whose name starts with `undertow_test`. Set `TEST_DATABASE_URL`, then r
 `npm run test:integration`. Tests migrate and reset that database. Never point
 them at a database containing user data. Gitea CI runs both suites and builds
 against a separate PostgreSQL service.
+With Docker available, `bash scripts/test-with-postgres.sh` creates and removes
+that disposable database for you. Install the root and server dependencies first.
 
 ## Layout
 
