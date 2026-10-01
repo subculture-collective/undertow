@@ -3,3 +3,4 @@ dist
 .DS_Store
 selftest-results
 deploy/undertow.env
+client_secret_*.json

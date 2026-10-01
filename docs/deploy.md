@@ -2,11 +2,12 @@
 
 Undertow ships as one container (`Dockerfile`), plus Postgres. The container applies pending database migrations at start, then serves the API under `/v1`, the reference at `/docs` and the editor itself.
 
-## Private preview placement
+## Preview placement
 
-The private preview runs on Dozor at `/srv/apps/undertow`, listening on
-`10.0.0.57:3040`. Almaz serves `https://undertow.subcult.tv` through Caddy,
-Authelia and Cloudflare. The API, worker and PostgreSQL run as the `undertow`
+The preview runs on Dozor at `/srv/apps/undertow`, listening on
+`10.0.0.57:3040`. Almaz serves `https://undertow.subcult.tv` through Caddy and
+Cloudflare. The editor is publicly accessible and account routes use Undertow's
+own authentication. The API, worker and PostgreSQL run as the `undertow`
 Compose project. The following capacity snapshot informed the original placement
 on September 29. Check current capacity before adding workers.
 
@@ -46,6 +47,10 @@ The `worker` service in `deploy/compose.yml` renders queued jobs. How it works a
 ## Sign-in providers
 
 Leave a provider's variables empty to hide it. The editor only shows providers that `/v1/meta` reports as enabled.
+
+The deployed preview currently enables Google. Discord is disabled. Keep downloaded
+Google `client_secret_*.json` files out of Git and Docker build contexts; copy their
+values into the deployment environment instead.
 
 **Google, which also covers YouTube**
 

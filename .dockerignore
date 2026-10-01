@@ -5,5 +5,6 @@ server/dist
 server/.env
 .env
 deploy/undertow.env*
+client_secret_*.json
 selftest-results
 .git
