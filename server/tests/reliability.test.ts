@@ -17,7 +17,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
   let key: string;
   let billing: InstanceType<typeof import('../src/lib/billing.js').Billing>;
   let stripeServer: ReturnType<typeof createServer>;
-  let stripeState: { status: string | null; cancel: boolean; paused: boolean; price: string; periodEnd: number; checkoutCount: number; open: boolean; fail: boolean };
+  let stripeState: { status: string | null; cancel: boolean; paused: boolean; paid: boolean; price: string; periodEnd: number; checkoutCount: number; open: boolean; fail: boolean };
   const owner = 'test-owner';
   const secret = 'test-worker-secret-at-least-16';
   const oldToken = 'rjt_old';
@@ -42,11 +42,14 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
       if (url.pathname === '/v1/customers') return send({ id: 'cus_test', livemode: false });
       if (url.pathname === '/v1/subscriptions') {
         if (stripeState.fail) { res.statusCode = 500; return send({ error: { type: 'api_error', message: 'temporary failure' } }); }
-        return send({ object: 'list', has_more: false, data: stripeState.status ? [{ id: 'sub_test', object: 'subscription', customer: 'cus_test', livemode: false, status: stripeState.status, latest_invoice: { status: 'paid' }, created: 100, cancel_at_period_end: stripeState.cancel, pause_collection: stripeState.paused ? { behavior: 'void' } : null,
+        return send({ object: 'list', has_more: false, data: stripeState.status ? [{ id: 'sub_test', object: 'subscription', customer: 'cus_test', livemode: false, status: stripeState.status, latest_invoice: { status: stripeState.paid ? 'paid' : 'open' }, created: 100, cancel_at_period_end: stripeState.cancel, pause_collection: stripeState.paused ? { behavior: 'void' } : null,
           items: { data: [{ price: { id: stripeState.price }, quantity: 1, current_period_end: stripeState.periodEnd }] } }] : [] });
       }
       if (url.pathname === '/v1/checkout/sessions' && req.method === 'GET') return send({ object: 'list', has_more: false, data: stripeState.open ? [{ id: 'cs_test', url: 'https://checkout.stripe.com/test', metadata: { app: 'undertow', priceId: 'price_creator' } }] : [] });
       if (url.pathname === '/v1/checkout/sessions' && req.method === 'POST') {
+        let body = '';
+        for await (const chunk of req) body += chunk.toString();
+        expect(new URLSearchParams(body).get('managed_payments[enabled]')).toBe('false');
         stripeState.checkoutCount++; stripeState.open = true;
         return send({ id: 'cs_test', url: 'https://checkout.stripe.com/test' });
       }
@@ -69,7 +72,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     await database.db.insert(schema.profile).values({ userId: owner, plan: 'creator' });
     const auth = (await import('../src/auth.js')).auth;
     key = (await auth.api.createApiKey({ body: { userId: owner, name: 'Tests' } })).key;
-    stripeState = { status: null, cancel: false, paused: false, price: 'price_creator', periodEnd: Math.floor(Date.now() / 1000) + 86400, checkoutCount: 0, open: false, fail: false };
+    stripeState = { status: null, cancel: false, paused: false, paid: true, price: 'price_creator', periodEnd: Math.floor(Date.now() / 1000) + 86400, checkoutCount: 0, open: false, fail: false };
     await database.db.delete(schema.billingEvent);
   });
   afterAll(async () => { if (database) await database.pool.end(); if (stripeServer) await new Promise<void>((resolve) => stripeServer.close(() => resolve())); if (dir) await rm(dir, { recursive: true, force: true }); });
@@ -139,6 +142,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     await expect(billing.checkout(owner)).rejects.toMatchObject({ status: 409 });
     await expect(billing.beforeDelete(owner)).rejects.toMatchObject({ status: 409 });
     stripeState.price = 'price_creator'; stripeState.paused = true;
+    expect((await billing.status(owner)).creator).toBe(false);
+    stripeState.paused = false; stripeState.paid = false;
     expect((await billing.status(owner)).creator).toBe(false);
   });
   it('rejects stale progress, output and failure without deleting the current claim files', async () => {
