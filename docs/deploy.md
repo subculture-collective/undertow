@@ -2,9 +2,13 @@
 
 Undertow ships as one container (`Dockerfile`), plus Postgres. The container applies pending database migrations at start, then serves the API under `/v1`, the reference at `/docs` and the editor itself.
 
-## Proposed placement
+## Private preview placement
 
-This is a proposal, not a deployment. Load observed on 2026-09-29 at 14:10:
+The private preview runs on Dozor at `/srv/apps/undertow`, listening on
+`10.0.0.57:3040`. Almaz serves `https://undertow.subcult.tv` through Caddy,
+Authelia and Cloudflare. The API, worker and PostgreSQL run as the `undertow`
+Compose project. The following capacity snapshot informed the original placement
+on September 29. Check current capacity before adding workers.
 
 | Host | Load average (1 min) | Cores | Memory free | Notes |
 |---|---|---|---|---|
@@ -12,7 +16,7 @@ This is a proposal, not a deployment. Load observed on 2026-09-29 at 14:10:
 | Almaz | 6.93 | 8 threads | 16 GiB | GTX 1080 present, but `nvidia-smi` found no device |
 | Dozor | 0.79 | 4 cores | 9.3 GiB | 60 GiB disk free |
 
-Dozor has the most headroom. Its main job is central monitoring, so `deploy/compose.yml` caps the API at 512 MB and one CPU, and Postgres at 1 GB and one CPU. The API port binds to `127.0.0.1:8787` unless `UNDERTOW_BIND` says otherwise. When the edge runs on another host, bind to the LAN address the edge reaches, such as `10.0.0.57:3040`. The future render worker is a separate container that pulls jobs from Postgres. It can start on Dozor with a two-CPU cap and move to another host later without changing the API.
+Dozor has the most headroom. Its main job is central monitoring, so `deploy/compose.yml` caps the API at 512 MB and one CPU, and Postgres at 1 GB and one CPU. The API port binds to `127.0.0.1:8787` unless `UNDERTOW_BIND` says otherwise. When the edge runs on another host, bind to the LAN address the edge reaches, such as `10.0.0.57:3040`. The render worker is a separate container that pulls jobs from Postgres. It can start on Dozor with a two-CPU cap and move to another host later without changing the API.
 
 After deploying, update the canonical host notes (see the homelab documentation policy) with the placement, the resource limits and a backup and rollback record.
 
@@ -24,7 +28,7 @@ After deploying, update the canonical host notes (see the homelab documentation 
 2. Run `docker compose -f deploy/compose.yml --env-file deploy/undertow.env -p undertow up -d --build`.
 3. Point the edge at the `UNDERTOW_BIND` address, with TLS. With `NODE_ENV=production`, session cookies are `Secure`, so the site must be served over HTTPS.
 4. Check `https://<host>/healthz` and `/docs`.
-5. Back up the `undertow-db` volume, for example a nightly `pg_dump` shipped to the backup target. It holds accounts, projects and API keys. Media isn't stored server-side.
+5. Back up PostgreSQL. It holds accounts, projects, API keys and render jobs. Render media is stored separately and is transient.
 
 ## Behind Cloudflare
 
@@ -80,3 +84,79 @@ EDITOR_URL=http://localhost:5173 npm --prefix server run worker   # cloud render
 ```
 
 Confirmation and reset links appear in the API log.
+
+## Backup and restore on Dozor
+
+`undertow-postgres-backup.timer` runs nightly. Its service calls
+`/usr/local/sbin/backup-undertow-postgres`, writes custom-format dumps under
+`/srv/recovery/backups/undertow-postgres/<UTC timestamp>/`, checks the archive
+with `pg_restore --list`, and records `SHA256SUMS`. The recovery HDD is on the
+same host. An off-host backup remains additional recovery work.
+
+Check the service and the chosen backup on Dozor:
+
+```sh
+systemctl show undertow-postgres-backup.service -p Result -p ExecMainStatus
+sudo ls /srv/recovery/backups/undertow-postgres
+# Substitute the backup directory selected above.
+sudo sh -c 'cd /srv/recovery/backups/undertow-postgres/<timestamp> && sha256sum -c SHA256SUMS'
+```
+
+Restore into a new database first. Keep the live database intact while checking
+the dump. On Dozor, with the timestamp substituted:
+
+```sh
+restore_database="undertow_restore_check_$(date -u +%Y%m%d%H%M%S)"
+docker exec undertow-db-1 psql -U undertow -d postgres -v ON_ERROR_STOP=1 \
+  -c "CREATE DATABASE $restore_database"
+sudo cat /srv/recovery/backups/undertow-postgres/<timestamp>/undertow.dump \
+  | docker exec -i undertow-db-1 pg_restore -U undertow -d "$restore_database" \
+      --no-owner --no-privileges --exit-on-error
+docker exec undertow-db-1 psql -U undertow -d "$restore_database" \
+  -c "SELECT count(*) FROM pg_tables WHERE schemaname = 'public'"
+```
+
+For a recovery cutover, stop the API and worker before changing `DATABASE_URL`
+in the API service's Compose environment to the restored database. Keep the
+existing database and a copy of the previous configuration. Start the API and
+worker together, check health, sign-in, project loading and a short render,
+then confirm the backup script dumps the chosen database. Do not drop the old
+database until the recovery has been accepted. A drill database can be dropped
+after the checks with `DROP DATABASE <drill database name>`.
+
+On September 30, the `20260930T091022Z` dump passed its checksum and restored
+without errors into `undertow_restore_check_20261001`, with 12 public tables.
+The drill database was then dropped. This verified database restoration, not
+an application cutover or recovery of transient render media.
+
+## Deployment and rollback
+
+Before replacing the preview, record the revision in `DEPLOYED_COMMIT`, archive
+its tracked source under `/srv/apps/undertow-releases/`, tag both existing images
+as `undertow-api:rollback-<revision>` and `undertow-worker:rollback-<revision>`,
+and take a fresh database backup. Keep `deploy/undertow.env` out of source
+archives and Docker build contexts.
+
+Build both new images before stopping either running service. Stop the worker,
+then recreate API and worker together using the new images. The worker protocol
+requires matching API and worker versions. Check container health, `/healthz`,
+Prometheus's `probe_success{project="undertow"}`, the public authentication gate,
+and a short render before recording the new deployment revision.
+
+For an image rollback with no database schema change, extract the previous
+source archive into a separate rollback directory, copy the protected env file
+into its `deploy/` directory, and retag the retained images:
+
+```sh
+docker tag undertow-api:rollback-<revision> undertow-api:latest
+docker tag undertow-worker:rollback-<revision> undertow-worker:latest
+docker compose -f <rollback directory>/deploy/compose.yml \
+  --env-file <rollback directory>/deploy/undertow.env -p undertow \
+  up -d --no-build --force-recreate api worker
+```
+
+This retains the `undertow` project's existing database and render volumes.
+Repeat the health and render checks and update `DEPLOYED_COMMIT` to the restored
+revision. If a future release changes the database schema, review compatibility
+before rolling images back. Use the restore procedure when an old image cannot
+read the migrated database.

@@ -10,7 +10,7 @@ COPY index.html render.html vite.config.ts tsconfig.json ./
 COPY public ./public
 COPY src ./src
 # Dev-only pages (selftest, styleguide) are not part of the production build.
-RUN npx vite build
+RUN npm run build
 
 # ---- API ----
 FROM node:24-alpine AS api

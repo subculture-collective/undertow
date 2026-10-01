@@ -10,6 +10,7 @@ import { pool } from './db/index.js';
 import { env, isProd, trustedOrigins } from './env.js';
 import type { AppEnv } from './lib/caller.js';
 import { ApiError, problemBody } from './lib/problem.js';
+import { limitRequestBody } from './lib/body-limits.js';
 import { keys } from './routes/keys.js';
 import { library } from './routes/library.js';
 import { me } from './routes/me.js';
@@ -34,6 +35,7 @@ export function createApp() {
     exposeHeaders: ['RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset', 'Retry-After', 'Upload-Offset'],
     maxAge: 600,
   }));
+  app.use('*', limitRequestBody);
 
   app.on(['GET', 'POST'], `${AUTH_BASE_PATH}/*`, (c) => auth.handler(c.req.raw));
 

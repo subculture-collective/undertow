@@ -11,6 +11,11 @@ import { env } from '../env.js';
 
 const root = resolve(env.RENDER_DIR);
 
+function jobPath(jobId: string) {
+  if (!/^rnd_[\w-]+$/.test(jobId)) throw new Error('Bad render job id.');
+  return join(root, jobId);
+}
+
 /** Keys are "<jobId>/<name>"; anything that could escape the root is rejected. */
 function pathFor(key: string) {
   if (!/^[\w-]+\/[\w.-]+$/.test(key)) throw new Error(`Bad storage key: ${key}`);
@@ -45,10 +50,21 @@ export const storage = {
   /** Size in bytes, or 0 if the file doesn't exist yet. */
   async size(key: string) { return (await stat(pathFor(key)).catch(() => null))?.size ?? 0; },
   read(key: string) { return Readable.toWeb(createReadStream(pathFor(key))) as ReadableStream<Uint8Array>; },
-  async removeJob(jobId: string) { await rm(join(root, jobId), { recursive: true, force: true }); },
+  async removeJob(jobId: string) { await rm(jobPath(jobId), { recursive: true, force: true }); },
+  async jobIds() {
+    const entries = await readdir(root, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return [];
+      throw error;
+    });
+    return entries.filter((e) => e.isDirectory() && /^rnd_[\w-]+$/.test(e.name)).map((e) => e.name);
+  },
   /** Deletes a job's uploaded files (media-*), keeping its output. */
   async removeInputs(jobId: string) {
-    const files = await readdir(join(root, jobId)).catch(() => [] as string[]);
-    await Promise.all(files.filter((f) => f.startsWith('media-')).map((f) => rm(join(root, jobId, f), { force: true })));
+    const path = jobPath(jobId);
+    const files = await readdir(path).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return [];
+      throw error;
+    });
+    await Promise.all(files.filter((f) => f.startsWith('media-')).map((f) => rm(join(path, f), { force: true })));
   },
 };
