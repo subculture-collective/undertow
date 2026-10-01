@@ -18,6 +18,7 @@ import { meta } from './routes/meta.js';
 import { projects } from './routes/projects.js';
 import { renders } from './routes/renders.js';
 import { worker } from './routes/worker.js';
+import { billingRoutes } from './routes/billing.js';
 
 const problem = (status: number, detail?: string, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(problemBody(status, detail)), { status, headers: { 'content-type': 'application/problem+json', ...headers } });
@@ -45,6 +46,7 @@ export function createApp() {
   });
 
   app.route('/v1', meta);
+  app.route('/v1', billingRoutes);
   app.route('/v1', me);
   app.route('/v1', projects);
   app.route('/v1', library);

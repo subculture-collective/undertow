@@ -78,6 +78,30 @@ Password reset and email confirmation need outgoing mail. Set `MAIL_FROM` and on
 
 ## Local development
 
+## Creator billing
+
+Set all four billing variables together: `STRIPE_API_KEY`,
+`STRIPE_CREATOR_PRICE_ID`, `STRIPE_WEBHOOK_SECRET` and
+`STRIPE_PORTAL_CONFIGURATION_ID`. The key, price, portal and webhook must belong
+to the same Stripe account or sandbox. Prefer a restricted key with Customers,
+Checkout Sessions and Customer Portal read/write, plus Prices, Subscriptions
+and Invoices read access. Keep the key and signing secret in the deployment
+environment, never in Git or the browser bundle.
+
+`STRIPE_LIVE_MODE=false` is the default. Account → Billing clearly labels sandbox
+mode. Price and webhook environment checks reject live/test mismatches. Register
+the HTTPS destination `/v1/billing/webhook` with Checkout, subscription and invoice
+events listed in [billing-work.md](billing-work.md). Keep delivery disabled until
+the app is deployed, then enable it and exercise lifecycle events. A successful
+Checkout return does not itself grant access.
+
+Creator access requires an active subscription, a paid latest invoice and an
+unexpired paid period. Cancellation at period end preserves that period. A past
+due or paused subscription loses cloud access. Billing must be cancelled before
+account deletion; open Checkout sessions are expired before deletion begins.
+
+## Local development
+
 ```sh
 docker compose up -d db              # Postgres on 127.0.0.1:5433
 cp server/.env.example server/.env   # then set AUTH_SECRET

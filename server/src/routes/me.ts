@@ -4,7 +4,7 @@ import { auth } from '../auth.js';
 import { account, user } from '../db/auth-schema.js';
 import { db } from '../db/index.js';
 import { profile } from '../db/schema.js';
-import { requireCaller } from '../lib/caller.js';
+import { planOf, requireCaller } from '../lib/caller.js';
 import { fail, problems } from '../lib/problem.js';
 import { iso, json, router, secured } from '../lib/router.js';
 import { Connection, Defaults, Me, SocialItem, UpdateMe } from '../schemas.js';
@@ -15,7 +15,7 @@ me.use('/me/*', requireCaller);
 
 async function loadDefaults(userId: string) {
   const row = await db.query.profile.findFirst({ where: eq(profile.userId, userId) });
-  return { plan: row?.plan ?? 'free', defaults: Defaults.parse(row?.defaults ?? {}) };
+  return { plan: await planOf(userId), defaults: Defaults.parse(row?.defaults ?? {}) };
 }
 
 async function loadConnections(userId: string): Promise<z.infer<typeof Connection>[]> {
