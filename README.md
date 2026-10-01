@@ -139,3 +139,18 @@ The built-in fonts (Inter, Nunito Sans, Jost, Gelasio, Anton and Courier
 Prime) are bundled from [Fontsource](https://fontsource.org) under the
 [SIL Open Font License 1.1](https://openfontlicense.org). Each font's license
 file is in its package under `node_modules/@fontsource*/`.
+
+### Search and sharing
+
+Production HTML includes the canonical Undertow URL, description, Open Graph and
+Twitter card metadata, WebApplication structured data, and an initial description
+that does not require JavaScript. The share image is `public/og-glitch.png`.
+Regenerate it with `npm run og-image` after editing `scripts/og-image.html`.
+
+The public editor is indexable. Account links, API routes, render pages and the
+styleguide return `X-Robots-Tag: noindex, nofollow`. Unknown paths return 404.
+The edge must not add a site-wide `noindex` header.
+
+After deploying, run `python3 scripts/verify-seo.py` to check the live HTML,
+share image, robots.txt, sitemap and page exclusions. Pass a base URL to check
+another deployment. Search engines and social platforms control their own caches.

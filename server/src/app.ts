@@ -27,6 +27,13 @@ export function createApp() {
   const app = new OpenAPIHono<AppEnv>();
 
   app.use('*', secureHeaders({ crossOriginResourcePolicy: false }));
+  app.use('*', async (c, next) => {
+    await next();
+    if (/^\/(v1|internal|docs)(\/|$)/.test(c.req.path)
+      || ['/render.html', '/styleguide.html', '/healthz'].includes(c.req.path)
+      || ['token', 'account', 'verified', 'error', 'checkout'].some((key) => c.req.query(key) !== undefined)
+      || c.res.status === 404) c.header('X-Robots-Tag', 'noindex, nofollow');
+  });
   // Browsers on other trusted origins may call with cookies; API-key clients are not origin-bound.
   app.use('/v1/*', cors({
     origin: (origin) => (trustedOrigins.includes(origin) ? origin : null),
@@ -86,10 +93,11 @@ export function createApp() {
   app.get('/docs', Scalar({ url: '/v1/openapi.json', pageTitle: 'Undertow API' }));
 
   if (env.STATIC_DIR) {
-    // Single-container deployments: serve the built editor, falling back to index.html for client routes.
+    // Account links use query parameters on the editor; unknown paths must remain 404s.
     const index = readFileSync(join(env.STATIC_DIR, 'index.html'), 'utf8');
+    app.get('/index.html', (c) => c.redirect('/', 308));
     app.use('/*', serveStatic({ root: env.STATIC_DIR }));
-    app.get('*', (c) => (/^\/(v1|internal)\//.test(c.req.path) ? c.notFound() : c.html(index)));
+    app.get('/', (c) => c.html(index));
   }
 
   app.notFound(() => problem(404, 'No such endpoint.'));
