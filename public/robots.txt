@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /v1/
+Disallow: /internal/
+Disallow: /docs
+Disallow: /render.html
+Disallow: /styleguide.html
+
+Sitemap: https://undertow.subcult.tv/sitemap.xml

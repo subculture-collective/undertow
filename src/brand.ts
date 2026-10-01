@@ -26,9 +26,9 @@ export const BRAND: Brand = {
   name: 'Undertow',
   tagline: 'Music visualizer videos, made in your browser',
   description:
-    'Build a layered music visualizer with Milkdrop, spectrum, lyrics, video and particles, then export MP4s for landscape, portrait and square. Your media stays on your device and rendering happens on your computer.',
+    'Create music visualizer videos with artwork, waveforms and timed lyrics. Export landscape, portrait and square MP4s free in your browser, with no watermark.',
   /** Public address of the deployed site, e.g. https://example.com. Needed for share-preview images. */
-  siteUrl: `https://${PLACEHOLDER}.example`,
+  siteUrl: 'https://undertow.subcult.tv',
   patreon: `https://www.patreon.com/${PLACEHOLDER}`,
   socials: [
     { platform: 'instagram', label: 'Instagram', url: `https://www.instagram.com/${PLACEHOLDER}` },
