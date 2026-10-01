@@ -10,7 +10,7 @@ import { BRAND, isSet } from './src/brand.ts';
  * need an absolute address and are only added once BRAND.siteUrl is set.
  */
 function brandMeta(): Plugin {
-  const title = `${BRAND.name}: ${BRAND.tagline}`;
+  const title = `${BRAND.name} | Free Music Visualizer Video Editor`;
   const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const meta = (attrs: Record<string, string>): HtmlTagDescriptor => ({ tag: 'meta', attrs, injectTo: 'head' });
   return {
@@ -21,23 +21,38 @@ function brandMeta(): Plugin {
         if (!ctx.path.endsWith('/index.html') && ctx.path !== '/') return html;
         const tags: HtmlTagDescriptor[] = [
           meta({ name: 'description', content: BRAND.description }),
-          meta({ name: 'theme-color', content: '#07060d' }),
+          meta({ name: 'theme-color', content: '#0f0c1c' }),
+          meta({ name: 'robots', content: 'index, follow, max-image-preview:large' }),
           { tag: 'link', attrs: { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }, injectTo: 'head' },
           meta({ property: 'og:type', content: 'website' }),
           meta({ property: 'og:site_name', content: BRAND.name }),
           meta({ property: 'og:title', content: title }),
           meta({ property: 'og:description', content: BRAND.description }),
+          meta({ property: 'og:locale', content: 'en_US' }),
           meta({ name: 'twitter:card', content: 'summary_large_image' }),
+          meta({ name: 'twitter:title', content: title }),
+          meta({ name: 'twitter:description', content: BRAND.description }),
         ];
         if (isSet(BRAND.siteUrl)) {
           const site = BRAND.siteUrl.replace(/\/$/, '');
           tags.push(
             { tag: 'link', attrs: { rel: 'canonical', href: `${site}/` }, injectTo: 'head' },
             meta({ property: 'og:url', content: `${site}/` }),
-            meta({ property: 'og:image', content: `${site}/og.png` }),
+            meta({ property: 'og:image', content: `${site}/og-glitch.png` }),
+            meta({ property: 'og:image:secure_url', content: `${site}/og-glitch.png` }),
+            meta({ property: 'og:image:type', content: 'image/png' }),
             meta({ property: 'og:image:width', content: '1200' }),
             meta({ property: 'og:image:height', content: '630' }),
-            meta({ name: 'twitter:image', content: `${site}/og.png` }),
+            meta({ property: 'og:image:alt', content: 'Undertow music visualizer video editor, with pink, sky blue and lilac spectrum bars.' }),
+            meta({ name: 'twitter:image', content: `${site}/og-glitch.png` }),
+            meta({ name: 'twitter:image:alt', content: 'Undertow: free music visualizer videos, made in your browser.' }),
+            { tag: 'script', attrs: { type: 'application/ld+json' }, injectTo: 'head', children: JSON.stringify({
+              '@context': 'https://schema.org', '@type': 'WebApplication', name: BRAND.name,
+              url: `${site}/`, description: BRAND.description, applicationCategory: 'MultimediaApplication',
+              operatingSystem: 'Web browser', browserRequirements: 'Requires JavaScript and a browser with WebCodecs support for local MP4 export.',
+              isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free editing and local exports.' },
+              image: `${site}/og-glitch.png`, featureList: ['Music visualizers', 'Waveforms and spectrum displays', 'Timed lyrics', 'Layered artwork and video', 'Landscape, portrait and square MP4 export'],
+            }).replace(/</g, '\\u003c') },
           );
         }
         return { html: html.replace(/<title>.*<\/title>/, `<title>${escape(title)}</title>`), tags };
