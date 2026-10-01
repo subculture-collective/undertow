@@ -51,8 +51,8 @@ export class Billing {
     const paid = typeof invoice === 'object' && invoice !== null && invoice.status === 'paid';
     const state = {
       subscriptionId: sub?.id ?? null, status: sub?.status ?? 'none',
-      periodEnd: item ? new Date(item.current_period_end * 1000) : null,
-      cancelAtPeriodEnd: sub?.cancel_at_period_end ?? false,
+      periodEnd: item ? new Date(Math.min(item.current_period_end, sub?.cancel_at ?? Infinity) * 1000) : null,
+      cancelAtPeriodEnd: !!sub && (sub.cancel_at_period_end || sub.cancel_at != null),
       paused: !!sub?.pause_collection || !!sub && (!paid || !item || sub.items.data.length !== 1), updatedAt: new Date(),
     };
     const [updated] = await tx.update(billingCustomer).set(state).where(eq(billingCustomer.userId, row.userId)).returning();
@@ -93,6 +93,7 @@ export class Billing {
       }
       const session = await this.stripe.checkout.sessions.create({
         mode: 'subscription', customer: customerId, client_reference_id: userId,
+        managed_payments: { enabled: false },
         line_items: [{ price: this.config.priceId, quantity: 1 }],
         subscription_data: { metadata: { app: 'undertow', userId }, billing_mode: { type: 'flexible' } },
         metadata: { app: 'undertow', userId, priceId: this.config.priceId },
