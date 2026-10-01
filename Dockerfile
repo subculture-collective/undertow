@@ -6,10 +6,10 @@ FROM node:24-alpine AS web
 WORKDIR /web
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY index.html render.html vite.config.ts tsconfig.json ./
+COPY index.html render.html styleguide.html vite.config.ts tsconfig.json ./
 COPY public ./public
 COPY src ./src
-# Dev-only pages (selftest, styleguide) are not part of the production build.
+# The selftest page stays in development; the styleguide ships with the editor.
 RUN npm run build
 
 # ---- API ----
