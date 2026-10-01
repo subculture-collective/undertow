@@ -6,18 +6,6 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_USER: undertow_test
-          POSTGRES_PASSWORD: test-only-password
-          POSTGRES_DB: undertow_test_ci
-        options: >-
-          --health-cmd "pg_isready -U undertow_test -d undertow_test_ci"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    env:
-      TEST_DATABASE_URL: postgres://undertow_test:test-only-password@postgres:5432/undertow_test_ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,4 +15,4 @@ jobs:
       - run: npm --prefix server ci
       - run: npm run build
       - run: npm --prefix server run build
-      - run: npm test
+      - run: bash scripts/test-with-postgres.sh
