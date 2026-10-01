@@ -8,6 +8,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { and, desc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
+import { user } from '../db/auth-schema.js';
 import { project, renderJob, renderMedia } from '../db/schema.js';
 import { requireCaller } from '../lib/caller.js';
 import { newId } from '../lib/ids.js';
@@ -21,13 +22,20 @@ renders.use('/renders/*', requireCaller); // also matches '/renders'
 
 type Job = typeof renderJob.$inferSelect;
 type Spec = { name: string; data: z.infer<typeof ProjectData>; options: z.infer<typeof RenderOptions> };
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function lockOwn(tx: Transaction, id: string, userId: string) {
+  const [job] = await tx.select().from(renderJob).where(and(eq(renderJob.id, id), eq(renderJob.userId, userId))).for('update');
+  if (!job) fail(404, 'No render with that id in this account.');
+  return job;
+}
 
 /** Jobs that count against the month's minutes: anything not cancelled or failed. */
 const COUNTED = ['awaiting_upload', 'queued', 'running', 'done', 'expired'];
 
-export async function renderSecondsThisMonth(userId: string) {
+export async function renderSecondsThisMonth(userId: string, executor: Pick<typeof db, 'select'> = db) {
   const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
-  const [row] = await db.select({ s: sql<number>`coalesce(sum(${renderJob.durationSeconds}), 0)::int` }).from(renderJob)
+  const [row] = await executor.select({ s: sql<number>`coalesce(sum(${renderJob.durationSeconds}), 0)::int` }).from(renderJob)
     .where(and(eq(renderJob.userId, userId), gte(renderJob.createdAt, monthStart), inArray(renderJob.status, COUNTED)));
   return row.s;
 }
@@ -83,14 +91,6 @@ renders.openapi(createRoute({
   const seconds = Math.ceil(o.end - o.start);
   if (o.shortSide > plan.renderMaxShortSide) fail(403, `Your plan renders up to ${plan.renderMaxShortSide}p.`);
   if (seconds > plan.renderMaxSeconds) fail(403, `Your plan renders up to ${Math.floor(plan.renderMaxSeconds / 60)} minutes per video.`);
-  const used = await renderSecondsThisMonth(userId);
-  if (used + seconds > plan.renderMinutesPerMonth * 60) {
-    fail(403, `This render needs ${seconds} s; ${Math.max(0, plan.renderMinutesPerMonth * 60 - used)} s of this month's ${plan.renderMinutesPerMonth} minutes are left.`);
-  }
-  const [{ active }] = await db.select({ active: sql<number>`count(*)::int` }).from(renderJob)
-    .where(and(eq(renderJob.userId, userId), inArray(renderJob.status, ['awaiting_upload', 'queued', 'running'])));
-  if (active >= 3) fail(429, 'You have 3 renders in progress. Wait for one to finish or cancel it.');
-
   // Only files the layout actually uses are uploaded; every one it uses must be listed.
   const needed = referencedIds(data!);
   const media = body.media.filter((m) => needed.has(m.id));
@@ -102,6 +102,16 @@ renders.openapi(createRoute({
   const id = newId('rnd');
   const spec: Spec = { name, data: data!, options: o };
   const job = await db.transaction(async (tx) => {
+    // Serialize reservations for this account, including across API processes.
+    const [owner] = await tx.select({ id: user.id }).from(user).where(eq(user.id, userId)).for('update');
+    if (!owner) fail(401);
+    const used = await renderSecondsThisMonth(userId, tx);
+    if (used + seconds > plan.renderMinutesPerMonth * 60) {
+      fail(403, `This render needs ${seconds} s; ${Math.max(0, plan.renderMinutesPerMonth * 60 - used)} s of this month's ${plan.renderMinutesPerMonth} minutes are left.`);
+    }
+    const [{ active }] = await tx.select({ active: sql<number>`count(*)::int` }).from(renderJob)
+      .where(and(eq(renderJob.userId, userId), inArray(renderJob.status, ['awaiting_upload', 'queued', 'running'])));
+    if (active >= 3) fail(429, 'You have 3 renders in progress. Wait for one to finish or cancel it.');
     const [j] = await tx.insert(renderJob).values({ id, userId, apiKeyId, spec, durationSeconds: seconds }).returning();
     if (media.length) await tx.insert(renderMedia).values(media.map((m) => ({ jobId: id, mediaId: m.id, kind: m.kind, name: m.name, mime: m.mime, size: m.size })));
     return j;
@@ -122,28 +132,32 @@ renders.openapi(createRoute({
 }), async (c) => {
   const { id, mediaId } = c.req.valid('param');
   const { offset } = c.req.valid('query');
-  const job = await own(id, c.get('caller').userId);
-  if (job.status !== 'awaiting_upload') fail(409, `The job is ${job.status}; files can only be uploaded before it starts.`);
-  const m = await db.query.renderMedia.findFirst({ where: and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId)) });
-  if (!m) fail(404, 'This job has no file with that id.');
   if (!c.req.raw.body) fail(422, 'Send the file as the request body.');
-  const key = `${id}/media-${mediaId}`;
-  if (offset > 0) {
-    const have = await storage.size(key);
-    if (have !== offset) fail(409, `This file has ${have} bytes so far; send the next chunk with offset=${have}.`, { 'Upload-Offset': String(have) });
-  }
-  const where = and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId));
-  // Not startable while the file is being written; set again below from the size actually stored.
-  await db.update(renderMedia).set({ uploaded: false }).where(where);
-  let bytes: number;
-  try {
-    bytes = await storage.put(key, c.req.raw.body, m.size - offset, offset > 0);
-  } catch {
-    await db.update(renderMedia).set({ uploaded: (await storage.size(key)) === m.size }).where(where);
-    fail(413, `That would make the file larger than the ${m.size} bytes declared.`);
-  }
-  const total = offset + bytes;
-  await db.update(renderMedia).set({ uploaded: total === m.size }).where(where);
+  const body = c.req.raw.body;
+  const total = await db.transaction(async (tx) => {
+    const job = await lockOwn(tx, id, c.get('caller').userId);
+    if (job.status !== 'awaiting_upload') fail(409, `The job is ${job.status}; files can only be uploaded before it starts.`);
+    const [m] = await tx.select().from(renderMedia).where(and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId)));
+    if (!m) fail(404, 'This job has no file with that id.');
+    const key = `${id}/media-${mediaId}`;
+    if (offset > 0) {
+      const have = await storage.size(key);
+      if (have !== offset) fail(409, `This file has ${have} bytes so far; send the next chunk with offset=${have}.`, { 'Upload-Offset': String(have) });
+    }
+    const where = and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId));
+    let bytes: number;
+    try {
+      bytes = await storage.put(key, body, m.size - offset, offset > 0);
+    } catch {
+      // Offset zero can replace a previously complete upload. Commit the real disk state even on failure.
+      await tx.update(renderMedia).set({ uploaded: (await storage.size(key)) === m.size }).where(where);
+      return null;
+    }
+    const total = offset + bytes;
+    await tx.update(renderMedia).set({ uploaded: total === m.size }).where(where);
+    return total;
+  });
+  if (total === null) fail(413, 'The upload failed or exceeded its declared size.');
   return c.body(null, 204, { 'Upload-Offset': String(total) });
 });
 
@@ -154,12 +168,14 @@ renders.openapi(createRoute({
   responses: { 200: json(RenderJob, 'The queued job'), ...problems(401, 404, 409, 429) },
 }), async (c) => {
   const { id } = c.req.valid('param');
-  const job = await own(id, c.get('caller').userId);
-  if (job.status !== 'awaiting_upload') fail(409, `The job is already ${job.status}.`);
-  const pending = await db.select({ name: renderMedia.name }).from(renderMedia).where(and(eq(renderMedia.jobId, id), eq(renderMedia.uploaded, false)));
-  if (pending.length) fail(409, `Still waiting for: ${pending.map((p) => p.name).join(', ')}.`);
-  const [queued] = await db.update(renderJob).set({ status: 'queued' }).where(and(eq(renderJob.id, id), eq(renderJob.status, 'awaiting_upload'))).returning();
-  if (!queued) fail(409, 'The job changed while starting. Fetch it again.');
+  const queued = await db.transaction(async (tx) => {
+    const job = await lockOwn(tx, id, c.get('caller').userId);
+    if (job.status !== 'awaiting_upload') fail(409, `The job is already ${job.status}.`);
+    const pending = await tx.select({ name: renderMedia.name }).from(renderMedia).where(and(eq(renderMedia.jobId, id), eq(renderMedia.uploaded, false)));
+    if (pending.length) fail(409, `Still waiting for: ${pending.map((p) => p.name).join(', ')}.`);
+    const [queued] = await tx.update(renderJob).set({ status: 'queued' }).where(eq(renderJob.id, id)).returning();
+    return queued;
+  });
   return c.json(await view(queued), 200);
 });
 
@@ -198,13 +214,14 @@ renders.openapi(createRoute({
   request: { params: IdParam },
   responses: { 204: { description: 'Cancelled or deleted' }, ...problems(401, 404, 429) },
 }), async (c) => {
-  const job = await own(c.req.valid('param').id, c.get('caller').userId);
-  if (['awaiting_upload', 'queued', 'running'].includes(job.status)) {
-    await db.update(renderJob).set({ status: 'cancelled', finishedAt: new Date() }).where(eq(renderJob.id, job.id));
-  } else {
-    await db.update(renderJob).set({ status: job.status === 'done' ? 'expired' : job.status, outputBytes: null }).where(eq(renderJob.id, job.id));
-  }
-  await storage.removeJob(job.id);
+  await db.transaction(async (tx) => {
+    const job = await lockOwn(tx, c.req.valid('param').id, c.get('caller').userId);
+    if (['awaiting_upload', 'queued', 'running'].includes(job.status)) {
+      await tx.update(renderJob).set({ status: 'cancelled', finishedAt: new Date(), tokenHash: null }).where(eq(renderJob.id, job.id));
+    } else {
+      await tx.update(renderJob).set({ status: job.status === 'done' ? 'expired' : job.status, outputBytes: null }).where(eq(renderJob.id, job.id));
+    }
+    await storage.removeJob(job.id);
+  });
   return c.body(null, 204);
 });
-
