@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable Postgres', () => {
   let app: ReturnType<typeof import('../src/app.js').createApp>;
@@ -31,7 +31,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     app = (await import('../src/app.js')).createApp();
   });
   beforeEach(async () => {
-    await database.db.execute(sql`truncate "user" cascade`);
+    await database.db.delete(database.schema.user);
     await rm(dir, { recursive: true, force: true });
     await database.db.insert(database.schema.user).values({ id: owner, name: 'Test', email: 'test@example.invalid', emailVerified: true });
     await database.db.insert(schema.profile).values({ userId: owner, plan: 'creator' });
@@ -40,7 +40,11 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
   });
   afterAll(async () => { if (database) await database.pool.end(); if (dir) await rm(dir, { recursive: true, force: true }); });
   // Caller usage inserts run after the response. Let those finish before resetting fixtures.
-  afterEach(async () => { await expect.poll(() => database.pool.idleCount === database.pool.totalCount).toBe(true); });
+  afterEach(async () => {
+    // Drizzle starts a fire-and-forget insert on a later microtask. Yield before checking the pool.
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    await expect.poll(() => database.pool.waitingCount === 0 && database.pool.idleCount === database.pool.totalCount).toBe(true);
+  });
 
   async function job(status = 'running', token = newToken) {
     await database.db.insert(schema.renderJob).values({ id: 'rnd_test', userId: owner, status, spec, durationSeconds: 10, tokenHash: createHash('sha256').update(token).digest('hex'), heartbeatAt: new Date() });
