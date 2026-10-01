@@ -10,7 +10,7 @@ minutes per calendar month, up to 4K, 15 minutes per job and seven-day downloads
 - [x] Add authenticated Checkout and portal routes, subscription reconciliation and signed webhooks.
 - [x] Add billing UI and subscription-aware account deletion.
 - [x] Verify entitlement boundaries, concurrent checkout, webhook replay and subscription changes.
-- [ ] Deploy and exercise sandbox payment, renewal, failed payment and cancellation.
+- [x] Deploy and exercise sandbox payment, renewal, failed payment and cancellation.
 
 Live payments and tax collection are not enabled. Sandbox deployment requires a
 restricted API key and the endpoint signing secret in the deployment environment.
@@ -29,6 +29,6 @@ restricted API key and the endpoint signing secret in the deployment environment
 The signing secret is stored outside the repository. The supplied test key was
 verified against the selected sandbox and its Creator price. Both builds and all
 29 tests passed, including real PostgreSQL and a simulated Stripe HTTP service.
-Public sandbox checkout, renewals and cancellation remain to be verified. The
+Public hosted Checkout and customer portal completed successfully. Stripe test clocks verified paid renewal, failed renewal, recovery and end-of-period cancellation through real HTTPS webhook delivery. The paid account rendered and downloaded a two-second MP4. Standard Checkout is selected explicitly because this sandbox defaults to Managed Payments. Scheduled cancellation dates from the flexible billing portal are honored. The
 earlier subculture-collective sandbox objects are retained, with webhook delivery
 disabled. No live-mode settings were changed.

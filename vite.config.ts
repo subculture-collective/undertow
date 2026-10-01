@@ -99,8 +99,8 @@ export default defineConfig({
     },
   },
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  // The render page is part of production builds: the cloud render worker loads it.
-  build: { rollupOptions: { input: { main: 'index.html', render: 'render.html' } } },
+  // Include the worker page and the design system catalogue in deployments.
+  build: { rollupOptions: { input: { main: 'index.html', render: 'render.html', styleguide: 'styleguide.html' } } },
   optimizeDeps: {
     // UMD/CommonJS bundles that need pre-bundling for ESM import.
     include: [

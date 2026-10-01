@@ -143,9 +143,8 @@ export default function App() {
     else if (q.has('verified')) setToast('Email confirmed. You’re signed in.');
     else if (q.get('account') === 'connections') setDialog({ kind: 'account', tab: 'connections' });
     else if (q.get('account') === 'billing') setDialog({ kind: 'account', tab: 'billing' });
-    // Keep only the theme choice in the address bar.
-    const theme = q.get('theme');
-    if ([...q.keys()].some((k) => k !== 'theme')) history.replaceState(null, '', theme ? `/?theme=${theme}` : '/');
+    // Remove consumed account parameters and obsolete theme links.
+    if (q.size) history.replaceState(null, '', '/');
   }, []);
   // Cloud renders: resume following active ones after sign-in, and say when one finishes.
   useEffect(() => {

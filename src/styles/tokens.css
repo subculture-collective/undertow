@@ -1,116 +1,65 @@
-/*
- * Design tokens. Every colour, size and duration in the UI comes from here.
- * This file is the Neon theme, the default. themes.css holds the alternatives.
- * Components use the semantic tokens (--surface-*, --text-*, --accent), never the raw palette,
- * so a theme only has to override semantic names. See docs/design-system.md.
- */
+/* Glitch design tokens. Components use semantic names from this file. */
 :root {
-  /* ---- palette ------------------------------------------------------------ */
-  --ink-950: #07060d;
-  --ink-900: #0d0b17;
-  --ink-850: #120f20;
-  --ink-800: #17132a;
-  --ink-700: #211b3a;
-  --ink-600: #2c2450;
-  --ink-500: #40366e;
-  --ink-400: #6e6890;
-  --ink-300: #a59fc2;
-  --ink-100: #f2eeff;
-
-  --magenta-500: #ff2bd6;
-  --magenta-300: #ff7de6;
-  --violet-500: #8b5cff;
-  --violet-300: #b69cff;
-  --cyan-500: #00e5ff;
-  --cyan-300: #7ff2ff;
-  --amber-500: #ffb020;
-  --red-500: #ff4d6d;
-  --green-500: #3ddc97;
-
   color-scheme: dark;
-}
-
-/*
- * Semantic and derived tokens. Declared on [data-theme] as well as :root so that
- * values built from other tokens (color-mix, gradients, glows) are recomputed
- * inside any element carrying a theme. Themes in themes.css override these names.
- */
-:root, [data-theme] {
-  /* ---- semantic colour ------------------------------------------------------ */
-  --surface-app: var(--ink-950);      /* page background, behind the stage */
-  --surface-panel: var(--ink-900);    /* side panels, header, transport */
-  --surface-raised: var(--ink-800);   /* buttons, cards, menus */
-  --surface-hover: var(--ink-700);
-  --surface-sunken: var(--ink-950);   /* inputs, lists inside panels */
-  --surface-overlay: rgb(4 3 10 / 0.72);
-
-  --line: var(--ink-700);
-  --line-strong: var(--ink-600);
-
-  --text: var(--ink-100);
-  --text-dim: var(--ink-300);
-  --text-faint: var(--ink-400);
-  --text-on-accent: var(--ink-950);   /* dark text on bright fills: white on magenta fails WCAG AA */
-
-  --accent: var(--magenta-500);
-  --accent-hi: var(--magenta-300);
-  --accent-2: var(--cyan-500);
-  --accent-3: var(--violet-500);
-  --accent-soft: rgb(255 43 214 / 0.14);
-  --focus: var(--cyan-500);
-
-  --warn: var(--amber-500);
-  --danger: var(--red-500);
-  --success: var(--green-500);
-
-  --patreon: #ff424d;
-
-  --icon: var(--violet-300);                                  /* layer-type glyphs */
-  --line-hover: var(--ink-500);                               /* field border on hover */
-  --track: var(--ink-600);                                    /* slider track */
-  --accent-line: color-mix(in srgb, var(--accent) 50%, transparent);   /* selected-item border */
-  --stage-halo: color-mix(in srgb, var(--accent-3) 8%, transparent);   /* light behind the stage */
-
-  /* Brand mark and wordmark. The mark's three gradient stops come from here too. */
-  --brand-1: var(--magenta-500);
-  --brand-2: var(--violet-500);
-  --brand-3: var(--cyan-500);
-  --font-brand: var(--font-display);
-  --brand-weight: 700;
+  --surface-app: #0f0c1c;
+  --surface-panel: #171429;
+  --surface-raised: #211d3b;
+  --surface-hover: #2b2650;
+  --surface-sunken: #0f0c1c;
+  --surface-overlay: rgb(10 8 20 / 0.75);
+  --line: #2c2749;
+  --line-strong: #4b4378;
+  --text: #f7f3ff;
+  --text-dim: #bdb4dc;
+  --text-faint: #7d74a3;
+  --text-on-accent: var(--ink);
+  --accent: var(--pink);
+  --accent-hi: #ffc6ee;
+  --accent-2: var(--sky);
+  --accent-3: var(--lilac);
+  --accent-soft: rgb(255 159 224 / 0.14);
+  --focus: var(--sky);
+  --warn: var(--butter);
+  --danger: var(--coral);
+  --success: var(--mint);
+  --patreon: var(--coral);
+  --icon: var(--lilac);
+  --line-hover: var(--lilac);
+  --track: #4b4378;
+  --accent-line: color-mix(in srgb, var(--accent) 50%, transparent);
+  --stage-halo: transparent;
+  --brand-1: var(--text);
+  --brand-2: var(--text);
+  --brand-3: var(--text);
+  --font-brand: var(--font-mono);
+  --brand-weight: 800;
   --brand-case: uppercase;
-  --brand-tracking: 0.14em;
-
-  --gradient-brand: linear-gradient(90deg, var(--brand-1), var(--brand-2) 55%, var(--brand-3));
-
-  /* ---- glow and elevation ----------------------------------------------------- */
-  --glow-accent: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 18px color-mix(in srgb, var(--accent) 35%, transparent);
-  --glow-focus: 0 0 0 1px color-mix(in srgb, var(--focus) 55%, transparent), 0 0 18px color-mix(in srgb, var(--focus) 30%, transparent);
-  --glow-text: 0 0 12px color-mix(in srgb, var(--accent) 55%, transparent);
-  --glow-thumb: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
-  --glow-select: 0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
-  --glow-mark: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 45%, transparent));
-  --glow-patreon: 0 0 0 1px var(--patreon), 0 0 16px color-mix(in srgb, var(--patreon) 45%, transparent);
-  --modal-ring: 0 0 0 1px color-mix(in srgb, var(--accent-3) 15%, transparent);
-  --shadow-panel: 0 12px 40px rgb(0 0 0 / 0.55);
-  --shadow-stage: 0 0 0 1px var(--line), 0 18px 60px rgb(0 0 0 / 0.7), 0 0 80px color-mix(in srgb, var(--accent-3) 12%, transparent);
-
-  /* ---- type ------------------------------------------------------------------- */
+  --brand-tracking: 0.04em;
+  --gradient-brand: linear-gradient(var(--accent), var(--accent));
+  --glow-accent: var(--hard-lift);
+  --glow-focus: 3px 3px 0 var(--focus);
+  --glow-text: -1.5px 0 0 var(--chroma-a), 1.5px 0 0 var(--chroma-b);
+  --glow-thumb: 2px 2px 0 var(--shadow-c);
+  --glow-select: -3px 0 0 var(--chroma-a), 3px 0 0 var(--chroma-b);
+  --glow-mark: none;
+  --glow-patreon: var(--hard-lift);
+  --modal-ring: 8px 8px 0 var(--lilac), -3px 0 0 var(--chroma-a);
+  --shadow-panel: 6px 6px 0 var(--shadow-c);
+  --shadow-stage: 0 0 0 2px var(--ink),
+    -6px 0 0 color-mix(in srgb, var(--chroma-a) 70%, transparent),
+    6px 0 0 color-mix(in srgb, var(--chroma-b) 70%, transparent);
   --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Futura', 'Avenir Next', 'Century Gothic', system-ui, sans-serif;
+  --font-display: var(--font-mono);
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-
   --text-2xs: 11px;
   --text-xs: 12px;
-  --text-sm: 13px;   /* body */
+  --text-sm: 13px;
   --text-md: 15px;
   --text-lg: 18px;
   --text-xl: 24px;
   --text-2xl: 32px;
-
   --leading: 1.4;
   --tracking-caps: 0.12em;
-
-  /* ---- space, size, radius ------------------------------------------------------ */
   --space-1: 2px;
   --space-2: 4px;
   --space-3: 6px;
@@ -120,26 +69,35 @@
   --space-7: 20px;
   --space-8: 24px;
   --space-9: 32px;
-
-  --border-w: 1px;       /* controls, menus and dialogs; Glitch thickens it */
+  --border-w: 2px;
   --control-h: 30px;
   --control-h-sm: 24px;
-
-  --radius-sm: 4px;
-  --radius-md: 7px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-pill: 999px;
-
-  /* ---- motion ------------------------------------------------------------------ */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-pill: 0px;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur-fast: 120ms;
   --dur-med: 200ms;
-
-  /* ---- layers ------------------------------------------------------------------ */
   --z-menu: 20;
   --z-modal: 50;
   --z-drop: 60;
+  --pink: #ff9fe0;
+  --sky: #9cecff;
+  --lilac: #c7b3ff;
+  --butter: #ffe28a;
+  --mint: #a8f0c6;
+  --coral: #ffa38f;
+  --ink: #110e1f;
+  --chroma-a: var(--sky);
+  --chroma-b: var(--pink);
+  --shadow-c: #6a5fb0;
+  --hard: 3px 3px 0 var(--shadow-c);
+  --hard-lift: 5px 5px 0 var(--shadow-c);
+  --mark-ab-a: var(--chroma-a);
+  --mark-ab-b: var(--chroma-b);
+  --mark-radius: 0px;
 }
 
 @media (prefers-reduced-motion: reduce) {
