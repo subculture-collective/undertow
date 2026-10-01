@@ -1,0 +1,112 @@
+/* Glitch component treatments and motion. */
+/* Buttons: outlined, hard shadow, lift on hover, press into the shadow on click. */
+:root button, :root .btn, :root .menu summary {
+  font-weight: 600; box-shadow: var(--hard);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast);
+}
+:root button:hover:not(:disabled), :root .btn:hover, :root .menu summary:hover {
+  transform: translate(-1px, -1px); box-shadow: var(--hard-lift); border-color: var(--lilac);
+}
+:root button:active:not(:disabled), :root .btn:active {
+  transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow-c);
+}
+:root button:disabled { box-shadow: none; }
+/* Buttons that shouldn't look like slabs: list controls, tabs, menu items, the brand. */
+:root :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu) button,
+:root button.ghost, :root .brand-button,
+:root :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu) button:hover:not(:disabled),
+:root button.ghost:hover:not(:disabled), :root .brand-button:hover:not(:disabled) {
+  box-shadow: none; transform: none;
+}
+
+:root button.primary, :root .btn.primary {
+  font-family: var(--font-mono); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  border-color: var(--ink); color: var(--ink); box-shadow: 3px 3px 0 var(--sky);
+}
+/* The primary button keeps a glitch on hover: it jitters and its shadow splits sky and lilac. */
+:root button.primary:hover:not(:disabled), :root .btn.primary:hover {
+  border-color: var(--ink); animation: vz-jitter 240ms steps(2) infinite, vz-chroma 480ms steps(3) infinite;
+}
+:root .btn.patreon, :root button.patreon { border-color: var(--ink); }
+:root .transport .play { border-radius: 0; border-color: var(--ink); }
+
+/* Fields: thick outline, a sky shadow on focus. */
+:root :is(input:not([type]), input[type=number], input[type=email], input[type=password], select, textarea):focus { border-color: var(--focus); box-shadow: var(--glow-focus); }
+:root input[type=range]::-webkit-slider-runnable-track { height: 6px; border: 2px solid var(--ink); background: var(--line-strong); }
+:root input[type=range]::-webkit-slider-thumb {
+  width: 14px; height: 18px; margin-top: -8px; border-radius: 0; background: var(--accent); border: 2px solid var(--ink);
+}
+:root input[type=range]::-moz-range-thumb { border-radius: 0; background: var(--accent); border: 2px solid var(--ink); }
+:root input[type=checkbox] { accent-color: var(--pink); }
+
+/* Sticker headings: small pastel labels on panel and section titles. */
+:root h4 {
+  justify-self: start; width: fit-content; padding: 1px var(--space-3); font-family: var(--font-mono); font-weight: 700;
+  color: var(--ink); background: var(--lilac); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow-c);
+}
+:root .eyebrow { font-family: var(--font-mono); }
+:root h3 { font-family: var(--font-mono); text-transform: uppercase; text-shadow: var(--glow-text); }
+
+/* Selection states: solid pastel fills with ink text and an outline. */
+:root .layer-list li { border-width: 2px; }
+:root .layer-list li.selected {
+  background: var(--pink); color: var(--ink); border: 2px solid var(--ink); box-shadow: var(--glow-select);
+}
+:root .layer-list li.selected :is(.ico, .eye, .actions button) { color: var(--ink); }
+:root .tabs button.active { background: var(--sky); color: var(--ink); box-shadow: none; outline: 2px solid var(--ink); outline-offset: -2px; }
+:root .preset-list div.active { background: var(--pink); color: var(--ink); }
+:root .template-card:hover:not(:disabled) { box-shadow: var(--hard-lift), -3px 0 0 var(--chroma-a); }
+:root .support-nudge { border: 2px solid var(--ink); box-shadow: var(--hard); background: rgb(255 159 224 / 0.12); }
+:root .progress .bar { height: 12px; border: 2px solid var(--ink); }
+:root .progress .bar div { box-shadow: none; }
+:root .modal { border-color: var(--ink); }
+:root header::after { height: 2px; opacity: 1; background: var(--ink); }
+
+/* Wordmark: a static colour split, plus sky and pink slices that glitch briefly every few seconds.
+   The slices are copies of the text from data-text (set by BrandLogo). */
+:root .brand-name { position: relative; text-shadow: -1px 0 0 var(--chroma-a), 1px 0 0 var(--chroma-b); }
+:root .brand-name[data-text]::before,
+:root .brand-name[data-text]::after {
+  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; opacity: 0; text-shadow: none;
+}
+:root .brand-name[data-text]::before { color: var(--chroma-a); animation: vz-slice 4.5s steps(1) infinite; }
+:root .brand-name[data-text]::after { color: var(--chroma-b); animation: vz-slice 4.5s steps(1) 0.12s infinite reverse; }
+:root .brand-button:hover .brand-name[data-text]::before,
+:root .brand-button:hover .brand-name[data-text]::after { animation-duration: 0.6s; }
+
+/* Dialogs glitch in when they open. */
+:root .modal { animation: vz-glitch-in 280ms steps(4) both; }
+
+@keyframes vz-slice {
+  0%, 86% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  88% { opacity: 0.9; clip-path: inset(12% 0 64% 0); transform: translate(-3px, 0); }
+  90% { clip-path: inset(58% 0 18% 0); transform: translate(3px, 0); }
+  92% { clip-path: inset(34% 0 44% 0); transform: translate(-2px, 1px); }
+  94% { clip-path: inset(78% 0 4% 0); transform: translate(2px, 0); }
+  96% { clip-path: inset(0 0 82% 0); transform: translate(-1px, 0); }
+  98%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+}
+@keyframes vz-jitter {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, -1px); }
+  100% { transform: translate(1px, 1px); }
+}
+@keyframes vz-chroma {
+  0% { box-shadow: -3px 0 0 var(--chroma-a), 4px 3px 0 var(--accent-3); }
+  33% { box-shadow: 4px 1px 0 var(--chroma-a), -4px -1px 0 var(--accent-3); }
+  66% { box-shadow: -2px -1px 0 var(--chroma-a), 5px 3px 0 var(--accent-3); }
+}
+/* Transform and opacity only: clip-path would also clip hit-testing, so an early click could land on the backdrop. */
+@keyframes vz-glitch-in {
+  0% { opacity: 0; transform: translateX(-10px) skewX(8deg); }
+  25% { opacity: 1; transform: translateX(8px) skewX(-6deg); }
+  50% { transform: translateX(-4px) skewX(3deg); }
+  75% { transform: translateX(2px); }
+  100% { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root *, :root *::before, :root *::after { animation: none !important; }
+}

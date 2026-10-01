@@ -1,5 +1,5 @@
 /**
- * Living style guide (dev server only): /styleguide.html. It renders the real
+ * Living style guide: /styleguide.html. It renders the real
  * components and reads token values from the loaded CSS, so it can't drift
  * from what the editor uses. See docs/design-system.md.
  */
@@ -13,9 +13,8 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/app.css';
-import './styles/themes.css';
+import './styles/glitch.css';
 import './styles/styleguide.css';
-import { THEMES, applyTheme, initTheme, type ThemeId } from './theme';
 
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -45,55 +44,10 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return <section className="sg-section"><h4>{title}</h4>{children}</section>;
 }
 
-/** A small editor mock-up in one theme, for side-by-side comparison. */
-function ThemeCard({ id, name, summary, active, onPick }: { id: ThemeId; name: string; summary: string; active: boolean; onPick: () => void }) {
-  const [v, setV] = useState(0.55);
-  return (
-    <div className={`sg-card ${active ? 'active' : ''}`} data-theme={id}>
-      <div className="sg-mock">
-        <div className="sg-mock-head">
-          <BrandLogo size={20} />
-          <div className="tabs"><button className="active">16:9</button><button>9:16</button><button>1:1</button></div>
-          <span className="spacer" />
-          <button className="primary sm">Export</button>
-        </div>
-        <div className="sg-mock-body">
-          <ul className="layer-list">
-            <li><button className="eye">●</button><span className="ico">✺</span><span className="name">Milkdrop</span></li>
-            <li className="selected"><button className="eye">●</button><span className="ico">▮</span><span className="name">Spectrum</span></li>
-            <li><button className="eye">●</button><span className="ico">T</span><span className="name">Title</span></li>
-          </ul>
-          <div className="sg-mock-stage">
-            {Array.from({ length: 18 }, (_, i) => <i key={i} style={{ height: `${20 + 70 * Math.abs(Math.sin(i * 0.9 + 1))}%` }} />)}
-          </div>
-          <div className="sg-mock-inspector">
-            <h4>Content</h4>
-            <Slider label="Glow" value={v} min={0} max={1} onChange={setV} />
-            <Select label="Style" value="bars" options={[['bars', 'Bars']] as const} onChange={() => {}} />
-            <button className="sm">Duplicate</button>
-          </div>
-        </div>
-      </div>
-      <div className="sg-card-foot">
-        <div>
-          <strong>{name}</strong>
-          <p className="hint">{summary}</p>
-        </div>
-        <div className="buttons">
-          <button className={active ? 'primary sm' : 'sm'} onClick={onPick}>{active ? 'Shown below' : 'Show below'}</button>
-          <a className="btn sm" href={`/?theme=${id}`}>Open editor</a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function StyleGuide() {
-  const [theme, setTheme] = useState<ThemeId>(initTheme);
-  const pick = (id: ThemeId) => { applyTheme(id); setTheme(id); };
   const [slider, setSlider] = useState(0.6);
   const [on, setOn] = useState(true);
-  const [color, setColor] = useState('#ff2bd6');
+  const [color, setColor] = useState('#ff9fe0');
   const [sel, setSel] = useState<'bars' | 'mirror'>('bars');
   const [tab, setTab] = useState(0);
   return (
@@ -103,12 +57,7 @@ function StyleGuide() {
         <span className="hint">Design system · {BRAND.tagline}</span>
       </div>
 
-      <Section title="Compare design systems">
-        <div className="sg-compare">
-          {THEMES.map((t) => <ThemeCard key={t.id} {...t} active={t.id === theme} onPick={() => pick(t.id)} />)}
-        </div>
-        <p className="hint">"Open editor" loads the real editor in that system and remembers the choice in this browser. ?theme=neon switches back.</p>
-      </Section>
+      <a className="btn" href="/">Open editor</a>
 
       <Section title="Brand">
         <div className="sg-row">
@@ -122,7 +71,7 @@ function StyleGuide() {
         <p className="hint">Links outlined in dashed amber are still placeholders in src/brand.ts. Production builds leave them out.</p>
       </Section>
 
-      <Section title={`Colour tokens · ${THEMES.find((t) => t.id === theme)!.name}`}><Swatches names={SEMANTIC} /></Section>
+      <Section title="Colour tokens · Glitch"><Swatches names={SEMANTIC} /></Section>
 
       <Section title="Type">
         {TYPE.map((t) => (
@@ -171,7 +120,7 @@ function StyleGuide() {
           <Select label="Select" value={sel} options={[['bars', 'Bars'], ['mirror', 'Mirrored bars']] as const} onChange={setSel} />
           <NumberInput label="Number" value={42} onChange={() => {}} />
           <textarea rows={2} defaultValue="Textarea" />
-          <p className="hint">Hint text uses --text-dim (7.7:1 on panels).</p>
+          <p className="hint">Hint text uses --text-dim.</p>
           <p className="warn">Warning text</p>
         </div>
       </Section>
