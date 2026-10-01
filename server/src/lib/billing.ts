@@ -93,6 +93,7 @@ export class Billing {
       }
       const session = await this.stripe.checkout.sessions.create({
         mode: 'subscription', customer: customerId, client_reference_id: userId,
+        managed_payments: { enabled: false },
         line_items: [{ price: this.config.priceId, quantity: 1 }],
         subscription_data: { metadata: { app: 'undertow', userId }, billing_mode: { type: 'flexible' } },
         metadata: { app: 'undertow', userId, priceId: this.config.priceId },

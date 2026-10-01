@@ -76,8 +76,6 @@ Password reset and email confirmation need outgoing mail. Set `MAIL_FROM` and on
 
 `BREVO_API_KEY` wins if both are set. With neither, emails are printed to the API log. That's fine for development, but in production nobody could confirm their address.
 
-## Local development
-
 ## Creator billing
 
 Set all four billing variables together: `STRIPE_API_KEY`,
