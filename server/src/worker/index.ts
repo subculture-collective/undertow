@@ -54,10 +54,14 @@ function run(cmd: string, args: string[]): Promise<string> {
   });
 }
 
-async function progress(id: string, pct: number) {
-  const res = await fetch(`${API}/internal/worker/jobs/${id}/progress`, {
-    method: 'POST', headers: { ...workerAuth, 'content-type': 'application/json' }, body: JSON.stringify({ progress: pct }),
+const claimAuth = (job: Claim) => ({ ...workerAuth, 'x-job-token': job.token });
+
+async function progress(job: Claim, pct: number) {
+  const res = await fetch(`${API}/internal/worker/jobs/${job.id}/progress`, {
+    method: 'POST', headers: { ...claimAuth(job), 'content-type': 'application/json' }, body: JSON.stringify({ progress: pct }),
   });
+  if (res.status === 409) throw new Cancelled('The worker claim expired.');
+  if (!res.ok) throw new Error(`Progress failed: HTTP ${res.status}`);
   const body = await res.json().catch(() => ({ continue: false })) as { continue: boolean };
   if (!body.continue) throw new Cancelled('The job was cancelled.');
 }
@@ -90,7 +94,7 @@ async function render(job: Claim, dir: string): Promise<string> {
       const s = await page.evaluate(() => (globalThis as unknown as { __render?: { frame: number; frames: number; done: boolean; error: string | null } }).__render);
       if (s?.error) throw new Error(`Render page: ${s.error}`);
       // Frames are 0-90%; muxing and upload make up the rest.
-      await progress(job.id, s?.frames ? (s.frame / s.frames) * 90 : 0);
+      await progress(job, s?.frames ? (s.frame / s.frames) * 90 : 0);
       if (s?.done) break;
       if (Date.now() > deadline) throw new Error(`Render took longer than ${env.RENDER_TIMEOUT_MINUTES} minutes.`);
       await sleep(2000);
@@ -131,7 +135,7 @@ async function mux(job: Claim, video: string, dir: string): Promise<string> {
 async function upload(job: Claim, file: string) {
   const res = await fetch(`${API}/internal/worker/jobs/${job.id}/output`, {
     method: 'PUT',
-    headers: { ...workerAuth, 'content-type': 'video/mp4', 'content-length': String((await stat(file)).size) },
+    headers: { ...claimAuth(job), 'content-type': 'video/mp4', 'content-length': String((await stat(file)).size) },
     body: createReadStream(file) as unknown as ReadableStream,
     duplex: 'half',
   } as RequestInit);
@@ -144,9 +148,9 @@ async function processJob(job: Claim) {
   try {
     log(job.id, `rendering "${job.spec.name}"`);
     const video = await render(job, dir);
-    await progress(job.id, 93);
+    await progress(job, 93);
     const out = await mux(job, video, dir);
-    await progress(job.id, 97);
+    await progress(job, 97);
     await upload(job, out);
     log(job.id, `done in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   } catch (e) {
@@ -154,7 +158,7 @@ async function processJob(job: Claim) {
     log(job.id, cancelled ? 'cancelled' : `failed: ${(e as Error).message}`);
     if (!cancelled) {
       await fetch(`${API}/internal/worker/jobs/${job.id}/fail`, {
-        method: 'POST', headers: { ...workerAuth, 'content-type': 'application/json' },
+        method: 'POST', headers: { ...claimAuth(job), 'content-type': 'application/json' },
         body: JSON.stringify({ error: (e as Error).message.slice(0, 500) }),
       }).catch(() => {});
     }

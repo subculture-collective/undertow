@@ -1,8 +1,9 @@
 # Undertow
 
 A layered music-visualizer video editor. Audio analysis, rendering and MP4
-encoding happen in the browser, on the visitor's machine, and media files never
-leave the device. Optional accounts store project layouts and defaults through
+encoding happen in the browser, on the visitor's machine. Local exports keep
+media on the device. Cloud exports upload the files needed by the render,
+then delete the inputs when the job ends. Optional accounts store project layouts and defaults through
 the Undertow API (`server/`), which is also usable by other apps with API keys.
 
 ## Features
@@ -41,10 +42,19 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
 npm install
 npm run dev        # editor on http://localhost:5173 (works without the API)
 npm run build      # static site in dist/
+npm test           # autosave regressions; API regressions also run when TEST_DATABASE_URL is set
 ```
 
 For accounts and the API, see [docs/deploy.md](docs/deploy.md#local-development).
 The API is documented in [docs/api.md](docs/api.md) and at `/docs` on a running server.
+
+API regression tests require `npm --prefix server ci` and a disposable PostgreSQL
+database whose name starts with `undertow_test`. Set `TEST_DATABASE_URL`, then run
+`npm run test:integration`. Tests migrate and reset that database. Never point
+them at a database containing user data. Gitea CI runs both suites and builds
+against a separate PostgreSQL service.
+With Docker available, `bash scripts/test-with-postgres.sh` creates and removes
+that disposable database for you. Install the root and server dependencies first.
 
 ## Layout
 

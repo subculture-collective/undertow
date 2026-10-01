@@ -10,7 +10,7 @@ Cloud rendering produces the same MP4 as "Export" in the editor, but on a server
 4. A worker claims it. The claim is atomic (`FOR UPDATE SKIP LOCKED`), so several workers can run at once. The claim issues a token scoped to that one job.
 5. The worker opens `render.html?job=…&token=…` in headless Google Chrome. The page downloads the layout and files with the token, then renders with the editor's own `exportVideo`, video only. The worker receives the MP4 as a download.
 6. The worker muxes the original song into the video as AAC with ffmpeg. If Chrome produced anything other than H.264, ffmpeg re-encodes it to H.264. The worker then uploads the result.
-7. The job becomes `done`. Its uploaded files are deleted, and the video is kept for `RENDER_OUTPUT_DAYS` (default 7), then deleted by the API's hourly cleanup.
+7. The job becomes `done`. Its uploaded files are deleted, and the video is kept for `RENDER_OUTPUT_DAYS` (default 7), then deleted by the API's hourly cleanup. Cleanup retries failed deletions and removes terminal-job files and orphan directories, including files left after account deletion.
 
 Using the editor's export code means cloud and local renders look the same: layer drawing, particles, Milkdrop, fonts and video backgrounds. There's no second renderer to keep in sync.
 
@@ -27,6 +27,17 @@ Plans are defined in `server/src/lib/plans.ts`. Until billing exists, set a plan
 ```sql
 update profile set plan = 'creator' where user_id = (select id from "user" where email = 'someone@example.com');
 ```
+
+Creation locks the account row and checks monthly minutes and the active-job
+limit in the insertion transaction. Concurrent requests share that reservation.
+All worker progress, output and failure requests include the `x-job-token`
+issued by the current claim, alongside the worker secret. An expired claim
+returns 409 and cannot modify or delete the replacement worker's files.
+Output uploads are limited to 2,147,483,647 bytes, matching the database field.
+Control requests accept at most 2 MiB and thumbnails at most 256 KiB.
+Render media uploads stream to disk under the declared per-file size limit.
+
+Roll out API and worker images together when changing the claim protocol.
 
 ## Failure handling
 

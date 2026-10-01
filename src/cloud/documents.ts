@@ -72,8 +72,19 @@ const thumbDue = (ref: DocRef) => lastThumb.key !== `${ref.source}:${ref.id}` ||
 // ---- saving -------------------------------------------------------------------------------------------------
 let loading = false;
 let timer = 0;
+let documentGeneration = 0;
+let saveChain = Promise.resolve();
 
-async function saveNow() {
+function saveNow() {
+  const generation = documentGeneration;
+  const save = saveChain.then(() => {
+    if (generation === documentGeneration) return saveSnapshot(generation);
+  });
+  saveChain = save.catch(() => {});
+  return save;
+}
+
+async function saveSnapshot(generation: number) {
   const { project, assets } = useStore.getState();
   const doc = useDoc.getState();
   if (doc.status === 'conflict') return;
@@ -90,23 +101,26 @@ async function saveNow() {
     if (ref.source === 'local') {
       const id = ref.id || localId();
       const prev = ref.id ? await tx<LocalRecord | undefined>('projects', 'readonly', (s) => s.get(id)) : undefined;
-      const thumbnail = thumbDue({ ...ref, id }) ? await captureThumbnail() : null;
+      const thumbnail = generation === documentGeneration && thumbDue({ ...ref, id }) ? await captureThumbnail() : null;
       const rec: LocalRecord = {
         id, name: nameOf(project), data: project, media, updatedAt: new Date().toISOString(),
         thumbnail: thumbnail ?? prev?.thumbnail,
       };
       await tx('projects', 'readwrite', (s) => s.put(rec, id));
+      if (generation !== documentGeneration) return;
       if (thumbnail) lastThumb = { key: `local:${id}`, at: Date.now() };
-      useDoc.setState({ ref: { source: 'local', id }, media, status: 'saved' });
+      useDoc.setState({ ref: { source: 'local', id }, media, status: useStore.getState().project === project ? 'saved' : 'idle' });
       return;
     }
     const saved = ref.id
       ? await unwrap(api.PATCH('/v1/projects/{id}', { params: { path: { id: ref.id } }, body: { name: nameOf(project), data: project as never, media, baseRevision: ref.revision } }))
       : await unwrap(api.POST('/v1/projects', { body: { name: nameOf(project), data: project as never, media } }));
+    if (generation !== documentGeneration) return;
     const next = { source: 'cloud' as const, id: saved.id, revision: saved.revision };
-    useDoc.setState({ ref: next, media, status: 'saved' });
+    useDoc.setState({ ref: next, media, status: useStore.getState().project === project ? 'saved' : 'idle' });
     if (thumbDue(next)) void uploadThumbnail(saved.id);
   } catch (e) {
+    if (generation !== documentGeneration) return;
     const p = e instanceof ApiProblem ? e : null;
     if (p?.status === 409) useDoc.setState({ status: 'conflict', message: p.detail ?? 'This project was changed somewhere else.' });
     else if (p?.status === 0) useDoc.setState({ status: 'offline', message: 'Offline. Your changes are kept in this browser and will save when you reconnect.' });
@@ -142,6 +156,7 @@ useAccount.subscribe((s, prev) => {
 
 // ---- opening ----------------------------------------------------------------------------------------------------
 function show(project: Project, ref: DocRef, media: MediaRef[]) {
+  documentGeneration++;
   const { project: relinked, missing } = autoRelink(project, media, useStore.getState().assets);
   loading = true;
   useStore.getState().openProject(relinked);
@@ -165,6 +180,7 @@ export async function openDoc(source: Source, id: string) {
 
 /** Starts a new project (from a template) and saves it: to the account when signed in. */
 export function newDoc(project: Project) {
+  documentGeneration++;
   clearTimeout(timer);
   loading = true;
   useStore.getState().openProject(project);
@@ -186,6 +202,7 @@ export async function resolveConflict(choice: 'reload' | 'copy') {
   useStore.getState().change((p) => ({ ...p, name: `${nameOf(p)} (my copy)` }));
   loading = false;
   // An empty id makes the next save create a new project instead of overwriting.
+  documentGeneration++;
   useDoc.setState({ ref: { source: ref.source, id: '' }, status: 'idle', message: '' });
   await saveNow();
 }
@@ -228,7 +245,11 @@ export async function deleteDoc(item: Pick<LibraryItem, 'source' | 'id'>) {
   if (item.source === 'local') await tx('projects', 'readwrite', (s) => s.delete(item.id));
   else await unwrap(api.DELETE('/v1/projects/{id}', { params: { path: { id: item.id } } }));
   const ref = useDoc.getState().ref;
-  if (ref?.source === item.source && ref.id === item.id) useDoc.setState({ ref: null, status: 'idle' });
+  if (ref?.source === item.source && ref.id === item.id) {
+    documentGeneration++;
+    clearTimeout(timer);
+    useDoc.setState({ ref: null, status: 'idle' });
+  }
 }
 
 export async function renameDoc(item: Pick<LibraryItem, 'source' | 'id'>, name: string) {
@@ -266,5 +287,8 @@ export async function moveToAccount(id: string) {
   }
   await tx('projects', 'readwrite', (s) => s.delete(id));
   const ref = useDoc.getState().ref;
-  if (ref?.source === 'local' && ref.id === id) useDoc.setState({ ref: { source: 'cloud', id: created.id, revision: created.revision }, status: 'saved' });
+  if (ref?.source === 'local' && ref.id === id) {
+    documentGeneration++;
+    useDoc.setState({ ref: { source: 'cloud', id: created.id, revision: created.revision }, status: 'saved' });
+  }
 }
