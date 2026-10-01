@@ -14,7 +14,7 @@ interface Result { aspect: AspectId; url: string; size: number; silent: boolean 
 
 type Where = 'local' | 'cloud';
 
-export function ExportDialog({ onClose, onSignIn }: { onClose: () => void; onSignIn: () => void }) {
+export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => void; onSignIn: () => void; onBilling: () => void }) {
   const project = useStore((s) => s.project);
   const assets = useStore((s) => s.assets);
   const current = useStore((s) => s.aspect);
@@ -107,7 +107,10 @@ export function ExportDialog({ onClose, onSignIn }: { onClose: () => void; onSig
           </div>
         )}
         {where === 'cloud' && signedIn && usage && !cloudAllowed && (
-          <p className="warn">Cloud rendering isn't included in the {usage.plan} plan. Rendering on this computer is always available.</p>
+          <div className="support-nudge">
+            <p>Cloud rendering requires Creator. Rendering on this computer is always free.</p>
+            <button className="sm primary" onClick={onBilling}>View Creator plan</button>
+          </div>
         )}
         {where === 'cloud' && cloudAllowed && limits && (
           <p className="hint">

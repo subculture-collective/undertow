@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { createMiddleware } from 'hono/factory';
 import { auth } from '../auth.js';
 import { db } from '../db/index.js';
-import { profile, usageEvent } from '../db/schema.js';
+import { billingCustomer, profile, usageEvent } from '../db/schema.js';
+import { creatorAccess } from './billing-policy.js';
 import { planFor, type Plan } from './plans.js';
 import { fail } from './problem.js';
 import { take } from './rate-limit.js';
@@ -23,8 +24,10 @@ function keyFrom(headers: Headers): string | null {
   return bearer ?? headers.get('x-api-key');
 }
 
-async function planOf(userId: string) {
+export async function planOf(userId: string) {
   const row = await db.query.profile.findFirst({ where: eq(profile.userId, userId), columns: { plan: true } });
+  const subscription = await db.query.billingCustomer.findFirst({ where: eq(billingCustomer.userId, userId) });
+  if (subscription?.customerId) return creatorAccess(subscription) ? 'creator' : 'free';
   return row?.plan ?? 'free';
 }
 

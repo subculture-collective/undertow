@@ -142,6 +142,7 @@ export default function App() {
     else if (error) setToast(AUTH_ERRORS[error] ?? `Sign-in didn't complete (${error.toLowerCase().replace(/_/g, ' ')}).`);
     else if (q.has('verified')) setToast('Email confirmed. You’re signed in.');
     else if (q.get('account') === 'connections') setDialog({ kind: 'account', tab: 'connections' });
+    else if (q.get('account') === 'billing') setDialog({ kind: 'account', tab: 'billing' });
     // Keep only the theme choice in the address bar.
     const theme = q.get('theme');
     if ([...q.keys()].some((k) => k !== 'theme')) history.replaceState(null, '', theme ? `/?theme=${theme}` : '/');
@@ -261,7 +262,7 @@ export default function App() {
         <Transport />
       </main>
       <Inspector />
-      {dialog?.kind === 'export' && <ExportDialog onClose={close} onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} />}
+      {dialog?.kind === 'export' && <ExportDialog onClose={close} onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} onBilling={() => setDialog({ kind: 'account', tab: 'billing' })} />}
       {dialog?.kind === 'renders' && <RendersDialog onClose={close} />}
       {dialog?.kind === 'gallery' && <TemplateGallery onClose={close} />}
       {dialog?.kind === 'about' && <AboutDialog onClose={close} />}

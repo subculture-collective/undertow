@@ -3,6 +3,8 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { createServer } from 'node:http';
+import Stripe from 'stripe';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { eq } from 'drizzle-orm';
 
@@ -13,6 +15,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
   let storage: typeof import('../src/lib/storage.js').storage;
   let dir: string;
   let key: string;
+  let billing: InstanceType<typeof import('../src/lib/billing.js').Billing>;
+  let stripeServer: ReturnType<typeof createServer>;
+  let stripeState: { status: string | null; cancel: boolean; paused: boolean; price: string; periodEnd: number; checkoutCount: number; open: boolean; fail: boolean };
   const owner = 'test-owner';
   const secret = 'test-worker-secret-at-least-16';
   const oldToken = 'rjt_old';
@@ -29,6 +34,33 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     storage = (await import('../src/lib/storage.js')).storage;
     await migrate(database.db, { migrationsFolder: new URL('../drizzle', import.meta.url).pathname });
     app = (await import('../src/app.js')).createApp();
+    stripeServer = createServer(async (req, res) => {
+      res.setHeader('content-type', 'application/json');
+      const url = new URL(req.url!, 'http://localhost');
+      const send = (body: unknown) => res.end(JSON.stringify(body));
+      if (url.pathname === '/v1/prices/price_creator') return send({ id: 'price_creator', active: true, livemode: false, type: 'recurring', recurring: { interval: 'month', interval_count: 1 }, unit_amount: 1200, currency: 'usd' });
+      if (url.pathname === '/v1/customers') return send({ id: 'cus_test', livemode: false });
+      if (url.pathname === '/v1/subscriptions') {
+        if (stripeState.fail) { res.statusCode = 500; return send({ error: { type: 'api_error', message: 'temporary failure' } }); }
+        return send({ object: 'list', has_more: false, data: stripeState.status ? [{ id: 'sub_test', object: 'subscription', customer: 'cus_test', livemode: false, status: stripeState.status, latest_invoice: { status: 'paid' }, created: 100, cancel_at_period_end: stripeState.cancel, pause_collection: stripeState.paused ? { behavior: 'void' } : null,
+          items: { data: [{ price: { id: stripeState.price }, quantity: 1, current_period_end: stripeState.periodEnd }] } }] : [] });
+      }
+      if (url.pathname === '/v1/checkout/sessions' && req.method === 'GET') return send({ object: 'list', has_more: false, data: stripeState.open ? [{ id: 'cs_test', url: 'https://checkout.stripe.com/test', metadata: { app: 'undertow', priceId: 'price_creator' } }] : [] });
+      if (url.pathname === '/v1/checkout/sessions' && req.method === 'POST') {
+        stripeState.checkoutCount++; stripeState.open = true;
+        return send({ id: 'cs_test', url: 'https://checkout.stripe.com/test' });
+      }
+      if (url.pathname === '/v1/checkout/sessions/cs_test/expire') { stripeState.open = false; return send({ id: 'cs_test', status: 'expired' }); }
+      if (url.pathname === '/v1/billing_portal/sessions') return send({ url: 'https://billing.stripe.com/test' });
+      res.statusCode = 404; send({ error: { message: 'unknown test endpoint' } });
+    });
+    await new Promise<void>((resolve) => stripeServer.listen(0, '127.0.0.1', resolve));
+    const address = stripeServer.address();
+    if (!address || typeof address === 'string') throw new Error('Stripe test server unavailable');
+    const { Billing } = await import('../src/lib/billing.js');
+    billing = new Billing(new Stripe('sk_test_simulated', { host: '127.0.0.1', port: address.port, protocol: 'http', maxNetworkRetries: 0 }), {
+      priceId: 'price_creator', portalConfigurationId: 'bpc_test', webhookSecret: 'whsec_test', liveMode: false, publicUrl: 'http://localhost:8787',
+    });
   });
   beforeEach(async () => {
     await database.db.delete(database.schema.user);
@@ -37,8 +69,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     await database.db.insert(schema.profile).values({ userId: owner, plan: 'creator' });
     const auth = (await import('../src/auth.js')).auth;
     key = (await auth.api.createApiKey({ body: { userId: owner, name: 'Tests' } })).key;
+    stripeState = { status: null, cancel: false, paused: false, price: 'price_creator', periodEnd: Math.floor(Date.now() / 1000) + 86400, checkoutCount: 0, open: false, fail: false };
+    await database.db.delete(schema.billingEvent);
   });
-  afterAll(async () => { if (database) await database.pool.end(); if (dir) await rm(dir, { recursive: true, force: true }); });
+  afterAll(async () => { if (database) await database.pool.end(); if (stripeServer) await new Promise<void>((resolve) => stripeServer.close(() => resolve())); if (dir) await rm(dir, { recursive: true, force: true }); });
   // Caller usage inserts run after the response. Let those finish before resetting fixtures.
   afterEach(async () => {
     // Drizzle starts a fire-and-forget insert on a later microtask. Yield before checking the pool.
@@ -50,6 +84,63 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     await database.db.insert(schema.renderJob).values({ id: 'rnd_test', userId: owner, status, spec, durationSeconds: 10, tokenHash: createHash('sha256').update(token).digest('hex'), heartbeatAt: new Date() });
     await storage.put('rnd_test/output.mp4', new Blob(['keep this output']).stream(), 100);
   }
+  async function webhook(id: string, overrides = {}) {
+    const body = JSON.stringify({ id, object: 'event', type: 'customer.subscription.updated', livemode: false,
+      data: { object: { object: 'subscription', customer: 'cus_test', status: 'active' } }, ...overrides });
+    return billing.webhook(body, billing.stripe.webhooks.generateTestHeaderString({ payload: body, secret: 'whsec_test' }));
+  }
+  it('creates one Checkout session across concurrent requests and never grants access from a redirect', async () => {
+    const urls = await Promise.all(Array.from({ length: 6 }, () => billing.checkout(owner)));
+    expect(new Set(urls).size).toBe(1);
+    expect(stripeState.checkoutCount).toBe(1);
+    expect((await billing.status(owner)).creator).toBe(false);
+    expect((await database.db.query.profile.findFirst())?.plan).toBe('free');
+    expect((await app.request('/v1/billing/checkout', { method: 'POST', headers: { origin: 'http://localhost:8787', authorization: `Bearer ${key}` } })).status).toBe(401);
+    expect((await app.request('/v1/billing/checkout', { method: 'POST', headers: { origin: 'https://evil.invalid' } })).status).toBe(403);
+  });
+  it('reconciles current Stripe state rather than stale events and skips webhook replays', async () => {
+    await billing.checkout(owner);
+    stripeState.status = 'active'; stripeState.cancel = true;
+    await webhook('evt_first');
+    expect((await billing.status(owner)).creator).toBe(true);
+    await expect(billing.checkout(owner)).rejects.toMatchObject({ status: 409 });
+    stripeState.status = 'past_due';
+    await webhook('evt_second');
+    expect((await database.db.query.profile.findFirst())?.plan).toBe('free');
+    await webhook('evt_first');
+    expect((await database.db.query.profile.findFirst())?.plan).toBe('free');
+    expect((await database.db.select().from(schema.billingEvent)).length).toBe(2);
+    stripeState.status = 'active'; stripeState.periodEnd = Math.floor(Date.now() / 1000) - 1;
+    expect((await billing.status(owner)).creator).toBe(false);
+  });
+  it('rejects tampered and live webhooks and retries failed synchronization without consuming the event', async () => {
+    await billing.checkout(owner);
+    await expect(billing.webhook('{}', 'invalid')).rejects.toMatchObject({ status: 400 });
+    await expect(webhook('evt_live', { livemode: true })).rejects.toMatchObject({ status: 400 });
+    stripeState.fail = true;
+    await expect(webhook('evt_retry')).rejects.toThrow();
+    expect((await database.db.select().from(schema.billingEvent)).length).toBe(0);
+    stripeState.fail = false; stripeState.status = 'active';
+    await webhook('evt_retry');
+    expect((await database.db.query.profile.findFirst())?.plan).toBe('creator');
+  });
+  it('blocks deletion while billing can renew and expires open checkout before deletion', async () => {
+    await billing.checkout(owner);
+    stripeState.status = 'active'; stripeState.cancel = true;
+    await expect(billing.beforeDelete(owner)).rejects.toMatchObject({ status: 409 });
+    stripeState.status = 'canceled';
+    await billing.beforeDelete(owner);
+    expect(stripeState.open).toBe(false);
+    await expect(billing.checkout(owner)).rejects.toMatchObject({ status: 409 });
+  });
+  it('does not grant Creator for a different price or paused collection', async () => {
+    await billing.checkout(owner); stripeState.status = 'active'; stripeState.price = 'price_other';
+    expect((await billing.status(owner)).creator).toBe(false);
+    await expect(billing.checkout(owner)).rejects.toMatchObject({ status: 409 });
+    await expect(billing.beforeDelete(owner)).rejects.toMatchObject({ status: 409 });
+    stripeState.price = 'price_creator'; stripeState.paused = true;
+    expect((await billing.status(owner)).creator).toBe(false);
+  });
   it('rejects stale progress, output and failure without deleting the current claim files', async () => {
     await job();
     for (const action of ['progress', 'output', 'fail']) {

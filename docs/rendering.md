@@ -19,14 +19,15 @@ The built-in fonts (Inter, Nunito Sans, Jost, Gelasio, Anton and Courier Prime) 
 ## Minutes and billing
 
 - A job counts against the month's minutes from the moment it's created. Cancelled and failed jobs are refunded.
-- A finished render adds a usage event whose `units` are seconds of video. That's the number to bill from.
+- A finished render adds a usage event whose `units` are seconds of video, counted against the included quota. There are no automatic overage charges.
 - `GET /v1/usage` reports `renderSecondsThisMonth` and the plan's render limits.
 
-Plans are defined in `server/src/lib/plans.ts`. Until billing exists, set a plan by hand:
-
-```sql
-update profile set plan = 'creator' where user_id = (select id from "user" where email = 'someone@example.com');
-```
+Plans are defined in `server/src/lib/plans.ts`. Creator is a monthly Stripe
+subscription, managed through Account → Billing. Access requires an active
+subscription with a paid invoice and an unexpired period. Past-due, unpaid,
+paused and cancelled subscriptions cannot create new cloud renders. Cancellation
+at period end retains access through that paid period. Quotas reset on the first
+day of each UTC calendar month, independently of the subscription renewal date.
 
 Creation locks the account row and checks monthly minutes and the active-job
 limit in the insertion transaction. Concurrent requests share that reservation.

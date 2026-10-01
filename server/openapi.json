@@ -339,6 +339,92 @@
           "renderOutputDays"
         ]
       },
+      "BillingStatus": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "sandbox": {
+            "type": "boolean"
+          },
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "subscribed": {
+            "type": "boolean"
+          },
+          "creator": {
+            "type": "boolean"
+          },
+          "periodEnd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "sandbox",
+          "amount",
+          "currency",
+          "status",
+          "subscribed",
+          "creator",
+          "periodEnd",
+          "cancelAtPeriodEnd"
+        ]
+      },
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "/problems/not-found"
+          },
+          "title": {
+            "type": "string",
+            "example": "Not found"
+          },
+          "status": {
+            "type": "integer",
+            "example": 404
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status"
+        ]
+      },
+      "BillingRedirect": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
       "Me": {
         "type": "object",
         "properties": {
@@ -516,31 +602,6 @@
           "provider",
           "accountId",
           "linkedAt"
-        ]
-      },
-      "Problem": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "example": "/problems/not-found"
-          },
-          "title": {
-            "type": "string",
-            "example": "Not found"
-          },
-          "status": {
-            "type": "integer",
-            "example": 404
-          },
-          "detail": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "title",
-          "status"
         ]
       },
       "UpdateMe": {
@@ -1355,6 +1416,181 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Current subscription and Creator price",
+        "responses": {
+          "200": {
+            "description": "Billing status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/checkout": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Start or resume Creator Checkout",
+        "responses": {
+          "200": {
+            "description": "Stripe redirect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingRedirect"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/portal": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "Manage billing in the customer portal",
+        "responses": {
+          "200": {
+            "description": "Stripe redirect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingRedirect"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sign in or send an API key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
