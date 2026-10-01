@@ -23,7 +23,23 @@ const bearer = (h: string | undefined) => h?.match(/^Bearer\s+(\S+)$/i)?.[1] ?? 
 /** A worker that hasn't reported for this long is presumed dead; its job is retried once, then failed. */
 const STALE_MS = 3 * 60_000;
 const MAX_ATTEMPTS = 2;
-const MAX_OUTPUT_BYTES = 4 * 1024 ** 3;
+// output_bytes is a PostgreSQL integer. Reject before writing past its representable size.
+const MAX_OUTPUT_BYTES = 2 ** 31 - 1;
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Mutations must belong to the current claim, not just to a trusted worker. */
+function claimHash(c: { req: { header(name: string): string | undefined } }) {
+  requireWorker(c.req.header('authorization'));
+  const token = c.req.header('x-job-token');
+  if (!token) fail(409, 'A current job token is required.');
+  return sha(token);
+}
+
+async function lockClaim(tx: Transaction, id: string, tokenHash: string) {
+  const [job] = await tx.select().from(renderJob).where(eq(renderJob.id, id)).for('update');
+  if (!job || job.status !== 'running' || job.tokenHash !== tokenHash) fail(409, 'This worker claim is no longer current.');
+  return job;
+}
 
 function requireWorker(auth: string | undefined) {
   const given = Buffer.from(bearer(auth));
@@ -41,6 +57,7 @@ async function jobForToken(id: string, auth: string | undefined) {
 
 async function requeueStale() {
   const cutoff = new Date(Date.now() - STALE_MS);
+  // Terminal files are removed by hourly reconciliation, which also retries failed deletions.
   await db.update(renderJob).set({ status: 'failed', error: 'The render stopped responding.', finishedAt: new Date(), tokenHash: null })
     .where(and(eq(renderJob.status, 'running'), lt(renderJob.heartbeatAt, cutoff), sql`${renderJob.attempts} >= ${MAX_ATTEMPTS}`));
   await db.update(renderJob).set({ status: 'queued', tokenHash: null, workerId: null })
@@ -66,42 +83,47 @@ worker.post('/worker/claim', async (c) => {
 });
 
 worker.post('/worker/jobs/:id/progress', async (c) => {
-  requireWorker(c.req.header('authorization'));
+  const tokenHash = claimHash(c);
   const { progress } = await c.req.json<{ progress: number }>();
   const [row] = await db.update(renderJob)
     .set({ progress: Math.max(0, Math.min(100, Math.round(progress))), heartbeatAt: new Date() })
-    .where(and(eq(renderJob.id, c.req.param('id')), eq(renderJob.status, 'running'))).returning({ id: renderJob.id });
-  // If the job is no longer running (cancelled by its owner, or failed as stale), the worker should stop.
-  return c.json({ continue: !!row });
+    .where(and(eq(renderJob.id, c.req.param('id')), eq(renderJob.status, 'running'), eq(renderJob.tokenHash, tokenHash))).returning({ id: renderJob.id });
+  if (!row) fail(409, 'This worker claim is no longer current.');
+  return c.json({ continue: true });
 });
 
 worker.put('/worker/jobs/:id/output', async (c) => {
-  requireWorker(c.req.header('authorization'));
+  const tokenHash = claimHash(c);
   const id = c.req.param('id');
-  const job = await db.query.renderJob.findFirst({ where: eq(renderJob.id, id) });
-  if (!job || job.status !== 'running') fail(409, 'The job is not running.');
   if (!c.req.raw.body) fail(422, 'Send the MP4 as the body.');
-  const bytes = await storage.put(`${id}/output.mp4`, c.req.raw.body, MAX_OUTPUT_BYTES);
-  const [done] = await db.update(renderJob).set({
-    status: 'done', progress: 100, outputBytes: bytes, finishedAt: new Date(), tokenHash: null,
-    expiresAt: new Date(Date.now() + env.RENDER_OUTPUT_DAYS * 86_400_000),
-  }).where(and(eq(renderJob.id, id), eq(renderJob.status, 'running'))).returning();
-  if (!done) { await storage.removeJob(id); fail(409, 'The job was cancelled while uploading.'); }
-  await storage.removeInputs(id);
-  // Billable units for rendering are seconds of video.
-  await db.insert(usageEvent).values({
-    userId: done.userId, apiKeyId: done.apiKeyId, method: 'RENDER', route: '/v1/renders', status: 200, units: done.durationSeconds,
+  const body = c.req.raw.body;
+  // Keep cancellation, retry and another output writer out until the file and state agree.
+  await db.transaction(async (tx) => {
+    const job = await lockClaim(tx, id, tokenHash);
+    const bytes = await storage.put(`${id}/output.mp4`, body, MAX_OUTPUT_BYTES);
+    await tx.update(renderJob).set({
+      status: 'done', progress: 100, outputBytes: bytes, finishedAt: new Date(), tokenHash: null,
+      expiresAt: new Date(Date.now() + env.RENDER_OUTPUT_DAYS * 86_400_000),
+    }).where(eq(renderJob.id, id));
+    // Billable units and the completed status commit together.
+    await tx.insert(usageEvent).values({
+      userId: job.userId, apiKeyId: job.apiKeyId, method: 'RENDER', route: '/v1/renders', status: 200, units: job.durationSeconds,
+    });
   });
+  await storage.removeInputs(id).catch((error) => console.error('Render input cleanup failed', { jobId: id, error }));
   return c.body(null, 204);
 });
 
 worker.post('/worker/jobs/:id/fail', async (c) => {
-  requireWorker(c.req.header('authorization'));
+  const tokenHash = claimHash(c);
   const { error } = await c.req.json<{ error: string }>();
   const id = c.req.param('id');
-  await db.update(renderJob).set({ status: 'failed', error: String(error).slice(0, 500), finishedAt: new Date(), tokenHash: null })
-    .where(and(eq(renderJob.id, id), eq(renderJob.status, 'running')));
-  await storage.removeJob(id);
+  await db.transaction(async (tx) => {
+    await lockClaim(tx, id, tokenHash);
+    await tx.update(renderJob).set({ status: 'failed', error: String(error).slice(0, 500), finishedAt: new Date(), tokenHash: null })
+      .where(eq(renderJob.id, id));
+    await storage.removeJob(id);
+  });
   return c.body(null, 204);
 });
 

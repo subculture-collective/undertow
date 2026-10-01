@@ -4,5 +4,6 @@ dist
 server/dist
 server/.env
 .env
+deploy/undertow.env*
 selftest-results
 .git
