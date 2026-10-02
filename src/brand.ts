@@ -15,11 +15,15 @@ export interface BrandLink { platform: SocialPlatform; label: string; url: strin
 
 export interface Brand {
   name: string;
+  /** Who runs the site, and where people can write to them. Both appear on the terms and privacy pages. */
+  operator: string;
+  operatorUrl: string;
+  contact: string;
   tagline: string;
   description: string;
   siteUrl: string;
   patreon: string;
-  /** Terms of service and privacy policy pages. Shown at sign-up, in billing and in About. */
+  /** Terms of service and privacy policy pages (terms.html and privacy.html). Linked at sign-up, in billing and in About. */
   terms: string;
   privacy: string;
   socials: BrandLink[];
@@ -27,6 +31,9 @@ export interface Brand {
 
 export const BRAND: Brand = {
   name: 'Undertow',
+  operator: 'Subcult',
+  operatorUrl: 'https://subcult.tv',
+  contact: 'info@subcult.tv',
   tagline: 'Music visualizer videos, made in your browser',
   description:
     'Create music visualizer videos with artwork, waveforms and timed lyrics. Export landscape, portrait and square MP4s free in your browser, with no watermark.',
@@ -34,9 +41,8 @@ export const BRAND: Brand = {
   siteUrl: 'https://undertow.subcult.tv',
   /** SUBCULT's Patreon custom domain. */
   patreon: 'https://support.subcult.tv',
-  /** Unset until the pages are published. Publish both before billing is switched on. */
-  terms: `https://subcult.tv/${PLACEHOLDER}/terms`,
-  privacy: `https://subcult.tv/${PLACEHOLDER}/privacy`,
+  terms: '/terms.html',
+  privacy: '/privacy.html',
   /** Only accounts that exist. Add Instagram, YouTube or TikTok here once they do. */
   socials: [{ platform: 'bluesky', label: 'Bluesky', url: 'https://bsky.app/profile/subcult.tv' }],
 };

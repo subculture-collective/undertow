@@ -62,6 +62,29 @@ function brandMeta(): Plugin {
 }
 
 /**
+ * The terms and privacy pages are plain HTML, readable without JavaScript.
+ * This fills in the names and addresses from src/brand.ts ({{name}},
+ * {{operator}}, {{operatorUrl}}, {{contact}}) and adds the canonical URL.
+ */
+function legalPages(): Plugin {
+  const fill = (html: string) => html.replace(/\{\{(name|operator|operatorUrl|contact)\}\}/g, (_, key: 'name' | 'operator' | 'operatorUrl' | 'contact') => BRAND[key]);
+  return {
+    name: 'vizstudio-legal-pages',
+    transformIndexHtml: {
+      order: 'pre',
+      handler(html, ctx) {
+        const page = ['/terms.html', '/privacy.html'].find((p) => ctx.path.endsWith(p));
+        if (!page) return html;
+        const tags: HtmlTagDescriptor[] = isSet(BRAND.siteUrl)
+          ? [{ tag: 'link', attrs: { rel: 'canonical', href: `${BRAND.siteUrl.replace(/\/$/, '')}${page}` }, injectTo: 'head' }]
+          : [];
+        return { html: fill(html), tags };
+      },
+    },
+  };
+}
+
+/**
  * Dev-only endpoints for /selftest.html: receives results and saves them to
  * selftest-results/, and serves a local font for the font-upload check.
  */
@@ -105,7 +128,7 @@ function selftest(): Plugin {
 const API = process.env.UNDERTOW_API ?? 'http://127.0.0.1:8787';
 
 export default defineConfig({
-  plugins: [react(), brandMeta(), selftest()],
+  plugins: [react(), brandMeta(), legalPages(), selftest()],
   server: {
     proxy: {
       '/v1': { target: API, changeOrigin: false },
@@ -114,8 +137,8 @@ export default defineConfig({
     },
   },
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  // Include the worker page and the design system catalogue in deployments.
-  build: { rollupOptions: { input: { main: 'index.html', render: 'render.html', styleguide: 'styleguide.html' } } },
+  // Include the worker page, the design system catalogue and the terms and privacy pages in deployments.
+  build: { rollupOptions: { input: { main: 'index.html', render: 'render.html', styleguide: 'styleguide.html', terms: 'terms.html', privacy: 'privacy.html' } } },
   optimizeDeps: {
     // UMD/CommonJS bundles that need pre-bundling for ESM import.
     include: [

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy policy | {{name}}</title>
+    <meta name="description" content="What {{name}} stores, what stays on your device, who else handles your data and how to delete it." />
+    <meta name="theme-color" content="#0f0c1c" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/legal.css" />
+  </head>
+  <body class="legal">
+    <header class="legal-head">
+      <a class="brand" href="/"><img src="/favicon.svg" width="28" height="28" alt="" /><span class="brand-name">{{name}}</span></a>
+      <nav aria-label="Pages">
+        <a href="/terms.html">Terms of service</a>
+        <a class="btn" href="/">Open the editor</a>
+      </nav>
+    </header>
+    <main>
+      <h1>Privacy policy</h1>
+      <p class="legal-date">Last updated October 2, 2026</p>
+
+      <section class="legal-summary" aria-labelledby="short">
+        <h2 id="short">In short</h2>
+        <ul>
+          <li>The editor works without an account. Your songs, images, clips and fonts stay on your device.</li>
+          <li>An account stores your email address, your name and your project layouts. It does not store your media.</li>
+          <li>Media is uploaded only when you choose a cloud render. The uploaded files are deleted when that render ends, and the finished video is deleted after 7 days.</li>
+          <li>We don't show ads, sell data or set tracking cookies.</li>
+        </ul>
+      </section>
+
+      <h2 id="who">Who runs {{name}}</h2>
+      <p>{{name}} is made and run by <a href="{{operatorUrl}}">{{operator}}</a>. In this policy, "we" means {{operator}}. To ask a question or make a request about your data, write to <a href="mailto:{{contact}}">{{contact}}</a>.</p>
+
+      <h2 id="no-account">Using the editor without an account</h2>
+      <p>You can edit and export videos without signing in. In that case:</p>
+      <ul>
+        <li>The files you add (songs, images, video clips, fonts and lyrics) are kept in your browser's storage on your device. They are not sent to us.</li>
+        <li>Your project layouts and your defaults are saved in the same browser. Clearing the site's data in your browser removes them.</li>
+        <li>"Export on this computer" analyses, renders and encodes the video in your browser. Nothing is uploaded.</li>
+      </ul>
+
+      <h2 id="account">What an account stores</h2>
+      <p>An account is optional. If you create one, we store the following on our servers.</p>
+      <table>
+        <thead><tr><th scope="col">What</th><th scope="col">What it holds</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Profile</th><td>Your email address, the name you give, whether you confirmed the address, and a profile picture address if your sign-in provider supplies one.</td></tr>
+          <tr><th scope="row">Password</th><td>Stored only as a hash. We cannot read it.</td></tr>
+          <tr><th scope="row">Sign-in sessions</th><td>A session identifier, plus the IP address and browser description recorded when you signed in.</td></tr>
+          <tr><th scope="row">Google sign-in</th><td>If you sign in with Google or connect it: your Google account identifier and the tokens Google issues, stored encrypted. If you connect YouTube, we ask for read-only access and use it only to read your channel name so it can fill your socials.</td></tr>
+          <tr><th scope="row">Projects</th><td>The layout: layer settings, the text you typed, the names and sizes of the files the project uses, and a small preview image. The files themselves stay on your devices.</td></tr>
+          <tr><th scope="row">Templates, palettes and defaults</th><td>What you save: template layouts, color palettes, and defaults such as artist name, website and social handles.</td></tr>
+          <tr><th scope="row">API keys</th><td>Each key's name, a short prefix that identifies it, and when it was created and last used. For requests made with your account we log the route, method, response status and time.</td></tr>
+          <tr><th scope="row">Billing</th><td>If you subscribe: your Stripe customer and subscription identifiers, the subscription's status and the end of the paid period. We never receive your card details.</td></tr>
+          <tr><th scope="row">Cloud renders</th><td>Each job's settings, length, status and times. See the next section for the files.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="cloud">Cloud rendering</h2>
+      <p>When you choose "In the cloud" in the export dialog, the files that project needs are uploaded to our server so it can render the video. Those uploaded files are deleted when the job finishes, fails or is cancelled. The finished video is kept for 7 days so you can download it, then deleted. You can delete it sooner from Cloud renders.</p>
+
+      <h2 id="payments">Payments</h2>
+      <p>Subscriptions are sold through <a href="https://stripe.com/privacy">Stripe</a>. You enter your payment details on Stripe's pages, and Stripe processes the payment and keeps its own records. Stripe tells us whether your subscription is active. Receipts and payment emails come from Stripe.</p>
+
+      <h2 id="email">Email</h2>
+      <p>We send account email only: the link that confirms your address and the link that resets your password. These are delivered through <a href="https://www.brevo.com/legal/privacypolicy/">Brevo</a>, which receives your email address to deliver them. We do not send marketing email.</p>
+
+      <h2 id="statistics">Visit statistics</h2>
+      <p>We count page views with Umami, an analytics tool we host ourselves. It sets no cookies. Before a page view is recorded, the query string is removed from the page address and the referring address is cut down to the site it came from. The record also includes general details about the browser and device. We use it to see how many people visit, not to follow individuals.</p>
+      <p>If your browser sends a Do Not Track or Global Privacy Control signal, no page view is recorded.</p>
+
+      <h2 id="cookies">Cookies and browser storage</h2>
+      <ul>
+        <li>When you sign in, we set a session cookie that keeps you signed in. Signing in with Google also sets short-lived cookies that protect the sign-in exchange.</li>
+        <li>The editor uses your browser's storage for your files, projects and defaults, as described above.</li>
+        <li>We set no advertising or cross-site tracking cookies.</li>
+      </ul>
+
+      <h2 id="others">Who else handles your data</h2>
+      <p>We do not sell your data or share it for advertising. These companies process data for us, each only for the job named:</p>
+      <ul>
+        <li><a href="https://www.cloudflare.com/privacypolicy/">Cloudflare</a> sits in front of the site and passes requests to our server. It sees your IP address and the requests your browser makes.</li>
+        <li>Stripe processes payments.</li>
+        <li>Brevo delivers account email.</li>
+        <li><a href="https://policies.google.com/privacy">Google</a> handles sign-in if you choose Google, and tells us the name, email address and picture on that account.</li>
+      </ul>
+      <p>We may disclose information when the law requires it.</p>
+
+      <h2 id="where">Where data is kept</h2>
+      <p>Accounts, projects and render files are kept on servers that {{operator}} operates in the United States. If you use {{name}} from another country, your data is processed there.</p>
+
+      <h2 id="how-long">How long we keep it</h2>
+      <ul>
+        <li>Account data is kept until you delete your account.</li>
+        <li>Deleting your account removes your profile, sign-in sessions, connected accounts, projects, templates, palettes, defaults, API keys, request log and render jobs.</li>
+        <li>Files uploaded for a cloud render are deleted when the job ends. Finished videos are deleted after 7 days.</li>
+        <li>Database backups are kept for about 30 days, so deleted data can remain in a backup for up to that long.</li>
+        <li>Stripe keeps payment records under its own policy and legal duties.</li>
+      </ul>
+
+      <h2 id="choices">Your choices and rights</h2>
+      <ul>
+        <li>Change your name under Account, Profile.</li>
+        <li>Disconnect Google under Account, Connected accounts.</li>
+        <li>Download any project's layout with Project, Download layout.</li>
+        <li>Delete your account under Account, Delete account. If you have a subscription, cancel it first under Billing.</li>
+      </ul>
+      <p>Depending on where you live, the law may give you rights to see, correct, export or delete your data, to object to how it is used, and to complain to a data protection authority. To use any of these, write to <a href="mailto:{{contact}}">{{contact}}</a>. We answer within 30 days.</p>
+
+      <h2 id="children">Children</h2>
+      <p>{{name}} is not meant for children under 13, and we do not knowingly keep accounts for them. If you believe a child has created an account, write to us and we will delete it.</p>
+
+      <h2 id="changes">Changes to this policy</h2>
+      <p>When this policy changes, we update the date at the top. If a change affects how your existing data is used, we will also tell account holders by email or in the editor before it takes effect.</p>
+
+      <h2 id="contact">Contact</h2>
+      <p><a href="mailto:{{contact}}">{{contact}}</a></p>
+    </main>
+    <footer>
+      <p><a href="/terms.html">Terms of service</a> · <a href="/">Open the editor</a></p>
+      <p>{{name}} is open source under AGPL-3.0. Made by <a href="{{operatorUrl}}">{{operator}}</a>.</p>
+    </footer>
+  </body>
+</html>

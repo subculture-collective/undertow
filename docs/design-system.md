@@ -13,6 +13,7 @@ To inspect the components, open `/styleguide.html` on the deployed site or local
 | `src/styles/base.css` | Element defaults: type, links, focus ring, scrollbars |
 | `src/styles/components.css` | Buttons, fields, sliders, tabs, menus, modals, progress bars, brand pieces |
 | `src/styles/app.css` | Editor layout and editor-only parts |
+| `src/styles/legal.css` | The terms and privacy pages (`terms.html`, `privacy.html`): long-form text, no JavaScript |
 | `src/brand.ts` | Name, tagline, Patreon and social links, site URL |
 | `src/ui/Brand.tsx` | Logomark, wordmark, social icons, Patreon button, terms and privacy links |
 | `src/ui/icons.tsx` | Layer, file and control icons |
