@@ -29,13 +29,10 @@ export const BRAND: Brand = {
     'Create music visualizer videos with artwork, waveforms and timed lyrics. Export landscape, portrait and square MP4s free in your browser, with no watermark.',
   /** Public address of the deployed site, e.g. https://example.com. Needed for share-preview images. */
   siteUrl: 'https://undertow.subcult.tv',
-  patreon: `https://www.patreon.com/${PLACEHOLDER}`,
-  socials: [
-    { platform: 'instagram', label: 'Instagram', url: `https://www.instagram.com/${PLACEHOLDER}` },
-    { platform: 'youtube', label: 'YouTube', url: `https://www.youtube.com/@${PLACEHOLDER}` },
-    { platform: 'tiktok', label: 'TikTok', url: `https://www.tiktok.com/@${PLACEHOLDER}` },
-    { platform: 'bluesky', label: 'Bluesky', url: `https://bsky.app/profile/${PLACEHOLDER}` },
-  ],
+  /** SUBCULT's Patreon custom domain. */
+  patreon: 'https://support.subcult.tv',
+  /** Only accounts that exist. Add Instagram, YouTube or TikTok here once they do. */
+  socials: [{ platform: 'bluesky', label: 'Bluesky', url: 'https://bsky.app/profile/subcult.tv' }],
 };
 
 export const isSet = (url: string) => !!url && !url.includes(PLACEHOLDER);
