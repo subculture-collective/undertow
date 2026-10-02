@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terms of service | {{name}}</title>
+    <meta name="description" content="The terms for using {{name}}: what is free, how the Creator subscription works, and who owns the videos you make." />
+    <meta name="theme-color" content="#0f0c1c" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/styles/legal.css" />
+  </head>
+  <body class="legal">
+    <header class="legal-head">
+      <a class="brand" href="/"><img src="/favicon.svg" width="28" height="28" alt="" /><span class="brand-name">{{name}}</span></a>
+      <nav aria-label="Pages">
+        <a href="/privacy.html">Privacy policy</a>
+        <a class="btn" href="/">Open the editor</a>
+      </nav>
+    </header>
+    <main>
+      <h1>Terms of service</h1>
+      <p class="legal-date">Last updated October 2, 2026</p>
+
+      <section class="legal-summary" aria-labelledby="short">
+        <h2 id="short">In short</h2>
+        <ul>
+          <li>Editing and exporting on your own device are free, with no watermark and no account.</li>
+          <li>Your media and the videos you make are yours. You are responsible for having the right to use the music, images, clips, fonts and lyrics you put in them.</li>
+          <li>The Creator subscription adds cloud rendering. It renews each month until you cancel.</li>
+          <li>{{name}} is provided as it is, without a guarantee that it will always be available or free of faults.</li>
+        </ul>
+      </section>
+
+      <h2 id="agreement">These terms</h2>
+      <p>{{name}} is made and run by <a href="{{operatorUrl}}">{{operator}}</a>. In these terms, "we" means {{operator}} and "{{name}}" means the editor at this address, its accounts, its API and its cloud rendering. By using {{name}} you agree to these terms. If you do not agree, do not use it.</p>
+      <p>The <a href="/privacy.html">privacy policy</a> explains what we store and why.</p>
+
+      <h2 id="who">Who can use it</h2>
+      <p>You must be at least 13 years old. If you are under the age at which you can agree to a contract where you live, a parent or guardian must agree for you. To buy a subscription you must be old enough to enter into that purchase.</p>
+
+      <h2 id="free">What is free and what is paid</h2>
+      <ul>
+        <li>The editor, the templates and exports rendered on your own device are free and carry no watermark. They do not need an account.</li>
+        <li>A free account adds a project library and saved defaults.</li>
+        <li>The Creator subscription adds cloud rendering, described below.</li>
+      </ul>
+
+      <h2 id="accounts">Accounts and API keys</h2>
+      <ul>
+        <li>Give an email address you can receive mail at, and keep your password to yourself.</li>
+        <li>You are responsible for what happens under your account and with the API keys you create. Revoke a key if it may have leaked.</li>
+        <li>Tell us at <a href="mailto:{{contact}}">{{contact}}</a> if you think someone else has got into your account.</li>
+      </ul>
+
+      <h2 id="content">Your content</h2>
+      <p>The files you bring and the videos you export belong to you or to whoever licensed them to you. We claim no ownership of them.</p>
+      <p>You are responsible for having the rights you need to use everything you put in a video, including the song, artwork, video clips, fonts and lyrics, and for how you publish the result.</p>
+      <p>To run the service we need to handle some of your content. You give us permission to store your project layouts and preview images, and to copy, process and store the files you upload for a cloud render, only so we can save your projects and produce and deliver your video.</p>
+
+      <h2 id="use">Acceptable use</h2>
+      <p>Do not use {{name}} to:</p>
+      <ul>
+        <li>break the law, or make or distribute content that is unlawful where you or we are;</li>
+        <li>infringe someone else's copyright, trademark or other rights;</li>
+        <li>try to get into accounts, data or systems that are not yours;</li>
+        <li>overload or disrupt the service, get around its rate limits or plan limits, or share one subscription among several people to avoid paying;</li>
+        <li>upload malicious code.</li>
+      </ul>
+
+      <h2 id="copyright">Copyright complaints</h2>
+      <p>If you believe something stored on or rendered by {{name}} infringes your copyright, write to <a href="mailto:{{contact}}">{{contact}}</a>. Say what the work is, where the material is, and how to reach you. We will look into it and remove material where that is warranted.</p>
+
+      <h2 id="creator">The Creator subscription</h2>
+      <ul>
+        <li><strong>What you get.</strong> 120 minutes of cloud-rendered video per calendar month, at up to 4K and up to 15 minutes per video. Finished videos can be downloaded for 7 days. Unused minutes do not carry over to the next month.</li>
+        <li><strong>How minutes are counted.</strong> A render counts against the month's minutes when you submit it. If it fails or you cancel it, those minutes are returned.</li>
+        <li><strong>Price and renewal.</strong> The price is shown before you pay. The subscription renews every month at that price until you cancel. Payment is handled by Stripe.</li>
+        <li><strong>Cancelling.</strong> You can cancel at any time under Account, Billing, Manage subscription. You keep Creator until the end of the period you have paid for, and you are not charged again.</li>
+        <li><strong>Failed payments.</strong> If a renewal payment fails, cloud rendering stops until the payment succeeds.</li>
+        <li><strong>Refunds.</strong> We do not refund a period that has already started, unless the law where you live gives you that right. If you were charged in error, write to us and we will put it right.</li>
+        <li><strong>Changes.</strong> If we change the price or what the subscription includes, we will tell you by email before your next renewal. You can cancel before the change applies.</li>
+      </ul>
+      <p>Rendering on your own device stays free whether or not you subscribe.</p>
+
+      <h2 id="open-source">Open source</h2>
+      <p>{{name}}'s source code is published under the GNU Affero General Public License, version 3. That license, not these terms, governs what you may do with the code. These terms cover your use of the service we run at this address.</p>
+      <p>The visualizer presets were written by the Milkdrop community and are provided through Butterchurn. Fonts bundled with the editor are licensed under the SIL Open Font License.</p>
+
+      <h2 id="third-parties">Other services</h2>
+      <p>Stripe handles payments, and Google handles sign-in if you choose it. Your use of those services is subject to their terms. Supporting {{operator}} on Patreon is separate from {{name}} and is governed by Patreon's terms.</p>
+
+      <h2 id="availability">Changes and availability</h2>
+      <p>We may add, change or remove features, and the service may be unavailable at times for maintenance or because something has failed. We will try to give notice before removing something you rely on. Keep your own copies of your media and of any project you cannot afford to lose; you can download a project's layout from the Project menu.</p>
+
+      <h2 id="ending">Ending your use</h2>
+      <p>You can stop using {{name}} at any time and delete your account under Account, Delete account. Cancel any subscription first.</p>
+      <p>We may suspend or close an account that breaks these terms or puts the service or other people at risk. Where we can, we will tell you why and give you a chance to fix it. If we close a paid account for a reason other than a breach of these terms, we will refund the unused part of the current period.</p>
+
+      <h2 id="warranty">No warranty</h2>
+      <p>{{name}} is provided "as is" and "as available". To the extent the law allows, we make no promises about it, including that it will be uninterrupted, free of errors, or fit for a particular purpose, or that exported videos will meet the requirements of any platform you publish them on.</p>
+
+      <h2 id="liability">Limit of liability</h2>
+      <p>To the extent the law allows, we are not liable for indirect or consequential losses, or for lost profits, lost data or lost business, arising from your use of {{name}}. Our total liability to you for any claim is limited to the amount you paid us in the 12 months before the claim arose, or 50 US dollars if that is more.</p>
+      <p>Nothing in these terms limits liability that cannot be limited by law, or takes away consumer rights you have where you live.</p>
+
+      <h2 id="law">Disputes and governing law</h2>
+      <p>If you have a complaint, write to <a href="mailto:{{contact}}">{{contact}}</a> first. We will try in good faith to resolve it. Applicable law governs these terms, without limiting any mandatory consumer protections that apply where you live.</p>
+
+      <h2 id="changes">Changes to these terms</h2>
+      <p>When these terms change, we update the date at the top. If a change is significant, we will tell account holders by email or in the editor before it takes effect. If you keep using {{name}} after a change takes effect, you accept the new terms. If you do not accept them, stop using {{name}} and cancel any subscription.</p>
+
+      <h2 id="contact">Contact</h2>
+      <p><a href="mailto:{{contact}}">{{contact}}</a></p>
+    </main>
+    <footer>
+      <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Open the editor</a></p>
+      <p>{{name}} is open source under AGPL-3.0. Made by <a href="{{operatorUrl}}">{{operator}}</a>.</p>
+    </footer>
+  </body>
+</html>
