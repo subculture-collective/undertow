@@ -11,6 +11,7 @@ import { newDoc } from '../cloud/documents';
 import { useStore } from '../store';
 import { applyTemplate, TEMPLATES, type Template } from '../templates';
 import { ASPECTS, type AspectId, type Project } from '../types';
+import { Modal } from './Modal';
 
 let demo: AudioTrack | null = null;
 
@@ -128,26 +129,24 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal gallery">
-        <h3>Start from a template</h3>
-        <p className="hint">
-          Starts a new project with your song, artwork, clip and lyrics, plus your defaults. The current project stays in Projects.
-          Previews show {ASPECTS[aspect].label}.
-        </p>
-        <div className="gallery-grid">
-          {TEMPLATES.map((t) => (
-            <button key={t.id} className="template-card" onClick={() => choose(t)}>
-              <div className={`thumb ${aspect}`}>
-                {thumbs[t.id] ? <img src={thumbs[t.id]} alt="" /> : <span className="hint">Rendering…</span>}
-              </div>
-              <strong>{t.name}</strong>
-              <span className="hint">{t.description}</span>
-            </button>
-          ))}
-        </div>
-        <div className="buttons end"><button onClick={onClose}>Close</button></div>
+    <Modal className="gallery" labelledBy="gallery-title" onClose={onClose}>
+      <h3 id="gallery-title">Start from a template</h3>
+      <p className="hint">
+        Starts a new project with your song, artwork, clip and lyrics, plus your defaults. The current project stays in Projects.
+        Previews show {ASPECTS[aspect].label}.
+      </p>
+      <div className="gallery-grid">
+        {TEMPLATES.map((t) => (
+          <button key={t.id} className="template-card" onClick={() => choose(t)}>
+            <div className={`thumb ${aspect}`}>
+              {thumbs[t.id] ? <img src={thumbs[t.id]} alt="" /> : <span className="hint">Rendering…</span>}
+            </div>
+            <strong>{t.name}</strong>
+            <span className="hint">{t.description}</span>
+          </button>
+        ))}
       </div>
-    </div>
+      <div className="buttons end"><button onClick={onClose}>Close</button></div>
+    </Modal>
   );
 }

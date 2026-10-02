@@ -14,7 +14,10 @@ To inspect the components, open `/styleguide.html` on the deployed site or local
 | `src/styles/components.css` | Buttons, fields, sliders, tabs, menus, modals, progress bars, brand pieces |
 | `src/styles/app.css` | Editor layout and editor-only parts |
 | `src/brand.ts` | Name, tagline, Patreon and social links, site URL |
-| `src/ui/Brand.tsx` | Logomark, wordmark, social icons, Patreon button |
+| `src/ui/Brand.tsx` | Logomark, wordmark, social icons, Patreon button, terms and privacy links |
+| `src/ui/icons.tsx` | Layer, file and control icons |
+| `src/ui/Modal.tsx` | The dialog every modal uses |
+| `src/ui/ask.tsx` | Confirm, rename and notice dialogs |
 
 ## Rules
 
@@ -24,6 +27,13 @@ To inspect the components, open `/styleguide.html` on the deployed site or local
 4. `--text-faint` is below 4.5:1 in Glitch. Use it only for disabled controls and decoration, never for text someone needs to read. Hints use `--text-dim`.
 5. New UI goes into `/styleguide.html` so the component catalogue stays current.
 6. Animation must stop under `prefers-reduced-motion`. Glitch keeps its static colour split and drops the slicing, jitter and glitch-in.
+7. Pink (`--accent`) marks actions: the primary button, slider thumbs and snapping guides. Sky (`--accent-2`, `--focus`) marks what is current: the active tab, the selected layer and its box on the stage, the chosen preset, and keyboard focus.
+8. Each view has one `.primary` button. In the editor that is "Add your song" until the project has a song, then Export.
+9. Corners are square. There are no radius tokens.
+10. Fields and slider tracks are outlined with `--line-field`, which is at least 3:1 against every surface. `--line` and `--line-strong` are for dividers and for buttons, which have a fill and a label as well.
+11. Dialogs use `Modal`, a native `<dialog>` opened with `showModal()`. It moves focus in, keeps it in, closes on Escape and returns focus to the control that opened it. Use `confirmAsk`, `promptAsk` and `noticeAsk` from `ask.tsx` in place of the browser's `confirm()`, `prompt()` and `alert()`.
+12. Icons come from `icons.tsx`: one 24-unit grid and one square stroke. Add to that file; text glyphs such as ▶ or ✕ render differently in each system font. An icon-only button needs an `aria-label`.
+13. The frame around the stage has no colour, so nothing tints the video being judged.
 
 ## Screen sizes
 
@@ -36,7 +46,7 @@ The editor layout has four tiers, defined at the end of `src/styles/app.css`:
 | Under 900px | One column: header, stage and transport, a Layers / Edit switch, then the chosen panel. Picking a layer opens Edit. The format tabs take a second header row |
 | Under 600px | The header's second row holds undo, redo and the format tabs, shortened to ratios. Project becomes a ☰ menu. Dialogs fill the screen |
 
-Phones held sideways (under 900px wide and under 560px tall) keep the stage and the panel side by side under a one-row header. On touch screens, the stage shows only the four corner handles, at 18px, and layer rows are taller.
+Phones held sideways (under 900px wide and under 560px tall) keep the stage and the panel side by side under a one-row header. On touch screens (`pointer: coarse`), `--control-h` is 44px and `--control-h-sm` is 36px, layer-row buttons are 40px, and the stage shows only the four corner handles, at 18px.
 
 Controls that exist in two places for different widths use `.wide-only` and `.narrow-only`. Check new header items at 390, 768, 1024 and 1280px wide.
 
@@ -45,13 +55,13 @@ Controls that exist in two places for different widths use `.wide-only` and `.na
 | Group | Tokens |
 |---|---|
 | Surfaces | `--surface-app`, `-panel`, `-raised`, `-hover`, `-sunken`, `-overlay` |
-| Lines | `--line`, `--line-strong`, `--line-hover`, `--track` |
+| Lines | `--line`, `--line-strong`, `--line-field`, `--line-hover`, `--track` |
 | Text | `--text`, `--text-dim`, `--text-faint`, `--text-on-accent` |
 | Accent | `--accent`, `--accent-hi`, `--accent-2`, `--accent-3`, `--accent-soft`, `--accent-line`, `--focus`, `--icon` |
 | Status | `--warn`, `--danger`, `--success`, `--patreon` |
-| Brand | `--brand-1` to `--brand-3` (logomark gradient), `--mark-ab-a` and `--mark-ab-b` (logomark colour-split copies, sky and pink), `--gradient-brand`, `--font-brand`, `--brand-weight`, `--brand-case`, `--brand-tracking`, `--mark-radius` |
-| Effects | `--glow-accent`, `--glow-focus`, `--glow-text`, `--glow-thumb`, `--glow-select`, `--glow-mark`, `--glow-patreon`, `--modal-ring`, `--stage-halo`, `--shadow-panel`, `--shadow-stage` |
+| Brand | `--mark-ab-a` and `--mark-ab-b` (logomark colour-split copies, sky and pink), `--font-brand`, `--brand-weight`, `--brand-case`, `--brand-tracking` |
+| Hard shadows | `--shadow-lift`, `--shadow-focus`, `--shadow-thumb`, `--shadow-panel`, `--shadow-stage`, `--modal-ring` |
+| Colour split | `--split-text`, `--split-select` |
 | Type | `--font-ui`, `--font-display`, `--font-mono`, `--text-2xs` to `--text-2xl` (11 to 32 px), `--leading`, `--tracking-caps` |
-| Space and size | `--space-1` to `--space-9` (2 to 32 px), `--control-h` (30 px), `--control-h-sm` (24 px), `--border-w` (1 px, 2 px in Glitch) |
-| Radius | `--radius-sm`, `-md`, `-lg`, `-xl`, `-pill` |
+| Space and size | `--space-1` to `--space-9` (2 to 32 px), `--control-h` (30 px, 44 px on touch), `--control-h-sm` (24 px, 36 px on touch), `--border-w` (2 px) |
 | Motion | `--ease-out`, `--dur-fast` (120 ms), `--dur-med` (200 ms). Both drop to 0 with `prefers-reduced-motion` |

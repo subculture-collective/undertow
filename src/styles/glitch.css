@@ -12,9 +12,9 @@
 }
 :root button:disabled { box-shadow: none; }
 /* Buttons that shouldn't look like slabs: list controls, tabs, menu items, the brand. */
-:root :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu) button,
+:root :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu, .scrub) button,
 :root button.ghost, :root .brand-button,
-:root :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu) button:hover:not(:disabled),
+:root :is(.layer-list, .asset-list, .tabs, .menu > div, .add-menu, .scrub) button:hover:not(:disabled),
 :root button.ghost:hover:not(:disabled), :root .brand-button:hover:not(:disabled) {
   box-shadow: none; transform: none;
 }
@@ -28,15 +28,9 @@
   border-color: var(--ink); animation: vz-jitter 240ms steps(2) infinite, vz-chroma 480ms steps(3) infinite;
 }
 :root .btn.patreon, :root button.patreon { border-color: var(--ink); }
-:root .transport .play { border-radius: 0; border-color: var(--ink); }
 
-/* Fields: thick outline, a sky shadow on focus. */
-:root :is(input:not([type]), input[type=number], input[type=email], input[type=password], select, textarea):focus { border-color: var(--focus); box-shadow: var(--glow-focus); }
-:root input[type=range]::-webkit-slider-runnable-track { height: 6px; border: 2px solid var(--ink); background: var(--line-strong); }
-:root input[type=range]::-webkit-slider-thumb {
-  width: 14px; height: 18px; margin-top: -8px; border-radius: 0; background: var(--accent); border: 2px solid var(--ink);
-}
-:root input[type=range]::-moz-range-thumb { border-radius: 0; background: var(--accent); border: 2px solid var(--ink); }
+/* Fields: a sky shadow on focus. */
+:root :is(input:not([type]), input[type=number], input[type=email], input[type=password], select, textarea):focus { border-color: var(--focus); box-shadow: var(--shadow-focus); }
 :root input[type=checkbox] { accent-color: var(--pink); }
 
 /* Sticker headings: small pastel labels on panel and section titles. */
@@ -45,29 +39,29 @@
   color: var(--ink); background: var(--lilac); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow-c);
 }
 :root .eyebrow { font-family: var(--font-mono); }
-:root h3 { font-family: var(--font-mono); text-transform: uppercase; text-shadow: var(--glow-text); }
+:root h3 { font-family: var(--font-mono); text-transform: uppercase; text-shadow: var(--split-text); }
 
-/* Selection states: solid pastel fills with ink text and an outline. */
+/* Selection states: sky means "current" everywhere (tab, layer, preset, palette). Pink is kept for actions. */
 :root .layer-list li { border-width: 2px; }
 :root .layer-list li.selected {
-  background: var(--pink); color: var(--ink); border: 2px solid var(--ink); box-shadow: var(--glow-select);
+  background: var(--sky); color: var(--ink); border: 2px solid var(--ink); box-shadow: var(--split-select);
 }
-:root .layer-list li.selected :is(.ico, .eye, .actions button) { color: var(--ink); }
+:root .layer-list li.selected :is(.layer-pick, .ico, .eye, .actions button) { color: var(--ink); }
 :root .tabs button.active { background: var(--sky); color: var(--ink); box-shadow: none; outline: 2px solid var(--ink); outline-offset: -2px; }
-:root .preset-list div.active { background: var(--pink); color: var(--ink); }
+:root .preset-list [aria-selected="true"] { background: var(--sky); color: var(--ink); }
 :root .template-card:hover:not(:disabled) { box-shadow: var(--hard-lift), -3px 0 0 var(--chroma-a); }
 :root .support-nudge { border: 2px solid var(--ink); box-shadow: var(--hard); background: rgb(255 159 224 / 0.12); }
 :root .progress .bar { height: 12px; border: 2px solid var(--ink); }
 :root .progress .bar div { box-shadow: none; }
 :root .modal { border-color: var(--ink); }
-:root header::after { height: 2px; opacity: 1; background: var(--ink); }
 
 /* Wordmark: a static colour split, plus sky and pink slices that glitch briefly every few seconds.
    The slices are copies of the text from data-text (set by BrandLogo). */
 :root .brand-name { position: relative; text-shadow: -1px 0 0 var(--chroma-a), 1px 0 0 var(--chroma-b); }
 :root .brand-name[data-text]::before,
 :root .brand-name[data-text]::after {
-  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; opacity: 0; text-shadow: none;
+  /* The second declaration gives the copies empty alt text, so the name is read out once. */
+  content: attr(data-text); content: attr(data-text) / ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; text-shadow: none;
 }
 :root .brand-name[data-text]::before { color: var(--chroma-a); animation: vz-slice 4.5s steps(1) infinite; }
 :root .brand-name[data-text]::after { color: var(--chroma-b); animation: vz-slice 4.5s steps(1) 0.12s infinite reverse; }
