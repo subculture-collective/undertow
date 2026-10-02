@@ -11,7 +11,8 @@ trap 'docker rm -f "$postgres_container" >/dev/null' EXIT
 
 ready=false
 for attempt in {1..30}; do
-  if docker exec "$postgres_container" pg_isready -U undertow_test -d undertow_test_ci >/dev/null; then
+  # Check over TCP: during first-run setup the server answers on its local socket before it accepts network connections.
+  if docker exec "$postgres_container" pg_isready -h 127.0.0.1 -U undertow_test -d undertow_test_ci >/dev/null; then
     ready=true
     break
   fi
