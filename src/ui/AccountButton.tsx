@@ -6,8 +6,10 @@ import { Menu } from './Menu';
 export function AccountButton({ onSignIn, onAccount, onProjects, onRenders }: {
   onSignIn: () => void; onAccount: (tab: AccountTab) => void; onProjects: () => void; onRenders: () => void;
 }) {
-  const { status, me, signOut } = useAccount();
+  const { status, me, offline, signOut } = useAccount();
   if (status === 'unknown') return <span className="account-placeholder" aria-hidden="true" />;
+  // No account API to sign in to (the standalone editor), so don't offer it.
+  if (offline) return null;
   if (status === 'signed-out' || !me) return <button onClick={onSignIn}>Sign in</button>;
   const initial = (me.name || me.email).trim().charAt(0).toUpperCase();
   return (

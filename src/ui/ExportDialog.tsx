@@ -9,6 +9,8 @@ import { PatreonButton } from './Brand';
 import { Row, Select } from './controls';
 import { audioEl, fmtTime } from './player';
 import { RenderRow } from './RendersDialog';
+import { Icon } from './icons';
+import { Modal } from './Modal';
 
 interface Result { aspect: AspectId; url: string; size: number; silent: boolean }
 
@@ -33,6 +35,8 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
 
   // Cloud rendering: signed in, and a plan with render minutes.
   const signedIn = useAccount((s) => s.status === 'signed-in');
+  // No account API (the standalone editor): cloud rendering isn't offered at all.
+  const cloudOffered = useAccount((s) => !s.offline);
   const retentionDays = useAccount((s) => s.renderOutputDays);
   const [where, setWhere] = useState<Where>('local');
   const [usage, setUsage] = useState<Usage | null>(null);
@@ -93,98 +97,98 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
   const myJobs = jobs.filter((j): j is RenderJob => submitted.includes(j.id));
 
   return (
-    <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
-      <div className="modal">
-        <h3>Export video</h3>
+    <Modal labelledBy="export-title" onClose={onClose} locked={busy}>
+      <h3 id="export-title">Export video</h3>
+      {cloudOffered && (
         <div className="tabs export-where">
           <button className={where === 'local' ? 'active' : ''} disabled={busy} onClick={() => setWhere('local')}>On this computer</button>
           <button className={where === 'cloud' ? 'active' : ''} disabled={busy} onClick={() => setWhere('cloud')}>In the cloud</button>
         </div>
-        {where === 'cloud' && !signedIn && (
-          <div className="support-nudge">
-            <p>Cloud rendering runs on {BRAND.name}'s servers, so you can close the tab while it works. Sign in to use it.</p>
-            <button className="sm primary" onClick={() => { onClose(); onSignIn(); }}>Sign in</button>
-          </div>
-        )}
-        {where === 'cloud' && signedIn && usage && !cloudAllowed && (
-          <div className="support-nudge">
-            <p>Cloud rendering requires Creator. Rendering on this computer is always free.</p>
-            <button className="sm primary" onClick={onBilling}>View Creator plan</button>
-          </div>
-        )}
-        {where === 'cloud' && cloudAllowed && limits && (
-          <p className="hint">
-            {minutesLeft.toFixed(1)} of {limits.renderMinutesPerMonth} cloud minutes left this month.
-            {' '}This export uses {Math.ceil(cloudSeconds / 60 * 10) / 10} min. Your files are uploaded for this render only and deleted when it finishes.
-          </p>
-        )}
-        {!track && <p className="warn">No song loaded. The video will be silent and 15 seconds long.</p>}
-        <Row label="Formats">
-          <span className="checks">
-            {ASPECT_IDS.map((a) => (
-              <label key={a}>
-                <input type="checkbox" disabled={busy} checked={aspects.includes(a)}
-                  onChange={(e) => setAspects((s) => (e.target.checked ? [...s, a] : s.filter((x) => x !== a)))} />
-                {ASPECTS[a].label}
-              </label>
-            ))}
-          </span>
-        </Row>
-        <Select label="Resolution" value={shortSide} onChange={setShortSide}
-          options={[[720, '720p'], [1080, '1080p'], [1440, '1440p'], [2160, '4K']] as const} />
-        <Select label="Frame rate" value={fps} onChange={setFps} options={[[24, '24 fps'], [30, '30 fps'], [60, '60 fps']] as const} />
-        <Select label="Quality" value={quality} onChange={setQuality} options={[['high', 'High'], ['very-high', 'Very high (bigger file)']] as const} />
-        <Select label="Length" value={range} onChange={setRange}
-          options={[['full', `Whole song (${fmtTime(duration)})`], ['preview', `15 s from playhead (${fmtTime(start)})`]] as const} />
-
-        {upload && (
-          <div className="progress">
-            <div className="bar"><div style={{ width: `${(upload.sent / Math.max(1, upload.total)) * 100}%` }} /></div>
-            <span>{ASPECTS[upload.aspect].label}: uploading files · {(upload.sent / 1e6).toFixed(1)} of {(upload.total / 1e6).toFixed(1)} MB</span>
-          </div>
-        )}
-        {myJobs.length > 0 && <ul className="render-list">{myJobs.map((j) => <RenderRow key={j.id} job={j} />)}</ul>}
-        {tooBig && <p className="warn">Your plan renders up to {limits!.renderMaxShortSide}p in the cloud.</p>}
-        {tooLong && <p className="warn">Your plan renders up to {Math.floor(limits!.renderMaxSeconds / 60)} minutes per video in the cloud.</p>}
-        {noMinutes && <p className="warn">Not enough cloud minutes left this month for this export.</p>}
-        {progress && (
-          <div className="progress">
-            <div className="bar"><div style={{ width: `${(progress.frame / progress.frames) * 100}%` }} /></div>
-            <span>{ASPECTS[progress.aspect].label}: frame {progress.frame}/{progress.frames} · {progress.fps.toFixed(1)} fps · about {fmtTime(progress.eta)} left</span>
-          </div>
-        )}
-        {error && <p className="warn">{error}</p>}
-        {results.map((r) => (
-          <p key={r.aspect}>
-            <a className="download" href={r.url} download={`${base}-${r.aspect}.mp4`}>⬇ Download {ASPECTS[r.aspect].label}</a>
-            <span className="hint"> {(r.size / 1e6).toFixed(1)} MB</span>
-            {r.silent && <span className="warn"> · silent: this browser has no audio encoder</span>}
-          </p>
-        ))}
-        {results.length > 0 && !busy && visibleLink(BRAND.patreon) && (
-          <div className="support-nudge">
-            <p>Happy with the result? {BRAND.name} is free, and Patreon support pays for new features.</p>
-            <PatreonButton small />
-          </div>
-        )}
-        <p className="hint">
-          {where === 'local'
-            ? 'Rendering happens on this computer. Keep this tab open until it finishes.'
-            : `Cloud renders keep going if you close this. Find them under your account menu, Renders. Videos are kept for ${retentionDays} days.`}
-        </p>
-        <div className="buttons end">
-          {progress
-            ? <button onClick={() => abort.current?.abort()}>Cancel</button>
-            : <>
-                <button onClick={onClose} disabled={!!upload}>Close</button>
-                {where === 'local'
-                  ? <button className="primary" disabled={!aspects.length} onClick={run}>Render</button>
-                  : <button className="primary" disabled={!aspects.length || !cloudAllowed || busy || tooBig || tooLong || noMinutes} onClick={runCloud}>
-                      {upload ? 'Uploading…' : 'Render in the cloud'}
-                    </button>}
-              </>}
+      )}
+      {where === 'cloud' && !signedIn && (
+        <div className="support-nudge">
+          <p>Cloud rendering runs on {BRAND.name}'s servers, so you can close the tab while it works. Sign in to use it.</p>
+          <button className="sm primary" onClick={() => { onClose(); onSignIn(); }}>Sign in</button>
         </div>
+      )}
+      {where === 'cloud' && signedIn && usage && !cloudAllowed && (
+        <div className="support-nudge">
+          <p>Cloud rendering requires Creator. Rendering on this computer is always free.</p>
+          <button className="sm primary" onClick={onBilling}>View Creator plan</button>
+        </div>
+      )}
+      {where === 'cloud' && cloudAllowed && limits && (
+        <p className="hint">
+          {minutesLeft.toFixed(1)} of {limits.renderMinutesPerMonth} cloud minutes left this month.
+          {' '}This export uses {Math.ceil(cloudSeconds / 60 * 10) / 10} min. Your files are uploaded for this render only and deleted when it finishes.
+        </p>
+      )}
+      {!track && <p className="warn">No song loaded. The video will be silent and 15 seconds long.</p>}
+      <Row label="Formats">
+        <span className="checks">
+          {ASPECT_IDS.map((a) => (
+            <label key={a}>
+              <input type="checkbox" disabled={busy} checked={aspects.includes(a)}
+                onChange={(e) => setAspects((s) => (e.target.checked ? [...s, a] : s.filter((x) => x !== a)))} />
+              {ASPECTS[a].label}
+            </label>
+          ))}
+        </span>
+      </Row>
+      <Select label="Resolution" value={shortSide} onChange={setShortSide}
+        options={[[720, '720p'], [1080, '1080p'], [1440, '1440p'], [2160, '4K']] as const} />
+      <Select label="Frame rate" value={fps} onChange={setFps} options={[[24, '24 fps'], [30, '30 fps'], [60, '60 fps']] as const} />
+      <Select label="Quality" value={quality} onChange={setQuality} options={[['high', 'High'], ['very-high', 'Very high (bigger file)']] as const} />
+      <Select label="Length" value={range} onChange={setRange}
+        options={[['full', track ? `Whole song (${fmtTime(duration)})` : `Silent video (${fmtTime(duration)})`], ['preview', `15 s from playhead (${fmtTime(start)})`]] as const} />
+
+      {upload && (
+        <div className="progress">
+          <div className="bar"><div style={{ width: `${(upload.sent / Math.max(1, upload.total)) * 100}%` }} /></div>
+          <span>{ASPECTS[upload.aspect].label}: uploading files · {(upload.sent / 1e6).toFixed(1)} of {(upload.total / 1e6).toFixed(1)} MB</span>
+        </div>
+      )}
+      {myJobs.length > 0 && <ul className="render-list">{myJobs.map((j) => <RenderRow key={j.id} job={j} />)}</ul>}
+      {tooBig && <p className="warn">Your plan renders up to {limits!.renderMaxShortSide}p in the cloud.</p>}
+      {tooLong && <p className="warn">Your plan renders up to {Math.floor(limits!.renderMaxSeconds / 60)} minutes per video in the cloud.</p>}
+      {noMinutes && <p className="warn">Not enough cloud minutes left this month for this export.</p>}
+      {progress && (
+        <div className="progress">
+          <div className="bar"><div style={{ width: `${(progress.frame / progress.frames) * 100}%` }} /></div>
+          <span>{ASPECTS[progress.aspect].label}: frame {progress.frame}/{progress.frames} · {progress.fps.toFixed(1)} fps · about {fmtTime(progress.eta)} left</span>
+        </div>
+      )}
+      {error && <p className="warn">{error}</p>}
+      {results.map((r) => (
+        <p key={r.aspect}>
+          <a className="download" href={r.url} download={`${base}-${r.aspect}.mp4`}><Icon name="download" /> Download {ASPECTS[r.aspect].label}</a>
+          <span className="hint"> {(r.size / 1e6).toFixed(1)} MB</span>
+          {r.silent && <span className="warn"> · silent: this browser has no audio encoder</span>}
+        </p>
+      ))}
+      {results.length > 0 && !busy && visibleLink(BRAND.patreon) && (
+        <div className="support-nudge">
+          <p>Happy with the result? {BRAND.name} is free, and Patreon support pays for new features.</p>
+          <PatreonButton small />
+        </div>
+      )}
+      <p className="hint">
+        {where === 'local'
+          ? 'Rendering happens on this computer. Keep this tab open until it finishes.'
+          : `Cloud renders keep going if you close this. Find them under your account menu, Renders. Videos are kept for ${retentionDays} days.`}
+      </p>
+      <div className="buttons end">
+        {progress
+          ? <button onClick={() => abort.current?.abort()}>Cancel</button>
+          : <>
+              <button onClick={onClose} disabled={!!upload}>Close</button>
+              {where === 'local'
+                ? <button className="primary" disabled={!aspects.length} onClick={run}>Render</button>
+                : <button className="primary" disabled={!aspects.length || !cloudAllowed || busy || tooBig || tooLong || noMinutes} onClick={runCloud}>
+                    {upload ? 'Uploading…' : 'Render in the cloud'}
+                  </button>}
+            </>}
       </div>
-    </div>
+    </Modal>
   );
 }

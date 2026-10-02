@@ -6,9 +6,11 @@
   --surface-raised: #211d3b;
   --surface-hover: #2b2650;
   --surface-sunken: #0f0c1c;
-  --surface-overlay: rgb(10 8 20 / 0.75);
+  --surface-overlay: rgb(10 8 20 / 0.86);
   --line: #2c2749;
   --line-strong: #4b4378;
+  /* Field outlines and slider tracks: 3:1 or better against every surface. */
+  --line-field: #7469b3;
   --text: #f7f3ff;
   --text-dim: #bdb4dc;
   --text-faint: #7d74a3;
@@ -25,29 +27,21 @@
   --patreon: var(--coral);
   --icon: var(--lilac);
   --line-hover: var(--lilac);
-  --track: #4b4378;
+  --track: var(--line-field);
   --accent-line: color-mix(in srgb, var(--accent) 50%, transparent);
-  --stage-halo: transparent;
-  --brand-1: var(--text);
-  --brand-2: var(--text);
-  --brand-3: var(--text);
   --font-brand: var(--font-mono);
   --brand-weight: 800;
   --brand-case: uppercase;
   --brand-tracking: 0.04em;
-  --gradient-brand: linear-gradient(var(--accent), var(--accent));
-  --glow-accent: var(--hard-lift);
-  --glow-focus: 3px 3px 0 var(--focus);
-  --glow-text: -1.5px 0 0 var(--chroma-a), 1.5px 0 0 var(--chroma-b);
-  --glow-thumb: 2px 2px 0 var(--shadow-c);
-  --glow-select: -3px 0 0 var(--chroma-a), 3px 0 0 var(--chroma-b);
-  --glow-mark: none;
-  --glow-patreon: var(--hard-lift);
+  --shadow-lift: var(--hard-lift);
+  --shadow-focus: 3px 3px 0 var(--focus);
+  --split-text: -1.5px 0 0 var(--chroma-a), 1.5px 0 0 var(--chroma-b);
+  --shadow-thumb: 2px 2px 0 var(--shadow-c);
+  --split-select: -3px 0 0 var(--chroma-a), 3px 0 0 var(--chroma-b);
   --modal-ring: 8px 8px 0 var(--lilac), -3px 0 0 var(--chroma-a);
   --shadow-panel: 6px 6px 0 var(--shadow-c);
-  --shadow-stage: 0 0 0 2px var(--ink),
-    -6px 0 0 color-mix(in srgb, var(--chroma-a) 70%, transparent),
-    6px 0 0 color-mix(in srgb, var(--chroma-b) 70%, transparent);
+  /* Neutral on purpose: no colour next to the video being judged. */
+  --shadow-stage: 0 0 0 2px var(--ink), 0 0 0 3px var(--line-strong);
   --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: var(--font-mono);
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
@@ -72,11 +66,6 @@
   --border-w: 2px;
   --control-h: 30px;
   --control-h-sm: 24px;
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-  --radius-pill: 0px;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur-fast: 120ms;
   --dur-med: 200ms;
@@ -97,7 +86,6 @@
   --hard-lift: 5px 5px 0 var(--shadow-c);
   --mark-ab-a: var(--chroma-a);
   --mark-ab-b: var(--chroma-b);
-  --mark-radius: 0px;
 }
 
 @media (prefers-reduced-motion: reduce) {
