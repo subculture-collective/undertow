@@ -6,7 +6,7 @@ FROM node:24-alpine AS web
 WORKDIR /web
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY index.html render.html styleguide.html vite.config.ts tsconfig.json ./
+COPY index.html render.html styleguide.html terms.html privacy.html vite.config.ts tsconfig.json ./
 COPY public ./public
 COPY src ./src
 # The selftest page stays in development; the styleguide ships with the editor.

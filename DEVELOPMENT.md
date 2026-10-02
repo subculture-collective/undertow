@@ -84,8 +84,8 @@ that disposable database for you. Install the root and server dependencies first
 
 ## Branding and design system
 
-`src/brand.ts` holds the site name, tagline, Patreon link, social links, terms
-and privacy links, and public URL. The header, About dialog, export dialog, page title, meta tags and
+`src/brand.ts` holds the site name, operator and contact address, tagline,
+Patreon link, social links, terms and privacy links, and public URL. The header, About dialog, export dialog, page title, meta tags and
 share previews all read from it. Links that still contain `PLACEHOLDER` show
 with a dashed amber outline in development and are left out of production
 builds.
@@ -94,9 +94,11 @@ The UI is styled only through CSS tokens. Glitch is the one design system;
 `/styleguide.html` shows its tokens, components and icons. See
 [docs/design-system.md](docs/design-system.md).
 
-The terms and privacy links in `src/brand.ts` are still placeholders, so
-production builds leave them out of sign-up, billing and About. Set both to
-published pages before billing is switched on.
+`terms.html` and `privacy.html` are plain HTML pages styled by
+`src/styles/legal.css`. They read the site name, operator and contact address
+from `src/brand.ts`. When the product changes what it stores, who processes it
+or how billing works, update the page and its "Last updated" date in the same
+change.
 
 `npm run og-image` renders `public/og.png` from `scripts/og-image.html` with
 headless Chrome. Set `CHROME` to the browser binary if it isn't at the macOS
