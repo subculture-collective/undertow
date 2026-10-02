@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAccount } from '../cloud/account';
 import { isActive, outputUrl, removeRender, useRenders, type RenderJob } from '../cloud/renders';
+import { Modal } from './Modal';
+import { confirmAsk } from './ask';
 
 const STATUS: Record<RenderJob['status'], string> = {
   awaiting_upload: 'Uploading files', queued: 'Waiting for a renderer', running: 'Rendering',
@@ -15,7 +17,10 @@ export function RenderRow({ job }: { job: RenderJob }) {
   const o = job.options;
   const act = async () => {
     const active = isActive(job);
-    if (!confirm(active ? 'Cancel this render? Its minutes are refunded.' : 'Delete this render and its video?')) return;
+    const ok = await confirmAsk(active
+      ? { title: 'Cancel this render?', body: 'Its minutes are refunded.', action: 'Cancel render', danger: true }
+      : { title: 'Delete this render?', body: 'Its video is deleted too.', action: 'Delete render', danger: true });
+    if (!ok) return;
     setBusy(true); setError('');
     try { await removeRender(job.id); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   };
@@ -59,16 +64,14 @@ export function RendersDialog({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState('');
   useEffect(() => { refresh().catch((e) => setError((e as Error).message)); }, [refresh]);
   return (
-    <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal renders" role="dialog" aria-labelledby="renders-title">
-        <h3 id="renders-title">Cloud renders</h3>
-        {jobs.length === 0
-          ? <p className="hint">No cloud renders yet. Choose “In the cloud” when exporting.</p>
-          : <ul className="render-list">{jobs.map((j) => <RenderRow key={j.id} job={j} />)}</ul>}
-        {error && <p className="warn">{error}</p>}
-        <p className="hint">Renders keep going after you close this. Files you upload for a render are deleted when it finishes; the video is kept for {retentionDays} days.</p>
-        <div className="buttons end"><button onClick={onClose}>Close</button></div>
-      </div>
-    </div>
+    <Modal className="renders" labelledBy="renders-title" onClose={onClose}>
+      <h3 id="renders-title">Cloud renders</h3>
+      {jobs.length === 0
+        ? <p className="hint">No cloud renders yet. Choose “In the cloud” when exporting.</p>
+        : <ul className="render-list">{jobs.map((j) => <RenderRow key={j.id} job={j} />)}</ul>}
+      {error && <p className="warn">{error}</p>}
+      <p className="hint">Renders keep going after you close this. Files you upload for a render are deleted when it finishes; the video is kept for {retentionDays} days.</p>
+      <div className="buttons end"><button onClick={onClose}>Close</button></div>
+    </Modal>
   );
 }

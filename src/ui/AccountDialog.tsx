@@ -9,6 +9,10 @@ import { BUILTIN_PALETTES } from '../cloud/palettes';
 import { SOCIAL_ICONS } from '../render/icons';
 import { useStore } from '../store';
 import { BUILTIN_FONTS, type SocialPlatform } from '../types';
+import { Modal } from './Modal';
+import { confirmAsk } from './ask';
+import { LegalLinks } from './Brand';
+import { Icon } from './icons';
 
 export type AccountTab = 'profile' | 'billing' | 'defaults' | 'connections' | 'keys' | 'danger';
 
@@ -22,25 +26,23 @@ export function AccountDialog({ initialTab = 'profile', onClose }: { initialTab?
   const [selectedTab, setTab] = useState<AccountTab>(initialTab);
   const tab = signedIn ? selectedTab : 'defaults';
   return (
-    <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal account" role="dialog" aria-labelledby="account-title">
-        <h3 id="account-title">{signedIn ? 'Account' : 'Defaults'}</h3>
-        {signedIn && (
-          <div className="tabs account-tabs">
-            {TABS.map(([id, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>{label}</button>)}
-          </div>
-        )}
-        <div className="account-body">
-          {tab === 'profile' && <ProfileTab />}
-          {tab === 'billing' && <BillingTab />}
-          {tab === 'defaults' && <DefaultsTab />}
-          {tab === 'connections' && <ConnectionsTab />}
-          {tab === 'keys' && <KeysTab />}
-          {tab === 'danger' && <DangerTab onDone={onClose} />}
+    <Modal className="account" labelledBy="account-title" onClose={onClose}>
+      <h3 id="account-title">{signedIn ? 'Account' : 'Defaults'}</h3>
+      {signedIn && (
+        <div className="tabs account-tabs">
+          {TABS.map(([id, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>{label}</button>)}
         </div>
-        <div className="buttons end"><button onClick={onClose}>Close</button></div>
+      )}
+      <div className="account-body">
+        {tab === 'profile' && <ProfileTab />}
+        {tab === 'billing' && <BillingTab />}
+        {tab === 'defaults' && <DefaultsTab />}
+        {tab === 'connections' && <ConnectionsTab />}
+        {tab === 'keys' && <KeysTab />}
+        {tab === 'danger' && <DangerTab onDone={onClose} />}
       </div>
-    </div>
+      <div className="buttons end"><button onClick={onClose}>Close</button></div>
+    </Modal>
   );
 }
 
@@ -120,6 +122,7 @@ function BillingTab() {
         <button disabled={busy} onClick={() => void run(load)}>Refresh billing</button>
       </div>
     </>}
+    <LegalLinks />
   </section>;
 }
 
@@ -156,7 +159,7 @@ function DefaultsTab() {
                 {PLATFORMS.map((p) => <option key={p} value={p}>{SOCIAL_ICONS[p].label}</option>)}
               </select>
               <input value={it.handle} placeholder="@handle" maxLength={120} onChange={(e) => setSocials(socials.map((x, j) => (j === i ? { ...x, handle: e.target.value } : x)))} />
-              <button className="icon sm" aria-label="Remove" onClick={() => setSocials(socials.filter((_, j) => j !== i))}>✕</button>
+              <button className="icon sm" aria-label={`Remove ${SOCIAL_ICONS[it.platform].label}`} onClick={() => setSocials(socials.filter((_, j) => j !== i))}><Icon name="close" size={14} /></button>
             </div>
           ))}
           {socials.length < 12 && <button className="sm" onClick={() => setSocials([...socials, { platform: 'instagram', handle: '' }])}>+ Add social</button>}
@@ -300,8 +303,10 @@ function KeysTab() {
             <div><strong>{k.name ?? 'Unnamed key'}</strong> <code>{k.start}…</code>
               <span className="hint">Created {new Date(k.createdAt).toLocaleDateString()} · {k.lastUsedAt ? `last used ${new Date(k.lastUsedAt).toLocaleDateString()}` : 'never used'}{k.expiresAt ? ` · expires ${new Date(k.expiresAt).toLocaleDateString()}` : ''}</span>
             </div>
-            <button className="sm danger" onClick={() => {
-              if (confirm(`Revoke "${k.name ?? k.start}"? Anything using it stops working.`)) void run(async () => { await unwrap(api.DELETE('/v1/keys/{id}', { params: { path: { id: k.id } } })); await load(); }, 'Key revoked.');
+            <button className="sm danger" onClick={async () => {
+              if (await confirmAsk({ title: `Revoke “${k.name ?? k.start}”?`, body: 'Anything using this key stops working.', action: 'Revoke key', danger: true })) {
+                void run(async () => { await unwrap(api.DELETE('/v1/keys/{id}', { params: { path: { id: k.id } } })); await load(); }, 'Key revoked.');
+              }
             }}>Revoke</button>
           </li>
         ))}

@@ -9,6 +9,7 @@ import {
   type SocialPlatform, type TextStyle,
 } from '../types';
 import { Color, NumberInput, Row, Select, Slider, Toggle } from './controls';
+import { Icon } from './icons';
 
 const BLENDS: [BlendMode, string][] = [
   ['source-over', 'Normal'], ['screen', 'Screen'], ['lighter', 'Add'], ['multiply', 'Multiply'],
@@ -55,18 +56,30 @@ function PresetPicker({ layerId, value, onChange }: { layerId: string; value: st
   }, [names, q]);
   const idx = names.indexOf(value);
   const step = (d: number) => names.length && onChange(names[(idx + d + names.length) % names.length]);
+  const shown = filtered.slice(0, 300);
+  const list = useRef<HTMLDivElement>(null);
+  // Arrow keys move through the list as shown, so a search narrows what they step over.
+  const onListKey = (e: React.KeyboardEvent) => {
+    const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+    if (!d || !shown.length) return;
+    e.preventDefault();
+    const at = shown.indexOf(value);
+    onChange(shown[at < 0 ? 0 : Math.min(shown.length - 1, Math.max(0, at + d))]);
+  };
+  useEffect(() => { list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' }); }, [value]);
   return (
     <div className="preset-picker" key={layerId}>
       <div className="preset-current" title={value || 'Random (from seed)'}>{value || 'Random (from seed)'}</div>
       <div className="preset-buttons">
-        <button onClick={() => step(-1)}>◀ Prev</button>
+        <button onClick={() => step(-1)}><Icon name="prev" size={12} /> Prev</button>
         <button onClick={() => onChange(names[Math.floor(Math.random() * names.length)])}>Random</button>
-        <button onClick={() => step(1)}>Next ▶</button>
+        <button onClick={() => step(1)}>Next <Icon name="next" size={12} /></button>
       </div>
-      <input placeholder={`Search ${names.length} presets…`} value={q} onChange={(e) => setQ(e.target.value)} />
-      <div className="preset-list">
-        {filtered.slice(0, 300).map((n) => (
-          <div key={n} className={n === value ? 'active' : ''} onClick={() => onChange(n)}>{n}</div>
+      <input aria-label="Search presets" placeholder={`Search ${names.length} presets…`} value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="preset-list" ref={list} role="listbox" aria-label="Presets" tabIndex={0} onKeyDown={onListKey}
+        aria-activedescendant={shown.includes(value) ? `preset-${shown.indexOf(value)}` : undefined}>
+        {shown.map((n, i) => (
+          <div key={n} id={`preset-${i}`} role="option" aria-selected={n === value} onClick={() => onChange(n)}>{n}</div>
         ))}
       </div>
     </div>
@@ -208,7 +221,7 @@ function TypeFields({ layer }: { layer: Layer }) {
                 {Object.entries(SOCIAL_ICONS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
               <input value={it.handle} placeholder="@handle" onChange={(e) => setItems(items.map((x, j) => (j === i ? { ...x, handle: e.target.value } : x)))} />
-              <button title="Remove" onClick={() => setItems(items.filter((_, j) => j !== i))}>✕</button>
+              <button className="icon" title="Remove" aria-label={`Remove ${SOCIAL_ICONS[it.platform].label}`} onClick={() => setItems(items.filter((_, j) => j !== i))}><Icon name="close" size={14} /></button>
             </div>
           ))}
           <button onClick={() => setItems([...items, { platform: 'youtube', handle: '' }])}>+ Add social</button>
@@ -287,7 +300,7 @@ export function Inspector() {
 
   return (
     <aside className="inspector">
-      <input className="layer-name" value={layer.name} onChange={(e) => updateLayer(layer.id, { name: e.target.value })} />
+      <input className="layer-name" aria-label="Layer name" value={layer.name} onChange={(e) => updateLayer(layer.id, { name: e.target.value })} />
       <section>
         <h4>{layer.type === 'milkdrop' ? 'Visualizer' : 'Content'}</h4>
         <TypeFields layer={layer} />
