@@ -19,6 +19,9 @@ export interface Brand {
   description: string;
   siteUrl: string;
   patreon: string;
+  /** Terms of service and privacy policy pages. Shown at sign-up, in billing and in About. */
+  terms: string;
+  privacy: string;
   socials: BrandLink[];
 }
 
@@ -31,6 +34,9 @@ export const BRAND: Brand = {
   siteUrl: 'https://undertow.subcult.tv',
   /** SUBCULT's Patreon custom domain. */
   patreon: 'https://support.subcult.tv',
+  /** Unset until the pages are published. Publish both before billing is switched on. */
+  terms: `https://subcult.tv/${PLACEHOLDER}/terms`,
+  privacy: `https://subcult.tv/${PLACEHOLDER}/privacy`,
   /** Only accounts that exist. Add Instagram, YouTube or TikTok here once they do. */
   socials: [{ platform: 'bluesky', label: 'Bluesky', url: 'https://bsky.app/profile/subcult.tv' }],
 };

@@ -9,6 +9,9 @@ import { BRAND } from './brand';
 import { BrandLogo, BrandMark, PatreonButton, SocialLinks } from './ui/Brand';
 import { Color, NumberInput, Select, Slider, Toggle } from './ui/controls';
 import { Menu } from './ui/Menu';
+import { Icon, LayerIcon } from './ui/icons';
+import { LAYER_LABELS } from './defaults';
+import type { LayerType } from './types';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/components.css';
@@ -19,12 +22,11 @@ import './styles/styleguide.css';
 const css = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 const SEMANTIC = [
-  '--surface-app', '--surface-panel', '--surface-raised', '--surface-hover', '--surface-sunken', '--line', '--line-strong',
+  '--surface-app', '--surface-panel', '--surface-raised', '--surface-hover', '--surface-sunken', '--line', '--line-strong', '--line-field',
   '--text', '--text-dim', '--text-faint', '--accent', '--accent-2', '--accent-3', '--focus', '--warn', '--danger', '--success', '--patreon',
 ];
 const TYPE = ['--text-2xs', '--text-xs', '--text-sm', '--text-md', '--text-lg', '--text-xl', '--text-2xl'];
 const SPACE = ['--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6', '--space-7', '--space-8', '--space-9'];
-const RADII = ['--radius-sm', '--radius-md', '--radius-lg', '--radius-xl', '--radius-pill'];
 
 function Swatches({ names }: { names: string[] }) {
   return (
@@ -65,7 +67,6 @@ function StyleGuide() {
           <BrandMark size={48} />
           <BrandMark size={24} />
           <span className="brand-name" style={{ fontSize: 'var(--text-2xl)' }}>{BRAND.name}</span>
-          <span className="gradient-text" style={{ fontSize: 'var(--text-2xl)', fontWeight: 800 }}>Gradient text</span>
         </div>
         <div className="sg-row"><PatreonButton /><PatreonButton small label="Support" /><SocialLinks /></div>
         <p className="hint">Links outlined in dashed amber are still placeholders in src/brand.ts. Production builds leave them out.</p>
@@ -82,18 +83,16 @@ function StyleGuide() {
         <div className="sg-type"><code>h4 / .eyebrow</code><span><h4>Section heading</h4><span className="eyebrow">Eyebrow</span></span></div>
       </Section>
 
-      <Section title="Space and radius">
+      <Section title="Space">
         <div className="sg-row">
           {SPACE.map((s) => <div key={s} className="sg-space" title={s}><div style={{ width: `var(${s})`, height: `var(${s})` }} /><code>{css(s)}</code></div>)}
         </div>
-        <div className="sg-row">
-          {RADII.map((r) => <div key={r} className="sg-radius" style={{ borderRadius: `var(${r})` }}><code>{r.replace('--radius-', '')}</code></div>)}
-        </div>
+        <p className="hint">Corners are square everywhere. There are no radius tokens.</p>
       </Section>
 
-      <Section title="Glow and elevation">
+      <Section title="Hard shadows">
         <div className="sg-row">
-          {['--glow-accent', '--glow-focus', '--shadow-panel', '--shadow-stage'].map((g) => (
+          {['--shadow-lift', '--shadow-focus', '--shadow-panel', '--shadow-stage'].map((g) => (
             <div key={g} className="sg-elev" style={{ boxShadow: `var(${g})` }}><code>{g}</code></div>
           ))}
         </div>
@@ -104,8 +103,8 @@ function StyleGuide() {
           <button className="primary">Primary</button>
           <button>Secondary</button>
           <button className="ghost">Ghost</button>
-          <button className="icon" aria-label="Undo">↶</button>
-          <button className="ghost icon" aria-label="Info">ⓘ</button>
+          <button className="icon" aria-label="Undo"><Icon name="undo" size={18} /></button>
+          <button className="ghost icon" aria-label="Close"><Icon name="close" /></button>
           <button disabled>Disabled</button>
           <button className="primary sm">Small primary</button>
           <button className="sm">Small</button>
@@ -122,6 +121,18 @@ function StyleGuide() {
           <textarea rows={2} defaultValue="Textarea" />
           <p className="hint">Hint text uses --text-dim.</p>
           <p className="warn">Warning text</p>
+        </div>
+      </Section>
+
+      <Section title="Icons">
+        <p className="hint">One 24-unit grid, one square stroke. Layer types first, then controls. Add new ones in src/ui/icons.tsx.</p>
+        <div className="sg-row">
+          {(Object.keys(LAYER_LABELS) as LayerType[]).map((t) => <span key={t} className="sg-icon" title={LAYER_LABELS[t]}><LayerIcon type={t} size={20} /></span>)}
+        </div>
+        <div className="sg-row">
+          {(['undo', 'redo', 'up', 'down', 'duplicate', 'close', 'eye', 'eye-off', 'play', 'pause', 'menu', 'pencil', 'download', 'prev', 'next'] as const).map((n) => (
+            <span key={n} className="sg-icon" title={n}><Icon name={n} size={20} /></span>
+          ))}
         </div>
       </Section>
 
@@ -143,9 +154,12 @@ function StyleGuide() {
       <Section title="Panel and list">
         <div className="sg-panel" style={{ width: 256 }}>
           <ul className="layer-list">
-            <li><button className="eye">●</button><span className="ico">✺</span><span className="name">Milkdrop visualizer</span></li>
-            <li className="selected"><button className="eye">●</button><span className="ico">▮</span><span className="name">Spectrum (selected)</span></li>
-            <li><button className="eye">○</button><span className="ico">T</span><span className="name">Hidden text</span></li>
+            {([['milkdrop', 'Milkdrop visualizer', true, false], ['spectrum', 'Spectrum (selected)', true, true], ['text', 'Hidden text', false, false]] as const).map(([type, name, visible, selected]) => (
+              <li key={type} className={selected ? 'selected' : ''}>
+                <button className="eye" aria-pressed={visible} aria-label={`Show ${name}`}><Icon name={visible ? 'eye' : 'eye-off'} /></button>
+                <button className="layer-pick"><span className="ico"><LayerIcon type={type} /></span><span className="name">{name}</span></button>
+              </li>
+            ))}
           </ul>
         </div>
         <div className="support-nudge" style={{ maxWidth: 520 }}>

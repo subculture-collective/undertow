@@ -3,7 +3,8 @@ import { authClient } from '../api/auth';
 import { BRAND } from '../brand';
 import { useAccount } from '../cloud/account';
 import { SOCIAL_ICONS } from '../render/icons';
-import { BrandMark } from './Brand';
+import { BrandMark, LegalLinks } from './Brand';
+import { Modal } from './Modal';
 
 export type AuthMode = 'sign-in' | 'sign-up' | 'forgot' | 'reset' | 'check-email';
 
@@ -71,64 +72,63 @@ export function AuthDialog({ initial = 'sign-in', resetToken, onClose }: { initi
   const anyProvider = providers.google || providers.discord;
 
   return (
-    <div className="modal-back" onPointerDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
-      <form className="modal auth" onSubmit={submit} aria-labelledby="auth-title">
-        <div className="auth-head">
-          <BrandMark size={36} />
-          <h3 id="auth-title">{title}</h3>
-        </div>
+    <Modal className="auth" labelledBy="auth-title" onClose={onClose} locked={busy} onSubmit={submit}>
+      <div className="auth-head">
+        <BrandMark size={36} />
+        <h3 id="auth-title">{title}</h3>
+      </div>
 
-        {mode === 'check-email' ? (
-          <>
-            <p>We sent a confirmation link to <strong>{email}</strong>. Open it to finish creating your account.</p>
-            <p className="hint">Nothing arrived? Check spam, or sign up again to resend.</p>
-            <div className="buttons end"><button type="button" className="primary" onClick={onClose}>Done</button></div>
-          </>
-        ) : (
-          <>
-            {(mode === 'sign-in' || mode === 'sign-up') && anyProvider && (
-              <>
-                <div className="providers">
-                  {providers.google && <Provider id="google" label="Google" path={GOOGLE_PATH} />}
-                  {providers.discord && <Provider id="discord" label="Discord" path={SOCIAL_ICONS.discord.path} />}
-                </div>
-                <div className="or"><span>or with email</span></div>
-              </>
-            )}
-            {mode === 'sign-up' && (
-              <label className="field">Artist or display name
-                <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="nickname" maxLength={120} />
-              </label>
-            )}
-            {mode !== 'reset' && (
-              <label className="field">Email
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-              </label>
-            )}
-            {mode !== 'forgot' && (
-              <label className="field">{mode === 'reset' ? 'New password' : 'Password'}
-                <input type="password" required minLength={10} value={password} onChange={(e) => setPassword(e.target.value)}
-                  autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} />
-                {mode !== 'sign-in' && <span className="hint">At least 10 characters.</span>}
-              </label>
-            )}
-            {error && <p className="warn" role="alert">{error}</p>}
-            {notice && <p className="hint" role="status">{notice}</p>}
-            <div className="buttons end">
-              <button type="button" onClick={onClose} disabled={busy}>Cancel</button>
-              <button type="submit" className="primary" disabled={busy}>
-                {busy ? 'Working…' : { 'sign-in': 'Sign in', 'sign-up': 'Create account', forgot: 'Send reset link', reset: 'Save password' }[mode]}
-              </button>
-            </div>
-            <p className="hint auth-switch">
-              {mode === 'sign-in' && <>New here? <a href="#" onClick={(e) => { e.preventDefault(); setMode('sign-up'); setError(''); }}>Create an account</a> · <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot'); setError(''); }}>Forgot password?</a></>}
-              {mode === 'sign-up' && <>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setMode('sign-in'); setError(''); }}>Sign in</a></>}
-              {mode === 'forgot' && <a href="#" onClick={(e) => { e.preventDefault(); setMode('sign-in'); setNotice(''); }}>Back to sign in</a>}
-            </p>
-            {mode === 'sign-up' && <p className="hint">Your account saves project layouts and defaults. Songs, images, clips and fonts stay on your devices.</p>}
-          </>
-        )}
-      </form>
-    </div>
+      {mode === 'check-email' ? (
+        <>
+          <p>We sent a confirmation link to <strong>{email}</strong>. Open it to finish creating your account.</p>
+          <p className="hint">Nothing arrived? Check spam, or sign up again to resend.</p>
+          <div className="buttons end"><button type="button" className="primary" onClick={onClose}>Done</button></div>
+        </>
+      ) : (
+        <>
+          {(mode === 'sign-in' || mode === 'sign-up') && anyProvider && (
+            <>
+              <div className="providers">
+                {providers.google && <Provider id="google" label="Google" path={GOOGLE_PATH} />}
+                {providers.discord && <Provider id="discord" label="Discord" path={SOCIAL_ICONS.discord.path} />}
+              </div>
+              <div className="or"><span>or with email</span></div>
+            </>
+          )}
+          {mode === 'sign-up' && (
+            <label className="field">Artist or display name
+              <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="nickname" maxLength={120} />
+            </label>
+          )}
+          {mode !== 'reset' && (
+            <label className="field">Email
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+            </label>
+          )}
+          {mode !== 'forgot' && (
+            <label className="field">{mode === 'reset' ? 'New password' : 'Password'}
+              <input type="password" required minLength={10} value={password} onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'} />
+              {mode !== 'sign-in' && <span className="hint">At least 10 characters.</span>}
+            </label>
+          )}
+          {error && <p className="warn" role="alert">{error}</p>}
+          {notice && <p className="hint" role="status">{notice}</p>}
+          <div className="buttons end">
+            <button type="button" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="primary" disabled={busy}>
+              {busy ? 'Working…' : { 'sign-in': 'Sign in', 'sign-up': 'Create account', forgot: 'Send reset link', reset: 'Save password' }[mode]}
+            </button>
+          </div>
+          <p className="hint auth-switch">
+            {mode === 'sign-in' && <>New here? <a href="#" onClick={(e) => { e.preventDefault(); setMode('sign-up'); setError(''); }}>Create an account</a> · <a href="#" onClick={(e) => { e.preventDefault(); setMode('forgot'); setError(''); }}>Forgot password?</a></>}
+            {mode === 'sign-up' && <>Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); setMode('sign-in'); setError(''); }}>Sign in</a></>}
+            {mode === 'forgot' && <a href="#" onClick={(e) => { e.preventDefault(); setMode('sign-in'); setNotice(''); }}>Back to sign in</a>}
+          </p>
+          {mode === 'sign-up' && <p className="hint">Your account saves project layouts and defaults. Songs, images, clips and fonts stay on your devices.</p>}
+          {mode === 'sign-up' && <LegalLinks />}
+        </>
+      )}
+    </Modal>
   );
 }
