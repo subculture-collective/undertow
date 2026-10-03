@@ -1,5 +1,7 @@
 # Undertow
 
+![Undertow: Give the track something to look at. Pink and cyan waveform artwork.](docs/assets/readme/banner.png)
+
 **Give the track something to look at.**
 
 Undertow is a layered music visualizer editor that runs in your browser. Load a
