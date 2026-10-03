@@ -12,13 +12,13 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
       </div>
       <p>
         {BRAND.name} runs in your browser. Songs, images, clips and fonts stay on your device, and your computer
-        encodes the video. If you sign in, your account stores project layouts and defaults so you can open them
-        anywhere. Media is only uploaded if you choose to render in the cloud, and it's deleted when that render
-        finishes.
+        does the encoding, so codecs and render speed depend on the browser and the hardware. If you sign in,
+        your account stores project layouts and defaults so you can open them anywhere. Media is only uploaded
+        if you choose to render in the cloud, and it's deleted when that render finishes.
       </p>
       {visibleLink(BRAND.patreon) && (
         <div className="support-nudge">
-          <p>It's free to use. If it saves you time, you can support new features on Patreon.</p>
+          <p>{BRAND.name} is free, with or without Patreon. Support there pays for the work on it.</p>
           <PatreonButton />
         </div>
       )}

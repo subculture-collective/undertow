@@ -15,8 +15,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
     if (!this.state.error) return this.props.children;
     return (
       <div className="crash" role="alert">
-        <h3>Something went wrong</h3>
-        <p>Your project is saved. Reload to keep working.</p>
+        <h3>The editor hit an error</h3>
+        <p>Your project autosaves. Reload to carry on from the last save.</p>
         <pre>{this.state.error.message}</pre>
         <button className="primary" onClick={() => location.reload()}>Reload</button>
       </div>

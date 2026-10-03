@@ -36,7 +36,7 @@ export const BRAND: Brand = {
   contact: 'info@subcult.tv',
   tagline: 'Music visualizer videos, made in your browser',
   description:
-    'Create music visualizer videos with artwork, waveforms and timed lyrics. Export landscape, portrait and square MP4s free in your browser, with no watermark.',
+    'Layer Milkdrop, a spectrum, VU meters, artwork and timed lyrics over your track. Lay it out in 16:9, 9:16 and 1:1, then render MP4 in your browser. Free, no watermark.',
   /** Public address of the deployed site, e.g. https://example.com. Needed for share-preview images. */
   siteUrl: 'https://undertow.subcult.tv',
   /** SUBCULT's Patreon custom domain. */

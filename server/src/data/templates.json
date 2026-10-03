@@ -2,7 +2,7 @@
  {
   "id": "classic",
   "name": "Classic",
-  "description": "Milkdrop visuals behind cover art, a spectrum, title and socials.",
+  "description": "The default. Milkdrop behind the cover art, a spectrum under it, then title and socials.",
   "data": {
    "version": 1,
    "name": "Untitled",
@@ -247,7 +247,7 @@
  {
   "id": "vinyl",
   "name": "Vinyl",
-  "description": "Spinning circular artwork inside a radial spectrum ring, with a song progress bar.",
+  "description": "The cover turns at 8 rpm inside a radial spectrum ring. Song progress runs along the bottom.",
   "data": {
    "version": 1,
    "name": "Untitled",
@@ -485,7 +485,7 @@
  {
   "id": "karaoke",
   "name": "Karaoke",
-  "description": "Big word-by-word lyrics over soft Milkdrop, with the artwork and title in the corner.",
+  "description": "Word-by-word lyrics up front, Milkdrop turned down behind them. Artwork and title sit in the corner.",
   "data": {
    "version": 1,
    "name": "Untitled",
@@ -721,7 +721,7 @@
  {
   "id": "neon",
   "name": "Neon",
-  "description": "A starfield warp with a glowing mirrored spectrum, spaced-out title and LED meter.",
+  "description": "Starfield warp, a mirrored spectrum in cyan and magenta, a wide-spaced title and a 24-segment LED meter.",
   "data": {
    "version": 1,
    "name": "Untitled",
@@ -971,7 +971,7 @@
  {
   "id": "poster",
   "name": "Poster",
-  "description": "A light, print-style layout: large artwork, serif title and ink-coloured spectrum.",
+  "description": "The daylight one. Paper background, large artwork, a serif title and a spectrum in ink.",
   "data": {
    "version": 1,
    "name": "Untitled",
@@ -1210,7 +1210,7 @@
  {
   "id": "clip",
   "name": "Video loop",
-  "description": "Your own looping clip under a dark wash, with a glowing line spectrum and title.",
+  "description": "Your clip on a loop under a dark wash, with a line spectrum and the title over it.",
   "data": {
    "version": 1,
    "name": "Untitled",

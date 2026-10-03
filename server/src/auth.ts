@@ -30,14 +30,14 @@ export const auth = betterAuth({
     minPasswordLength: 10,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      await sendMail(user.email, 'Reset your Undertow password', `Reset your password here:\n${url}\n\nIf you didn't ask for this, ignore this email.`);
+      await sendMail(user.email, 'Reset your Undertow password', `Use this link to choose a new Undertow password:\n${url}\n\nIf you didn't ask for a reset, ignore this email and your password stays as it is.`);
     },
   },
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-      await sendMail(user.email, 'Confirm your Undertow email', `Confirm your email address:\n${url}`);
+      await sendMail(user.email, 'Confirm your Undertow email', `Open this link to confirm your address and finish setting up your Undertow account:\n${url}\n\nIf you didn't sign up, ignore this email.`);
     },
   },
 
