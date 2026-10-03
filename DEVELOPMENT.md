@@ -101,8 +101,18 @@ or how billing works, update the page and its "Last updated" date in the same
 change.
 
 `npm run og-image` renders `public/og-glitch.png` from `scripts/og-image.html` with
-headless Chrome. Set `CHROME` to the browser binary if it isn't at the macOS
-default path.
+headless Chrome. The card sets its text in the fonts bundled in
+`scripts/og-fonts/` (Liberation Mono for the wordmark and labels, Public Sans
+for the headline and detail lines), loaded with `@font-face`, so it does not
+use the rendering machine's system fonts. Their licences sit beside them.
+
+- macOS: `npm run og-image` uses Google Chrome at its default path.
+- Linux: `CHROME=/usr/bin/chromium npm run og-image`, or point `CHROME` at
+  another Chrome or Chromium binary.
+
+Two runs on the same machine produce the same bytes. A different browser
+version or operating system can still rasterize text slightly differently, so
+open the PNG after rendering and check it before committing.
 
 ## Browser self-test
 
