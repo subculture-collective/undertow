@@ -25,7 +25,7 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   portrait 9:16 and square 1:1, so one project exports every format.
 - **Lyrics**: LRC (including enhanced LRC word timing for karaoke), SRT and VTT,
   with a sync offset.
-- **Export**: H.264 MP4 with AAC audio, 720p to 4K, 24/30/60 fps, whole song or
+- **Export**: MP4 (H.264 with AAC audio where the browser can encode them), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
 - Undo/redo, autosave (layout in localStorage, files in IndexedDB), layout
   save/load as JSON, snapping guides, keyboard nudging.
@@ -35,7 +35,7 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   new projects (artist name, website, socials, palette, font), and a project
   library that saves to your account or to this browser. Autosave detects edits
   from another tab or device instead of overwriting them.
-- **Cloud rendering** (paid plans): export on the server instead of the browser,
+- **Cloud rendering** (the `creator` plan; live billing is off): export on the server instead of the browser,
   using the same rendering code. See [docs/rendering.md](docs/rendering.md).
 
 ## Development
@@ -100,7 +100,7 @@ from `src/brand.ts`. When the product changes what it stores, who processes it
 or how billing works, update the page and its "Last updated" date in the same
 change.
 
-`npm run og-image` renders `public/og.png` from `scripts/og-image.html` with
+`npm run og-image` renders `public/og-glitch.png` from `scripts/og-image.html` with
 headless Chrome. Set `CHROME` to the browser binary if it isn't at the macOS
 default path.
 
