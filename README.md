@@ -1,44 +1,50 @@
 # Undertow
 
-**Turn your track into a visual release.**
+**Give the track something to look at.**
 
-Undertow is a music visualizer and video editor that runs in your browser. Bring
-a song, add artwork and timed lyrics, arrange your layers, and export an MP4 for
-a full release or a short social post.
+Undertow is a layered music visualizer editor that runs in your browser. Load a
+song, stack visuals behind your artwork, put timed lyrics on top, and render an
+MP4 for the full release or a short for the feed.
 
 [Open Undertow](https://undertow.subcult.tv) · [Product overview](https://subcult.tv/products/undertow) · [Feedback and issues](https://git.subcult.tv/subculture-collective/undertow/issues)
 
 ![Undertow layered music video editor](https://subcult.tv/screenshots/undertow-editor-1440.webp)
 
-## A track, a layout, a video
+## What's in the box
 
-1. **Start with your sound.** Load a track and choose a template such as Vinyl,
-   Karaoke, Neon, Poster, or Video loop.
-2. **Build the scene.** Combine audio-reactive visualizers, artwork, logos, text,
-   waveforms, spectrum displays, particles, and looping video backgrounds.
-3. **Add the words.** Import LRC, SRT, or VTT lyrics, adjust their timing, and use
-   custom fonts for your title and text layers.
-4. **Make every format.** Give each layer its own position in landscape, portrait,
-   and square layouts, then export the formats you need from one project.
+- **Layers:** Milkdrop presets, spectrum, waveform, VU meters, particles,
+  artwork and logos, text, socials, and looping video backgrounds. Stack them,
+  blend them, hide the ones you don't want.
+- **Lyrics:** LRC, SRT or VTT, with a sync offset. Enhanced LRC word timings
+  give word-by-word karaoke.
+- **Three frames from one project:** every layer keeps its own position in
+  16:9, 9:16 and 1:1, so the landscape cut, the vertical and the square all come
+  out of the same file.
+- **Templates:** Classic, Vinyl, Karaoke, Neon, Poster and Video loop, for when
+  you're in a hurry. Each one carries over your song, artwork, clip and lyrics.
+- **Fonts:** six built in, or upload your own TTF, OTF, WOFF or WOFF2.
 
-Undo, snapping guides, browser autosave, and layout save/load help you refine a
-project and return to it later.
+Undo, snapping guides, browser autosave and layout save/load are there for the
+second and third pass.
 
-## Export on your device
+## It renders on your machine
 
-Local exports analyze, render, and encode your media on your own machine. No
-account is required for the standalone editor. Export a whole song or a
-15-second preview as an H.264 MP4, with options from 720p to 4K and 24, 30, or
-60 frames per second.
+A local export analyzes, draws and encodes the video in your browser. Your
+audio doesn't leave it, and the standalone editor needs no account. Export the
+whole song or a 15-second preview as MP4, from 720p to 4K at 24, 30 or 60
+frames per second.
 
-Codec support and rendering speed depend on your browser and hardware. Browsers
-without an audio encoder produce silent video, with a notice in the export
-dialog. See the [browser test notes](DEVELOPMENT.md#browser-self-test).
+Codec support and render speed depend on your browser and hardware. The
+exporter asks for H.264 first and falls back to HEVC, VP9 or AV1 if the browser
+can't encode it. A browser without an audio encoder produces silent video and
+says so in the export dialog. 4K is offered everywhere but not every device can
+encode it. See the [browser test notes](DEVELOPMENT.md#browser-self-test).
 
-Optional accounts add a project library and reusable artist defaults. Cloud
-rendering, when configured for a paid plan, uploads the files needed for the
-render and deletes those inputs when the job ends. Read the
-[rendering guide](docs/rendering.md) for that separate workflow.
+Optional accounts add a project library and reusable artist defaults; they
+store layouts, not media. Cloud rendering is still in testing and live paid
+billing is off, so there is no plan to buy. Where it is enabled, a cloud render
+uploads the files it needs and deletes those inputs when the job ends. The
+[rendering guide](docs/rendering.md) covers that separate workflow.
 
 ## Make it your own
 
