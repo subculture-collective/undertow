@@ -1,6 +1,6 @@
 # Undertow
 
-![Undertow: Give the track something to look at. Pink and cyan waveform artwork.](docs/assets/readme/banner.png)
+![Undertow: Give the track something to look at. Pink and cyan waveform artwork.](https://git.subcult.tv/api/v1/repos/subculture-collective/undertow/raw/docs/assets/readme/banner.png?ref=c46159f6b465ce1d996b8d8c2560db692b57191c)
 
 **Give the track something to look at.**
 
