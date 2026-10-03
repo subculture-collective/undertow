@@ -58,7 +58,7 @@ export function LayerPanel() {
             <button title="Delete file" aria-label={`Delete ${a.meta.name}`} onClick={() => removeAsset(a.meta.id)}><Icon name="close" size={14} /></button>
           </li>
         ))}
-        {!Object.keys(assets).length && <li className="hint">Drop a song, images (PNG, SVG, JPG), video clips, fonts or lyrics (.lrc, .srt, .vtt) anywhere.</li>}
+        {!Object.keys(assets).length && <li className="hint">Nothing loaded yet. Drop a song, images (PNG, SVG, JPG), video clips, fonts or lyrics (.lrc, .srt, .vtt) anywhere in the window.</li>}
       </ul>
     </aside>
   );

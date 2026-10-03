@@ -51,7 +51,7 @@ function brandMeta(): Plugin {
               url: `${site}/`, description: BRAND.description, applicationCategory: 'MultimediaApplication',
               operatingSystem: 'Web browser', browserRequirements: 'Requires JavaScript and a browser with WebCodecs support for local MP4 export.',
               isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', description: 'Free editing and local exports.' },
-              image: `${site}/og-glitch.png`, featureList: ['Music visualizers', 'Waveforms and spectrum displays', 'Timed lyrics', 'Layered artwork and video', 'Landscape, portrait and square MP4 export'],
+              image: `${site}/og-glitch.png`, featureList: ['Milkdrop visualizer presets', 'Spectrum, waveform and VU meter layers', 'Timed lyrics from LRC, SRT and VTT files', 'Layered artwork and looping video', 'MP4 export in 16:9, 9:16 and 1:1'],
             }).replace(/</g, '\\u003c') },
           );
         }

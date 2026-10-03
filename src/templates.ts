@@ -33,13 +33,13 @@ export const TEMPLATES: Template[] = [
   {
     id: 'classic',
     name: 'Classic',
-    description: 'Milkdrop visuals behind cover art, a spectrum, title and socials.',
+    description: 'The default. Milkdrop behind the cover art, a spectrum under it, then title and socials.',
     build: starterProject,
   },
   {
     id: 'vinyl',
     name: 'Vinyl',
-    description: 'Spinning circular artwork inside a radial spectrum ring, with a song progress bar.',
+    description: 'The cover turns at 8 rpm inside a radial spectrum ring. Song progress runs along the bottom.',
     build: () => project([
       layer('solid', { props: { color: '#140d1c', color2: '#3b1a33', gradient: true, angle: 120 } }),
       layer('particles', { props: { style: 'dust', count: 120, color: '#ffd9f0', color2: '#ffb36b', size: 0.8, speed: 0.6 }, opacity: 0.7 }),
@@ -69,7 +69,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'karaoke',
     name: 'Karaoke',
-    description: 'Big word-by-word lyrics over soft Milkdrop, with the artwork and title in the corner.',
+    description: 'Word-by-word lyrics up front, Milkdrop turned down behind them. Artwork and title sit in the corner.',
     build: () => project([
       layer('solid', { props: { color: '#07070c', color2: '#141030', gradient: true, angle: 90 } }),
       layer('milkdrop', { props: { preset: 'Flexi + Martin - astral projection', gain: 0.8 }, opacity: 0.45 }),
@@ -97,7 +97,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'neon',
     name: 'Neon',
-    description: 'A starfield warp with a glowing mirrored spectrum, spaced-out title and LED meter.',
+    description: 'Starfield warp, a mirrored spectrum in cyan and magenta, a wide-spaced title and a 24-segment LED meter.',
     build: () => project([
       layer('solid', { props: { color: '#03020a', color2: '#1b0a3e', gradient: true, angle: 90 } }),
       layer('particles', { props: { style: 'starfield', count: 350, color: '#ffffff', color2: '#b18cff', size: 1, speed: 1, react: 0.9 } }),
@@ -124,7 +124,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'poster',
     name: 'Poster',
-    description: 'A light, print-style layout: large artwork, serif title and ink-coloured spectrum.',
+    description: 'The daylight one. Paper background, large artwork, a serif title and a spectrum in ink.',
     build: () => project([
       layer('solid', { props: { color: '#f3ebe1', color2: '#dcc8b3', gradient: true, angle: 160 } }),
       layer('particles', { props: { style: 'bokeh', count: 30, color: '#ffffff', color2: '#ffe2c4', size: 1.4, speed: 0.5, react: 0.3 }, opacity: 0.8 }),
@@ -152,7 +152,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'clip',
     name: 'Video loop',
-    description: 'Your own looping clip under a dark wash, with a glowing line spectrum and title.',
+    description: 'Your clip on a loop under a dark wash, with a line spectrum and the title over it.',
     build: () => project([
       layer('video'),
       layer('solid', { name: 'Wash', props: { color: '#000000', color2: '#1a0a2a', gradient: true, angle: 90 }, opacity: 0.45 }),

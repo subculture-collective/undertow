@@ -38,7 +38,7 @@ export function AuthDialog({ initial = 'sign-in', resetToken, onClose }: { initi
     setBusy(true); setError('');
     try {
       const { error: e } = await fn();
-      if (e) { setError(e.code === 'EMAIL_NOT_VERIFIED' ? 'Confirm your email first. We sent you a link when you signed up.' : e.message ?? 'Something went wrong.'); return false; }
+      if (e) { setError(e.code === 'EMAIL_NOT_VERIFIED' ? 'Confirm your email first. We sent you a link when you signed up.' : e.message ?? 'That didn’t go through. Try again.'); return false; }
       return true;
     } catch {
       setError(`Could not reach ${BRAND.name}. Check your connection.`);
