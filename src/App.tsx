@@ -153,7 +153,7 @@ export default function App() {
   // Cloud renders: resume following active ones after sign-in, and say when one finishes.
   useEffect(() => {
     useRenders.setState({
-      onFinished: (j) => setToast(j.status === 'done' ? `Cloud render ready: ${j.name}. Open Renders to download.` : `Cloud render failed: ${j.name}.`),
+      onFinished: (j) => setToast(j.status === 'done' ? `Cloud render ready: ${j.name}. Open Cloud renders to download it.` : `Cloud render failed: ${j.name}.`),
     });
   }, []);
   useEffect(() => { if (signedIn) void useRenders.getState().refresh().catch(() => {}); }, [signedIn]);
