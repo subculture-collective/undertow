@@ -1,6 +1,11 @@
 <!doctype html>
-<!-- Source for public/og-glitch.png. Regenerate with npm run og-image. -->
+<!-- Source for public/og-glitch.png. Regenerate with npm run og-image.
+     Text is set in the fonts bundled in og-fonts/ (Liberation Mono, Public Sans), never system fonts. -->
 <html lang="en"><head><meta charset="utf-8"><style>
+@font-face{font-family:'OG Mono';font-weight:400;src:url('og-fonts/LiberationMono-Regular.ttf') format('truetype')}
+@font-face{font-family:'OG Mono';font-weight:700;src:url('og-fonts/LiberationMono-Bold.ttf') format('truetype')}
+@font-face{font-family:'OG Sans';font-weight:400;src:url('og-fonts/PublicSans-Regular.ttf') format('truetype')}
+@font-face{font-family:'OG Sans';font-weight:700;src:url('og-fonts/PublicSans-Bold.ttf') format('truetype')}
 html,body{margin:0;width:1200px;height:630px;overflow:hidden;background:#0f0c1c}svg{display:block}
 </style></head><body>
 <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
@@ -8,21 +13,25 @@ html,body{margin:0;width:1200px;height:630px;overflow:hidden;background:#0f0c1c}
 <rect x="46" y="54" width="1100" height="516" fill="#6a5fb0"/>
 <rect x="38" y="46" width="1100" height="516" fill="#171429" stroke="#c7b3ff" stroke-width="3"/>
 <rect x="74" y="82" width="120" height="32" fill="#c7b3ff"/>
-<text x="86" y="104" fill="#110e1f" font-family="monospace" font-size="18" font-weight="bold">SUBCULT</text>
-<g font-family="monospace" font-size="94" font-weight="bold">
-<text x="72" y="227" fill="#9cecff">UNDERTOW</text><text x="78" y="227" fill="#ff9fe0">UNDERTOW</text><text x="75" y="227" fill="#f7f3ff">UNDERTOW</text>
+<text x="86" y="104" fill="#110e1f" font-family="OG Mono" font-size="18" font-weight="700">SUBCULT</text>
+<g font-family="OG Mono" font-size="94" font-weight="700">
+<text x="72" y="214" fill="#9cecff">UNDERTOW</text><text x="78" y="214" fill="#ff9fe0">UNDERTOW</text><text x="75" y="214" fill="#f7f3ff">UNDERTOW</text>
 </g>
-<g fill="#f7f3ff" font-family="sans-serif" font-size="38" font-weight="600">
-<text x="76" y="307">Music visualizer videos,</text><text x="76" y="358">made in your browser.</text>
+<g fill="#f7f3ff" font-family="OG Sans" font-size="38" font-weight="700">
+<text x="76" y="286">Give the track</text><text x="76" y="334">something to look at.</text>
 </g>
-<rect x="82" y="405" width="434" height="48" fill="#9cecff"/>
-<rect x="76" y="399" width="434" height="48" fill="#ff9fe0" stroke="#110e1f" stroke-width="3"/>
-<text x="94" y="430" fill="#110e1f" font-family="monospace" font-size="21" font-weight="bold">FREE EDITOR · NO WATERMARK</text>
-<text x="76" y="514" fill="#bdb4dc" font-family="monospace" font-size="24">undertow.subcult.tv</text>
+<g fill="#bdb4dc" font-family="OG Sans" font-size="23">
+<text x="76" y="380">Milkdrop, spectrum and timed lyrics.</text><text x="76" y="411">MP4, rendered in your browser.</text>
+</g>
+<rect x="82" y="446" width="434" height="48" fill="#9cecff"/>
+<rect x="76" y="440" width="434" height="48" fill="#ff9fe0" stroke="#110e1f" stroke-width="3"/>
+<text x="94" y="471" fill="#110e1f" font-family="OG Mono" font-size="21" font-weight="700">FREE EDITOR · NO WATERMARK</text>
+<text x="76" y="534" fill="#bdb4dc" font-family="OG Mono" font-size="24">undertow.subcult.tv</text>
 <g id="bars"></g>
 </svg>
 <script>
 const bars=document.getElementById('bars');const ns='http://www.w3.org/2000/svg';
 const heights=[70,118,185,240,165,275,220,125,90];
 heights.forEach((height,i)=>{for(const [offset,colour] of [[4,'#9cecff'],[0,i%2?'#c7b3ff':'#ff9fe0']]){const r=document.createElementNS(ns,'rect');r.setAttribute('x',770+i*32+offset);r.setAttribute('y',430-height);r.setAttribute('width',22);r.setAttribute('height',height);r.setAttribute('fill',colour);bars.append(r);}});
+document.fonts.ready.then(()=>{document.documentElement.dataset.fonts=[...document.fonts].map(f=>f.family+' '+f.weight+' '+f.status).join('; ');});
 </script></body></html>

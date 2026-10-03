@@ -48,7 +48,7 @@ The editor's labels are the ones audio and video tools already use: Layers, Expo
 6. Patreon lines state that the editor is free either way. They don't ask how the export went.
 7. Spelling follows the file you are in. The editor writes "colour"; the README writes "analyze".
 
-The tagline in `src/brand.ts` is also set in the share image (`scripts/og-image.html`, `public/og-glitch.png`). Change both together with `npm run og-image`.
+The tagline in `src/brand.ts` is also set in the share image (`scripts/og-image.html`, `public/og-glitch.png`). Change both together with `npm run og-image`. The card uses the fonts in `scripts/og-fonts/`, not system fonts.
 
 ## Screen sizes
 

@@ -43,9 +43,9 @@ function brandMeta(): Plugin {
             meta({ property: 'og:image:type', content: 'image/png' }),
             meta({ property: 'og:image:width', content: '1200' }),
             meta({ property: 'og:image:height', content: '630' }),
-            meta({ property: 'og:image:alt', content: 'Undertow music visualizer video editor, with pink, sky blue and lilac spectrum bars.' }),
+            meta({ property: 'og:image:alt', content: 'Undertow share card. Headline: Give the track something to look at. Below it: Milkdrop, spectrum and timed lyrics. MP4, rendered in your browser. A pink label reads Free editor, no watermark, beside pink, sky blue and lilac spectrum bars.' }),
             meta({ name: 'twitter:image', content: `${site}/og-glitch.png` }),
-            meta({ name: 'twitter:image:alt', content: 'Undertow: free music visualizer videos, made in your browser.' }),
+            meta({ name: 'twitter:image:alt', content: 'Undertow: give the track something to look at. Milkdrop, spectrum and timed lyrics; MP4, rendered in your browser. Free editor, no watermark.' }),
             { tag: 'script', attrs: { type: 'application/ld+json' }, injectTo: 'head', children: JSON.stringify({
               '@context': 'https://schema.org', '@type': 'WebApplication', name: BRAND.name,
               url: `${site}/`, description: BRAND.description, applicationCategory: 'MultimediaApplication',
