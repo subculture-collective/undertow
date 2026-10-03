@@ -1,6 +1,6 @@
 # Cloud rendering
 
-Cloud rendering produces the same MP4 as "Export" in the editor, but on a server, so you can close the tab. It's a paid-plan feature. The `creator` plan includes 120 minutes a month, up to 4K and 15 minutes per video.
+Cloud rendering produces the same MP4 as "Export" in the editor, but on a server, so you can close the tab. It needs the `creator` plan, which includes 120 minutes a month, up to 4K and 15 minutes per video. Live billing is off (`STRIPE_LIVE_MODE=false`), so the plan is not on sale and public copy must not present it as purchasable.
 
 ## How a render runs
 

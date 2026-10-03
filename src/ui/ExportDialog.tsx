@@ -107,14 +107,14 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
       )}
       {where === 'cloud' && !signedIn && (
         <div className="support-nudge">
-          <p>Cloud rendering runs on {BRAND.name}'s servers, so you can close the tab while it works. Sign in to use it.</p>
+          <p>Cloud rendering runs on {BRAND.name}'s servers, so you can close the tab while it works. It needs an account whose plan includes it. Sign in to check yours.</p>
           <button className="sm primary" onClick={() => { onClose(); onSignIn(); }}>Sign in</button>
         </div>
       )}
       {where === 'cloud' && signedIn && usage && !cloudAllowed && (
         <div className="support-nudge">
-          <p>Cloud rendering requires Creator. Rendering on this computer is always free.</p>
-          <button className="sm primary" onClick={onBilling}>View Creator plan</button>
+          <p>Your plan doesn't include cloud rendering. Billing shows whether Creator is open yet. Rendering on this computer is free either way.</p>
+          <button className="sm primary" onClick={onBilling}>Open Billing</button>
         </div>
       )}
       {where === 'cloud' && cloudAllowed && limits && (
@@ -168,14 +168,14 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
       ))}
       {results.length > 0 && !busy && visibleLink(BRAND.patreon) && (
         <div className="support-nudge">
-          <p>Happy with the result? {BRAND.name} is free, and Patreon support pays for new features.</p>
+          <p>{BRAND.name} is free, with or without Patreon. Support there pays for the work on it.</p>
           <PatreonButton small />
         </div>
       )}
       <p className="hint">
         {where === 'local'
-          ? 'Rendering happens on this computer. Keep this tab open until it finishes.'
-          : `Cloud renders keep going if you close this. Find them under your account menu, Renders. Videos are kept for ${retentionDays} days.`}
+          ? 'It renders on this computer, and your audio doesn’t leave it. Speed depends on the browser and the device. Keep this tab open until it finishes.'
+          : `Cloud renders keep going if you close this. Find them in your account menu under Cloud renders. Videos are kept for ${retentionDays} days.`}
       </p>
       <div className="buttons end">
         {progress

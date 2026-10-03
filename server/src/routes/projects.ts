@@ -32,7 +32,7 @@ async function own(id: string, userId: string) {
 
 async function checkQuota(userId: string, max: number) {
   const [{ n }] = await db.select({ n: count() }).from(project).where(eq(project.userId, userId));
-  if (n >= max) fail(403, `Your plan allows ${max} projects. Delete one or upgrade.`);
+  if (n >= max) fail(403, `Your plan allows ${max} projects. Delete one to make room.`);
 }
 
 // Cursors are "<updatedAt ISO>|<id>" in base64url: stable ordering even when timestamps tie.
