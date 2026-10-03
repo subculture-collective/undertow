@@ -132,8 +132,8 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
     <Modal className="gallery" labelledBy="gallery-title" onClose={onClose}>
       <h3 id="gallery-title">Start from a template</h3>
       <p className="hint">
-        Starts a new project with your song, artwork, clip and lyrics, plus your defaults. The current project stays in Projects.
-        Previews show {ASPECTS[aspect].label}.
+        Pick a starting point. It opens as a new project with your song, artwork, clip and lyrics, plus your defaults, and every
+        layer is yours to move. The current project stays in Projects. Previews show {ASPECTS[aspect].label}.
       </p>
       <div className="gallery-grid">
         {TEMPLATES.map((t) => (

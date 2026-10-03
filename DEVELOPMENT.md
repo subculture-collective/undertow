@@ -25,7 +25,7 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   portrait 9:16 and square 1:1, so one project exports every format.
 - **Lyrics**: LRC (including enhanced LRC word timing for karaoke), SRT and VTT,
   with a sync offset.
-- **Export**: H.264 MP4 with AAC audio, 720p to 4K, 24/30/60 fps, whole song or
+- **Export**: MP4 (H.264 with AAC audio where the browser can encode them), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
 - Undo/redo, autosave (layout in localStorage, files in IndexedDB), layout
   save/load as JSON, snapping guides, keyboard nudging.
@@ -35,7 +35,7 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   new projects (artist name, website, socials, palette, font), and a project
   library that saves to your account or to this browser. Autosave detects edits
   from another tab or device instead of overwriting them.
-- **Cloud rendering** (paid plans): export on the server instead of the browser,
+- **Cloud rendering** (the `creator` plan; live billing is off): export on the server instead of the browser,
   using the same rendering code. See [docs/rendering.md](docs/rendering.md).
 
 ## Development
@@ -100,9 +100,19 @@ from `src/brand.ts`. When the product changes what it stores, who processes it
 or how billing works, update the page and its "Last updated" date in the same
 change.
 
-`npm run og-image` renders `public/og.png` from `scripts/og-image.html` with
-headless Chrome. Set `CHROME` to the browser binary if it isn't at the macOS
-default path.
+`npm run og-image` renders `public/og-glitch.png` from `scripts/og-image.html` with
+headless Chrome. The card sets its text in the fonts bundled in
+`scripts/og-fonts/` (Liberation Mono for the wordmark and labels, Public Sans
+for the headline and detail lines), loaded with `@font-face`, so it does not
+use the rendering machine's system fonts. Their licences sit beside them.
+
+- macOS: `npm run og-image` uses Google Chrome at its default path.
+- Linux: `CHROME=/usr/bin/chromium npm run og-image`, or point `CHROME` at
+  another Chrome or Chromium binary.
+
+Two runs on the same machine produce the same bytes. A different browser
+version or operating system can still rasterize text slightly differently, so
+open the PNG after rendering and check it before committing.
 
 ## Browser self-test
 

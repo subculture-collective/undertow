@@ -36,6 +36,20 @@ To inspect the components, open `/styleguide.html` on the deployed site or local
 12. Icons come from `icons.tsx`: one 24-unit grid and one square stroke. Add to that file; text glyphs such as ▶ or ✕ render differently in each system font. An icon-only button needs an `aria-label`.
 13. The frame around the stage has no colour, so nothing tints the video being judged.
 
+## Words
+
+The editor's labels are the ones audio and video tools already use: Layers, Export, Resolution, Frame rate, Loop. Leave them short. The voice belongs in the page description, template descriptions, empty states, the first-run gallery, export notes and error messages.
+
+1. Open with one line about the track, then give specifics: layer names, formats, numbers. "Give the track something to look at", then Milkdrop, spectrum, VU meters, LRC/SRT/VTT, 16:9, 9:16, 1:1, 720p to 4K.
+2. Local export happens in the browser and uploads nothing. Say so where someone is about to render.
+3. Codecs and render speed depend on the browser and the device. Never promise a fast render, or 4K on every machine. The exporter asks for H.264 and falls back to HEVC, VP9 or AV1.
+4. Live billing is off. Nothing in the interface or on the page presents Creator, a price or cloud minutes as something to buy unless `GET /v1/billing` reports it enabled, and sandbox mode is labelled as a test.
+5. An error says what happened and what to try next: "This browser cannot encode 3840x2160 video. Try a lower resolution or Chrome."
+6. Patreon lines state that the editor is free either way. They don't ask how the export went.
+7. Spelling follows the file you are in. The editor writes "colour"; the README writes "analyze".
+
+The tagline in `src/brand.ts` is also set in the share image (`scripts/og-image.html`, `public/og-glitch.png`). Change both together with `npm run og-image`. The card uses the fonts in `scripts/og-fonts/`, not system fonts.
+
 ## Screen sizes
 
 The editor layout has four tiers, defined at the end of `src/styles/app.css`:

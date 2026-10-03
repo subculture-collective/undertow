@@ -105,14 +105,14 @@ function BillingTab() {
   });
   const price = billing?.amount != null ? new Intl.NumberFormat(undefined, { style: 'currency', currency: billing.currency }).format(billing.amount / 100) : null;
   return <section className="form">
-    <p>Editing, templates and watermark-free exports on your device are free.</p>
-    <p>Creator includes 120 cloud-rendered minutes per calendar month, up to 4K, 15 minutes per job and seven-day downloads. Unused minutes do not roll over.</p>
+    <p>Editing, templates and exports on your device are free, with no watermark.</p>
     {view}
     {!billing && <p className="hint">Loading billing…</p>}
-    {billing && !billing.enabled && <p className="hint">Creator subscriptions are not available yet.</p>}
+    {billing && !billing.enabled && <p className="hint">Cloud rendering is still in testing. Creator subscriptions aren't open yet, so there is nothing to buy here.</p>}
     {billing?.enabled && <>
-      {billing.sandbox && <p className="warn">Sandbox billing. Use test payment details only. No real charges.</p>}
-      <p>Creator: {price} per month. Automatically renews until cancelled.</p>
+      {billing.sandbox && <p className="warn">Sandbox billing: this is a payment test, not a plan on sale. Use test payment details only. No real charges are made.</p>}
+      <p>Creator includes 120 cloud-rendered minutes per calendar month, up to 4K, 15 minutes per job and seven-day downloads. Unused minutes do not roll over.</p>
+      <p>Creator: {price} per month{billing.sandbox ? ' (test price)' : ''}. Automatically renews until cancelled.</p>
       <p className="hint">Subscription: {billing.status.replaceAll('_', ' ')}.</p>
       {billing.cancelAtPeriodEnd && billing.periodEnd && <p className="hint">Cancels on {new Date(billing.periodEnd).toLocaleDateString()}. Paid access remains until then.</p>}
       {!billing.creator && <p className="hint">After Checkout, refresh billing if payment confirmation is still pending.</p>}
