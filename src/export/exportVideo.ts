@@ -1,5 +1,5 @@
 import {
-  AudioBufferSource, BufferTarget, Mp4OutputFormat, VideoSample, VideoSampleSource, Output, QUALITY_HIGH, QUALITY_VERY_HIGH,
+  AudioBufferSource, VideoSample, VideoSampleSource, QUALITY_HIGH, QUALITY_VERY_HIGH,
   getFirstEncodableAudioCodec, getFirstEncodableVideoCodec, type AudioCodec,
 } from 'mediabunny';
 import type { AudioTrack } from '../audio/analysis';
@@ -10,6 +10,7 @@ import { loadPresets } from '../render/milkdrop';
 import { ASPECTS, type AspectId, type Project, type VideoLayer } from '../types';
 import { builtinFontsReady } from '../fonts';
 import { ClipReader } from './clipReader';
+import { createBlobOutput } from './blobOutput';
 
 /** Yields a macrotask so the page stays responsive; encoder promises can resolve without ever doing so. */
 const channel = new MessageChannel();
@@ -101,7 +102,8 @@ export async function exportVideo(
   const comp = new Compositor(ctx);
   const capturer = frameCapturer(canvas, ctx);
 
-  const output = new Output({ format: new Mp4OutputFormat({ fastStart: 'in-memory' }), target: new BufferTarget() });
+  const blobOutput = createBlobOutput();
+  const { output } = blobOutput;
   const bitrate = o.quality === 'very-high' ? QUALITY_VERY_HIGH : QUALITY_HIGH;
   const video = new VideoSampleSource({ codec: videoCodec, bitrate, keyFrameInterval: 2 });
   output.addVideoTrack(video, { frameRate: o.fps });
@@ -122,21 +124,14 @@ export async function exportVideo(
   const clips: { id: string; reader: ClipReader; layer: VideoLayer; duration: number }[] = [];
   const videoFrames = new Map<string, DecodedFrame | null>();
   const closeClips = () => Promise.all(clips.map((c) => c.reader.close()));
+  let msPerFrame = 0;
   try {
     for (const l of project.layers) {
       const a = l.type === 'video' && l.visible ? assets[l.props.assetId ?? ''] : undefined;
       if (l.type !== 'video' || !a?.video) continue;
       clips.push({ id: l.id, layer: l, duration: a.video.duration, reader: await ClipReader.open(a.blob, a.meta.name, W) });
     }
-  } catch (e) {
-    await closeClips();
-    comp.dispose();
-    throw e;
-  }
-
-  await output.start();
-  let msPerFrame = 0;
-  try {
+    await output.start();
     if (audio && track) {
       await audio.add(track.slice(o.start, o.end));
       audio.close();
@@ -160,14 +155,15 @@ export async function exportVideo(
     video.close();
     await output.finalize();
   } catch (e) {
-    await output.cancel();
+    try { await output.cancel(); } catch (cleanupError) { console.warn('Export cleanup failed:', cleanupError); }
+    blobOutput.clear();
     throw e;
   } finally {
     comp.dispose();
     await closeClips();
   }
   return {
-    blob: new Blob([output.target.buffer!], { type: 'video/mp4' }),
+    blob: blobOutput.finish(),
     width: W, height: H, videoCodec, audioCodec: audio ? audioCodec : null, capture: capturer.mode(), msPerFrame,
   };
 }
