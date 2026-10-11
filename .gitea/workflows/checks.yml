@@ -1,11 +1,14 @@
 name: Reliability checks
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -13,6 +16,10 @@ jobs:
           node-version: '24'
       - run: npm ci
       - run: npm --prefix server ci
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+      - name: Audit API dependencies
+        run: npm --prefix server audit --audit-level=high
       - run: npm run build
       - run: npm --prefix server run build
       - run: bash scripts/test-with-postgres.sh
