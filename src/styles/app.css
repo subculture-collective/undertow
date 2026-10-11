@@ -101,7 +101,9 @@ main { grid-area: main; display: flex; flex-direction: column; min-width: 0; min
 
 /* ---- inspector ------------------------------------------------------------------------------ */
 .layer-name { width: 100%; margin-bottom: var(--space-4); font-size: var(--text-md); font-weight: 600; }
-.inspector section { display: grid; gap: var(--space-4); padding: var(--space-5) 0; border-top: 1px solid var(--line); }
+/* minmax(0, 1fr): a row's natural width (label, slider track, value) is wider than the panel, and an auto column
+   would grow to it and push the controls out through the panel's padding. */
+.inspector section { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); padding: var(--space-5) 0; border-top: 1px solid var(--line); }
 
 .preset-picker { display: grid; gap: var(--space-3); }
 .preset-current { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--accent-hi); }
@@ -113,7 +115,7 @@ main { grid-area: main; display: flex; flex-direction: column; min-width: 0; min
 .preset-buttons button { gap: var(--space-2); }
 
 .socials { display: grid; gap: var(--space-3); }
-.social-row { display: grid; grid-template-columns: 110px 1fr auto; gap: var(--space-2); }
+.social-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: var(--space-2); }
 
 /* ---- export dialog ------------------------------------------------------------------------------ */
 .checks { display: flex; flex-direction: column; gap: var(--space-2); }
@@ -270,6 +272,15 @@ header .menu summary:has(.avatar) { padding: 0 var(--space-3); }
   header .brand-name { display: none; }
   .save-status { display: none; }
 }
+/* Narrow side panels (three columns, 900 to 1023px). */
+@media (min-width: 900px) and (max-width: 1023px) {
+  /* A 200px list can't fit a name beside four action buttons, so the selected row's actions take a second line.
+     They no longer appear on hover alone: a row growing under the pointer would make the list jump. */
+  .layer-list li { flex-wrap: wrap; }
+  .layer-list li:hover:not(.selected):not(:focus-within) .actions { display: none; }
+  .layer-list .actions { flex: 1 0 100%; justify-content: flex-end; padding-bottom: var(--space-1); }
+  .social-row { grid-template-columns: 96px minmax(0, 1fr) auto; }
+}
 
 @media (max-width: 899px) {
   .app {
@@ -294,6 +305,9 @@ header .menu summary:has(.avatar) { padding: 0 var(--space-3); }
 
   .stage-wrap { padding: var(--space-4); }
   .transport { gap: var(--space-4); padding: var(--space-3) var(--space-4); }
+  /* The panel is full width but short, so the layer types sit in two columns instead of one long list. */
+  .add-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .add-menu button { min-width: 0; }
 }
 
 /* Phones held sideways: too short to stack, so the stage and the panel sit side by side under a one-row header. */

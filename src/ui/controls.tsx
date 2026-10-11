@@ -1,6 +1,16 @@
 import type { ReactNode } from 'react';
 
-export function Row({ label, children }: { label: string; children: ReactNode }) {
+/** A labelled form row. `group` is for rows holding several labelled controls, where a wrapping <label> would be
+ *  invalid and clicking the row's label would toggle the first of them. */
+export function Row({ label, group = false, children }: { label: string; group?: boolean; children: ReactNode }) {
+  if (group) {
+    return (
+      <div className="row" role="group" aria-label={label}>
+        <span className="row-label" aria-hidden="true">{label}</span>
+        <span className="row-control">{children}</span>
+      </div>
+    );
+  }
   return (
     <label className="row">
       <span className="row-label">{label}</span>
