@@ -31,7 +31,18 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
   const [progress, setProgress] = useState<(ExportProgress & { aspect: AspectId }) | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [error, setError] = useState('');
+  const [rendering, setRendering] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  const resultUrls = useRef<string[]>([]);
+  const clearResults = () => {
+    resultUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    resultUrls.current = [];
+    setResults([]);
+  };
+  useEffect(() => () => {
+    abort.current?.abort();
+    resultUrls.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   // Cloud rendering: signed in, and a plan with render minutes.
   const signedIn = useAccount((s) => s.status === 'signed-in');
@@ -54,19 +65,25 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
   const end = range === 'full' ? duration : Math.min(duration, start + 15);
 
   const run = async () => {
-    setError(''); setResults([]);
+    if (abort.current) return;
+    setError(''); clearResults();
     audioEl.pause();
     abort.current = new AbortController();
+    setRendering(true);
     try {
       for (const aspect of aspects) {
         const res = await exportVideo(project, track, assets, { aspect, shortSide, fps, quality, start, end },
           (p) => setProgress({ ...p, aspect }), abort.current.signal);
+        if (abort.current.signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
         const silent = !!track && !res.audioCodec;
-        setResults((r) => [...r, { aspect, url: URL.createObjectURL(res.blob), size: res.blob.size, silent }]);
+        const url = URL.createObjectURL(res.blob);
+        resultUrls.current.push(url);
+        setResults((r) => [...r, { aspect, url, size: res.blob.size, silent }]);
       }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') setError((e as Error).message);
     } finally {
+      setRendering(false);
       setProgress(null);
       abort.current = null;
     }
@@ -89,7 +106,7 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
   };
 
   const base = project.name.replace(/[^\w\- ]+/g, '').trim() || 'visualizer';
-  const busy = !!progress || !!upload;
+  const busy = rendering || !!upload;
   const cloudSeconds = Math.ceil(end - start) * aspects.length;
   const tooBig = where === 'cloud' && !!limits && shortSide > limits.renderMaxShortSide;
   const tooLong = where === 'cloud' && !!limits && end - start > limits.renderMaxSeconds;
@@ -178,7 +195,7 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
           : `Cloud renders keep going if you close this. Find them in your account menu under Cloud renders. Videos are kept for ${retentionDays} days.`}
       </p>
       <div className="buttons end">
-        {progress
+        {rendering
           ? <button onClick={() => abort.current?.abort()}>Cancel</button>
           : <>
               <button onClick={onClose} disabled={!!upload}>Close</button>
