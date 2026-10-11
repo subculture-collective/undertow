@@ -124,7 +124,7 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
         </p>
       )}
       {!track && <p className="warn">No song loaded. The video will be silent and 15 seconds long.</p>}
-      <Row label="Formats">
+      <Row label="Formats" group>
         <span className="checks">
           {ASPECT_IDS.map((a) => (
             <label key={a}>
