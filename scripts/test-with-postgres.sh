@@ -3,14 +3,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-postgres_container=$(docker run -d --rm --memory=256m --cpus=1 \
+postgres_container=$(docker run -d --memory=256m --cpus=1 \
   --network bridge -p 127.0.0.1::5432 \
   -e POSTGRES_USER=undertow_test -e POSTGRES_PASSWORD=test-only-password \
   -e POSTGRES_DB=undertow_test_ci postgres:17-alpine)
-trap 'docker rm -f "$postgres_container" >/dev/null' EXIT
+trap 'docker rm --force --volumes "$postgres_container" >/dev/null 2>&1 || true' EXIT
 
 ready=false
-for attempt in {1..30}; do
+for attempt in {1..90}; do
+  if [[ "$(docker inspect --format '{{.State.Running}}' "$postgres_container")" != true ]]; then
+    break
+  fi
   # Check over TCP: during first-run setup the server answers on its local socket before it accepts network connections.
   if docker exec "$postgres_container" pg_isready -h 127.0.0.1 -U undertow_test -d undertow_test_ci >/dev/null; then
     ready=true
@@ -19,7 +22,9 @@ for attempt in {1..30}; do
   sleep 1
 done
 if [[ "$ready" != true ]]; then
-  echo 'Disposable PostgreSQL did not become ready.' >&2
+  echo "Disposable PostgreSQL did not become ready within 90 seconds (probe $attempt)." >&2
+  docker inspect --format 'status={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}}' "$postgres_container" >&2 || true
+  docker logs --tail 40 "$postgres_container" >&2 || true
   exit 1
 fi
 
