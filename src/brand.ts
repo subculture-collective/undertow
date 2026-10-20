@@ -39,8 +39,8 @@ export const BRAND: Brand = {
     'Layer Milkdrop, a spectrum, VU meters, artwork and timed lyrics over your track. Lay it out in 16:9, 9:16 and 1:1, then render MP4 in your browser. Free, no watermark.',
   /** Public address of the deployed site, e.g. https://example.com. Needed for share-preview images. */
   siteUrl: 'https://undertow.subcult.tv',
-  /** SUBCULT's Patreon custom domain. */
-  patreon: 'https://support.subcult.tv',
+  /** Central studio support explanation; this does not purchase product features. */
+  patreon: 'https://subcult.tv/support',
   terms: '/terms.html',
   privacy: '/privacy.html',
   /** Only accounts that exist. Add Instagram, YouTube or TikTok here once they do. */

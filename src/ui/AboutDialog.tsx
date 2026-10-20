@@ -18,7 +18,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
       </p>
       {visibleLink(BRAND.patreon) && (
         <div className="support-nudge">
-          <p>{BRAND.name} is free, with or without Patreon. Support there pays for the work on it.</p>
+          <p>{BRAND.name} is made by SUBCULT. Contributions support the studio and its work on creative tools; they do not buy export quality or cloud rendering.</p>
           <PatreonButton />
         </div>
       )}
