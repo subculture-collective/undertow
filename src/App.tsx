@@ -240,7 +240,7 @@ export default function App() {
           {!signedIn && <button onClick={() => setDialog({ kind: 'account', tab: 'defaults' })}>Edit defaults…</button>}
           <button onClick={saveProject}>Download layout (.json)</button>
           <button onClick={() => projectInput.current?.click()}>Import layout (.json)…</button>
-          {visibleLink(BRAND.patreon) && <a className="btn narrow-only" href={BRAND.patreon} target="_blank" rel="noopener noreferrer">Support on Patreon</a>}
+          {visibleLink(BRAND.patreon) && <a className="btn narrow-only" href={BRAND.patreon}>Support SUBCULT</a>}
         </Menu>
         <input ref={projectInput} type="file" hidden accept=".json" onChange={async (e) => {
           const f = e.target.files?.[0];
@@ -254,7 +254,7 @@ export default function App() {
         <button className={project.audioAssetId ? 'primary' : ''} onClick={() => { audioEl.pause(); setDialog({ kind: 'export' }); }}>Export</button>
         <span className="divider wide-only" />
         <div className="header-socials"><SocialLinks /></div>
-        <span className="wide-only"><PatreonButton label="Support" small /></span>
+        <span className="wide-only"><PatreonButton label="Support SUBCULT" small /></span>
         <AccountButton onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })}
           onAccount={(tab) => setDialog({ kind: 'account', tab })} onProjects={() => setDialog({ kind: 'projects' })}
           onRenders={() => setDialog({ kind: 'renders' })} />

@@ -125,7 +125,9 @@ main { grid-area: main; display: flex; flex-direction: column; min-width: 0; min
   display: flex; align-items: center; gap: var(--space-5); padding: var(--space-5);
   background: var(--accent-soft); border: 1px solid var(--accent-line);
 }
-.support-nudge p { flex: 1; }
+.support-nudge { flex-wrap: wrap; }
+.support-nudge p { flex: 1 1 15rem; }
+.support-nudge .btn { min-height: 44px; }
 
 /* ---- template gallery ------------------------------------------------------------------------------ */
 .modal.gallery { width: min(980px, calc(100vw - 40px)); }
