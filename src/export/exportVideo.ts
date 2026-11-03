@@ -56,6 +56,24 @@ function frameCapturer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
   return { capture, mode: () => mode };
 }
 
+const AUDIO_CHUNK_SECONDS = 10;
+
+/**
+ * The song between start and end as consecutive buffers of at most `seconds`.
+ * Boundaries are whole samples, so the pieces join without gaps or overlaps.
+ */
+function* audioChunks(buffer: AudioBuffer, start: number, end: number, seconds: number): Generator<AudioBuffer> {
+  const rate = buffer.sampleRate;
+  const first = Math.floor(start * rate), last = Math.max(first + 1, Math.min(buffer.length, Math.ceil(end * rate)));
+  const step = Math.max(1, Math.round(seconds * rate));
+  for (let a = first; a < last; a += step) {
+    const b = Math.min(last, a + step);
+    const out = new AudioBuffer({ length: b - a, numberOfChannels: buffer.numberOfChannels, sampleRate: rate });
+    for (let c = 0; c < buffer.numberOfChannels; c++) out.copyToChannel(buffer.getChannelData(c).subarray(a, Math.min(b, buffer.length)), c);
+    yield out;
+  }
+}
+
 export interface ExportOptions {
   aspect: AspectId;
   /** Output height for landscape, width for portrait; i.e. the short side. */
@@ -125,21 +143,28 @@ export async function exportVideo(
   const videoFrames = new Map<string, DecodedFrame | null>();
   const closeClips = () => Promise.all(clips.map((c) => c.reader.close()));
   let msPerFrame = 0;
+  const checkCancelled = () => { if (signal.aborted) throw new DOMException('Export cancelled', 'AbortError'); };
   try {
     for (const l of project.layers) {
+      checkCancelled();
       const a = l.type === 'video' && l.visible ? assets[l.props.assetId ?? ''] : undefined;
       if (l.type !== 'video' || !a?.video) continue;
       clips.push({ id: l.id, layer: l, duration: a.video.duration, reader: await ClipReader.open(a.blob, a.meta.name, W) });
     }
+    checkCancelled();
     await output.start();
     if (audio && track) {
-      await audio.add(track.slice(o.start, o.end));
+      // In chunks, so Cancel takes effect during a long song's audio encode.
+      for (const chunk of audioChunks(track.buffer, o.start, o.end, AUDIO_CHUNK_SECONDS)) {
+        checkCancelled();
+        await audio.add(chunk);
+      }
       audio.close();
     }
     const frames = Math.max(1, Math.round((o.end - o.start) * o.fps));
     const t0 = performance.now();
     for (let i = 0; i < frames; i++) {
-      if (signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
+      checkCancelled();
       const t = o.start + i / o.fps;
       for (const c of clips) videoFrames.set(c.id, await c.reader.frameAt(clipTime(c.layer.props, c.duration, t)));
       comp.render({ project, aspect: o.aspect, t, dt: 1 / o.fps, track, assets, preview: false, videoFrames });

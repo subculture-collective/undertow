@@ -93,6 +93,8 @@ function selftest(): Plugin {
     '/System/Library/Fonts/Supplemental/Apple Chancery.ttf',
     '/System/Library/Fonts/Supplemental/Courier New.ttf',
     '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf',
+    // Shipped with the repository, so the check also runs where none of the system fonts above exist.
+    'scripts/og-fonts/PublicSans-Regular.ttf',
   ];
   return {
     name: 'vizstudio-selftest',

@@ -216,6 +216,11 @@ export const CreateRender = z.object({
   projectId: z.string().optional(),
   data: ProjectData.optional(),
   /** Every file the layout uses, with its exact size and type. These are uploaded next. */
-  media: z.array(MediaRef.extend({ size: z.number().int().positive(), mime: z.string().max(120).default('application/octet-stream') })).max(50),
+  media: z.array(MediaRef.extend({
+    /** Also the upload path segment and storage file name, so it is limited to what both accept. */
+    id: z.string().regex(/^\w[\w.-]{0,63}$/, 'Media ids are 1–64 letters, digits, "_", "-" or ".", starting with a letter, digit or "_"'),
+    size: z.number().int().positive(),
+    mime: z.string().max(120).default('application/octet-stream'),
+  })).max(50).refine((m) => new Set(m.map((f) => f.id)).size === m.length, { message: 'Each media id must be listed once' }),
   options: RenderOptions,
 }).refine((b) => !!b.projectId !== !!b.data, { message: 'Send exactly one of projectId or data' }).openapi('CreateRender');

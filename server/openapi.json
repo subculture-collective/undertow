@@ -1371,6 +1371,10 @@
                 {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^\\w[\\w.-]{0,63}$"
+                    },
                     "size": {
                       "type": "integer",
                       "exclusiveMinimum": 0
@@ -1456,7 +1460,7 @@
             }
           },
           "503": {
-            "description": "Error",
+            "description": "Temporarily unavailable",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1521,7 +1525,7 @@
             }
           },
           "503": {
-            "description": "Error",
+            "description": "Temporarily unavailable",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1586,7 +1590,7 @@
             }
           },
           "503": {
-            "description": "Error",
+            "description": "Temporarily unavailable",
             "content": {
               "application/problem+json": {
                 "schema": {

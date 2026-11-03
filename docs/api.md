@@ -92,7 +92,9 @@ Each API key, or each signed-in user without a key, gets a per-minute request bu
 Plans are defined in `server/src/lib/plans.ts`. Stripe reconciliation updates
 `profile.plan`, and request authorization checks the stored subscription status
 and paid-period expiry. Every authenticated request is recorded in `usage_event`,
-and `GET /v1/usage` summarises it per day. No metered overage billing is enabled.
+and `GET /v1/usage` summarises it per day. Finished cloud renders are recorded there
+too, with seconds of output as units; they add to `units` but not to `requests`.
+No metered overage billing is enabled.
 
 `GET /v1/billing` reconciles the current subscription and reports its state and
 price. `POST /v1/billing/checkout` starts or resumes Checkout, while

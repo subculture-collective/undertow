@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useAccount } from '../cloud/account';
-import { refreshMissing, resolveConflict, useDoc } from '../cloud/documents';
+import { refreshMissing, resolveConflict, retrySave, useDoc } from '../cloud/documents';
 import { KIND_LABEL, remapAsset, type MediaRef } from '../cloud/media';
 import { useStore } from '../store';
 
@@ -15,6 +15,7 @@ export function SaveStatus() {
     'waiting-sign-in': ['Not synced', 'warn', 'Sign in to save to your account'],
     offline: ['Offline', 'warn', 'Changes are kept in this browser and save when you reconnect'],
     conflict: ['Conflict', 'bad', 'Saved elsewhere since you opened it'],
+    missing: ['Not saved', 'bad', 'This project isn’t in the signed-in account'],
     error: ['Not saved', 'bad', useDoc.getState().message],
   }[status] as [string, string, string];
   if (!text) return null;
@@ -34,11 +35,24 @@ export function DocBar({ onSignIn }: { onSignIn: () => void }) {
           <button className="sm primary" onClick={() => void resolveConflict('copy')}>Keep mine as a copy</button>
         </div>
       )}
-      {(status === 'offline' || status === 'error') && <div className="doc-bar warn" role="status"><span>{message}</span></div>}
-      {status === 'waiting-sign-in' && !signedIn && (
+      {status === 'missing' && (
+        <div className="doc-bar bad" role="alert">
+          <span>{message}</span>
+          <button className="sm primary" onClick={() => void resolveConflict('copy')}>Save as a new project</button>
+        </div>
+      )}
+      {status === 'offline' && <div className="doc-bar warn" role="status"><span>{message}</span></div>}
+      {status === 'error' && (
         <div className="doc-bar warn" role="status">
           <span>{message}</span>
-          <button className="sm primary" onClick={onSignIn}>Sign in</button>
+          <button className="sm" onClick={retrySave}>Retry now</button>
+        </div>
+      )}
+      {status === 'waiting-sign-in' && (
+        <div className="doc-bar warn" role="status">
+          <span>{message}</span>
+          {/* Still shown as signed in after a rejected session: the account check may not have caught up yet. */}
+          {signedIn ? <button className="sm" onClick={retrySave}>Retry now</button> : <button className="sm primary" onClick={onSignIn}>Sign in</button>}
         </div>
       )}
       {missing.length > 0 && <MissingFiles missing={missing} />}

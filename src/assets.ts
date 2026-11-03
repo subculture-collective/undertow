@@ -46,6 +46,15 @@ async function normaliseSvg(blob: Blob): Promise<Blob> {
 
 export async function hydrate(meta: AssetMeta, blob: Blob): Promise<RuntimeAsset> {
   const url = URL.createObjectURL(blob);
+  try {
+    return await decodeAsset(meta, blob, url);
+  } catch (e) {
+    URL.revokeObjectURL(url);
+    throw e;
+  }
+}
+
+async function decodeAsset(meta: AssetMeta, blob: Blob, url: string): Promise<RuntimeAsset> {
   const a: RuntimeAsset = { meta, blob, url };
   if (meta.kind === 'image') {
     const img = new Image();

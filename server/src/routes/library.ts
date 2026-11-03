@@ -6,6 +6,7 @@ import { user } from '../db/auth-schema.js';
 import { db } from '../db/index.js';
 import { palette, template } from '../db/schema.js';
 import { requireCaller } from '../lib/caller.js';
+import { withOwnerLock } from '../lib/quota.js';
 import { newId } from '../lib/ids.js';
 import { fail, problems } from '../lib/problem.js';
 import { iso, json, router, secured } from '../lib/router.js';
@@ -81,11 +82,14 @@ library.openapi(createRoute({
 }), async (c) => {
   const body = c.req.valid('json');
   const { userId, plan } = c.get('caller');
-  const [{ n }] = await db.select({ n: count() }).from(template).where(eq(template.userId, userId));
-  if (n >= plan.maxTemplates) fail(403, `Your plan allows ${plan.maxTemplates} templates.`);
   // Templates are shared: strip file references so a layout never points at someone's private media.
   const data = { ...body.data, audioAssetId: null, layers: body.data.layers.map(stripAssets) };
-  const [r] = await db.insert(template).values({ id: newId('tpl'), userId, ...body, data }).returning();
+  const r = await withOwnerLock(userId, async (tx) => {
+    const [{ n }] = await tx.select({ n: count() }).from(template).where(eq(template.userId, userId));
+    if (n >= plan.maxTemplates) fail(403, `Your plan allows ${plan.maxTemplates} templates.`);
+    const [r] = await tx.insert(template).values({ id: newId('tpl'), userId, ...body, data }).returning();
+    return r;
+  });
   const u = await db.query.user.findFirst({ where: eq(user.id, userId), columns: { name: true } });
   return c.json({
     id: r.id, name: r.name, description: r.description, builtIn: false, visibility: r.visibility as 'private' | 'public',
@@ -129,9 +133,12 @@ library.openapi(createRoute({
 }), async (c) => {
   const body = c.req.valid('json');
   const { userId } = c.get('caller');
-  const [{ n }] = await db.select({ n: count() }).from(palette).where(eq(palette.userId, userId));
-  if (n >= 100) fail(403, 'You can save up to 100 palettes.');
-  const [r] = await db.insert(palette).values({ id: newId('pal'), userId, name: body.name, colors: body.colors }).returning();
+  const r = await withOwnerLock(userId, async (tx) => {
+    const [{ n }] = await tx.select({ n: count() }).from(palette).where(eq(palette.userId, userId));
+    if (n >= 100) fail(403, 'You can save up to 100 palettes.');
+    const [r] = await tx.insert(palette).values({ id: newId('pal'), userId, name: body.name, colors: body.colors }).returning();
+    return r;
+  });
   return c.json({ id: r.id, name: r.name, colors: body.colors, builtIn: false }, 201);
 });
 

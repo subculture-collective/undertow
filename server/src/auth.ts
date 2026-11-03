@@ -10,6 +10,7 @@ import { billing } from './lib/billing.js';
 import { APIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
 import { billingCustomer } from './db/schema.js';
+import { apikey } from './db/auth-schema.js';
 
 export const AUTH_BASE_PATH = '/v1/auth';
 
@@ -56,8 +57,11 @@ export const auth = betterAuth({
     } : {}),
   },
 
-  // People can delete their account; projects, templates, palettes, keys and usage go with it (foreign keys cascade).
-  user: { deleteUser: { enabled: true, beforeDelete: async (u) => {
+  // People can delete their account; projects, templates, palettes and usage go with it (foreign keys cascade).
+  // API keys have no foreign key to the user, so afterDelete removes them; the plugin doesn't check the owner still exists.
+  user: { deleteUser: { enabled: true, afterDelete: async (u) => {
+    await db.delete(apikey).where(eq(apikey.referenceId, u.id));
+  }, beforeDelete: async (u) => {
     const row = await db.query.billingCustomer.findFirst({ where: eq(billingCustomer.userId, u.id) });
     if (!billing && !row?.customerId) return;
     if (!billing) throw new APIError('SERVICE_UNAVAILABLE', { message: 'Billing must be available before deleting this account.' });

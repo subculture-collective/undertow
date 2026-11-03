@@ -75,7 +75,7 @@ export interface paths {
                         "application/problem+json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Error */
+                /** @description Temporarily unavailable */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -149,7 +149,7 @@ export interface paths {
                         "application/problem+json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Error */
+                /** @description Temporarily unavailable */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -221,7 +221,7 @@ export interface paths {
                         "application/problem+json": components["schemas"]["Problem"];
                     };
                 };
-                /** @description Error */
+                /** @description Temporarily unavailable */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -5230,6 +5230,7 @@ export interface components {
             projectId?: string;
             data?: components["schemas"]["ProjectData"];
             media: (components["schemas"]["MediaRef"] & {
+                id?: string;
                 size: number;
                 /** @default application/octet-stream */
                 mime: string;

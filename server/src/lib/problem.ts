@@ -18,6 +18,7 @@ const TITLES: Record<number, [string, string]> = {
   422: ['invalid', 'Validation failed'],
   429: ['rate-limited', 'Too many requests'],
   501: ['not-implemented', 'Not implemented yet'],
+  503: ['unavailable', 'Temporarily unavailable'],
 };
 
 export function problemBody(status: number, detail?: string) {
