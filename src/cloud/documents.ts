@@ -7,19 +7,24 @@
 import { create } from 'zustand';
 import { api, ApiProblem, unwrap } from '../api/client';
 import { tx } from '../idb';
+import { toProject } from '../projectShape';
 import { useStore } from '../store';
 import type { Project } from '../types';
 import { isSignedIn, useAccount } from './account';
 import { autoRelink, buildManifest, type MediaRef } from './media';
+import { initialWorkingCopy, writeWorkingCopy, type DocRef, type Source } from '../workingCopy';
 
-export type Source = 'local' | 'cloud';
-export interface DocRef { source: Source; id: string; revision?: number }
+export type { DocRef, Source };
 
 export type SaveStatus =
   | 'idle' | 'saving' | 'saved'
   /** Signed out while an account project is open: edits are kept in this browser until you sign in. */
   | 'waiting-sign-in'
-  | 'offline' | 'conflict' | 'error';
+  | 'offline' | 'conflict'
+  /** The account project is gone (deleted elsewhere, or another account is signed in): save it as a new one. */
+  | 'missing'
+  /** The save failed; temporary failures retry on their own. */
+  | 'error';
 
 export interface LibraryItem {
   source: Source;
@@ -41,11 +46,22 @@ interface DocState {
   media: MediaRef[];
 }
 
-const REF_KEY = 'undertow:doc';
-const loadRef = (): DocRef | null => { try { return JSON.parse(localStorage.getItem(REF_KEY) ?? 'null'); } catch { return null; } };
+export const useDoc = create<DocState>(() => ({ ref: initialWorkingCopy()?.ref ?? null, status: 'idle', message: '', missing: [], media: [] }));
 
-export const useDoc = create<DocState>(() => ({ ref: loadRef(), status: 'idle', message: '', missing: [], media: [] }));
-useDoc.subscribe((s, prev) => { if (s.ref !== prev.ref) localStorage.setItem(REF_KEY, JSON.stringify(s.ref)); });
+// The working copy pairs the layout with the reference and revision its edits are based on.
+// A new reference (a save, opening a project) is written at once; edits shortly after they stop.
+let workingCopyTimer = 0;
+const writeNow = () => {
+  clearTimeout(workingCopyTimer);
+  writeWorkingCopy({ project: useStore.getState().project, ref: useDoc.getState().ref });
+};
+useDoc.subscribe((s, prev) => { if (s.ref !== prev.ref) writeNow(); });
+useStore.subscribe((s, prev) => {
+  if (s.project === prev.project) return;
+  clearTimeout(workingCopyTimer);
+  workingCopyTimer = window.setTimeout(writeNow, 300);
+});
+window.addEventListener('pagehide', writeNow);
 
 const localId = () => `loc_${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
 const nameOf = (p: Project) => p.name.trim() || 'Untitled';
@@ -72,8 +88,13 @@ const thumbDue = (ref: DocRef) => lastThumb.key !== `${ref.source}:${ref.id}` ||
 // ---- saving -------------------------------------------------------------------------------------------------
 let loading = false;
 let timer = 0;
+/** A save is scheduled but its timer hasn't fired yet. */
+let pending = false;
 let documentGeneration = 0;
 let saveChain = Promise.resolve();
+/** Failed saves in a row; sets how long the next automatic retry waits. */
+let retryAttempt = 0;
+const RETRY_MS = [5_000, 15_000, 60_000];
 
 function saveNow() {
   const generation = documentGeneration;
@@ -87,7 +108,8 @@ function saveNow() {
 async function saveSnapshot(generation: number) {
   const { project, assets } = useStore.getState();
   const doc = useDoc.getState();
-  if (doc.status === 'conflict') return;
+  // These need a decision first; saving again would only repeat the failure.
+  if (doc.status === 'conflict' || doc.status === 'missing') return;
   const media = buildManifest(project, assets, doc.media);
   let ref = doc.ref;
 
@@ -109,6 +131,7 @@ async function saveSnapshot(generation: number) {
       await tx('projects', 'readwrite', (s) => s.put(rec, id));
       if (generation !== documentGeneration) return;
       if (thumbnail) lastThumb = { key: `local:${id}`, at: Date.now() };
+      retryAttempt = 0;
       useDoc.setState({ ref: { source: 'local', id }, media, status: useStore.getState().project === project ? 'saved' : 'idle' });
       return;
     }
@@ -117,15 +140,39 @@ async function saveSnapshot(generation: number) {
       : await unwrap(api.POST('/v1/projects', { body: { name: nameOf(project), data: project as never, media } }));
     if (generation !== documentGeneration) return;
     const next = { source: 'cloud' as const, id: saved.id, revision: saved.revision };
+    retryAttempt = 0;
     useDoc.setState({ ref: next, media, status: useStore.getState().project === project ? 'saved' : 'idle' });
     if (thumbDue(next)) void uploadThumbnail(saved.id);
   } catch (e) {
     if (generation !== documentGeneration) return;
     const p = e instanceof ApiProblem ? e : null;
-    if (p?.status === 409) useDoc.setState({ status: 'conflict', message: p.detail ?? 'This project was changed somewhere else.' });
-    else if (p?.status === 0) useDoc.setState({ status: 'offline', message: 'Offline. Your changes are kept in this browser and will save when you reconnect.' });
-    else useDoc.setState({ status: 'error', message: p?.detail ?? (e as Error).message });
+    const code = p?.status;
+    if (code === 409) useDoc.setState({ status: 'conflict', message: p?.detail ?? 'This project was changed somewhere else.' });
+    else if (code === 0) useDoc.setState({ status: 'offline', message: 'Offline. Your changes are kept in this browser and will save when you reconnect.' });
+    else if (code === 401) {
+      // The session ended; saving resumes when the account is signed in again.
+      useDoc.setState({ status: 'waiting-sign-in', message: 'Your session ended. Sign in to save to your account; your changes are kept in this browser meanwhile.' });
+      void useAccount.getState().refresh().catch(() => {});
+    } else if (code === 403 || code === 404) {
+      useDoc.setState({ status: 'missing', message: 'This project isn’t in the signed-in account any more: it was deleted, or another account is signed in. Your version is kept in this browser; save it as a new project to keep it.' });
+    } else {
+      const detail = p?.detail ?? (e as Error).message;
+      // Server and network trouble usually passes; a rejected layout won't change by itself.
+      if (code === undefined || code >= 500 || code === 408 || code === 429) {
+        const delay = RETRY_MS[Math.min(retryAttempt++, RETRY_MS.length - 1)];
+        useDoc.setState({ status: 'error', message: `${detail} Trying again in ${delay / 1000} s.` });
+        scheduleSave(delay);
+      } else {
+        useDoc.setState({ status: 'error', message: detail });
+      }
+    }
   }
+}
+
+/** Retries a failed save straight away. */
+export function retrySave() {
+  retryAttempt = 0;
+  scheduleSave(0);
 }
 
 async function uploadThumbnail(id: string) {
@@ -140,7 +187,19 @@ async function uploadThumbnail(id: string) {
 export function scheduleSave(delay?: number) {
   clearTimeout(timer);
   const ref = useDoc.getState().ref;
-  timer = window.setTimeout(() => void saveNow(), delay ?? (ref?.source === 'local' ? 600 : 2000));
+  pending = true;
+  timer = window.setTimeout(() => { pending = false; void saveNow(); }, delay ?? (ref?.source === 'local' ? 600 : 2000));
+}
+
+/**
+ * Saves edits still waiting for the autosave delay before another project
+ * replaces this one. Failures stay in the save status; switching goes ahead.
+ */
+async function flushPendingSave() {
+  clearTimeout(timer);
+  if (!pending) return;
+  pending = false;
+  await saveNow().catch(() => {});
 }
 
 useStore.subscribe((s, prev) => {
@@ -157,6 +216,7 @@ useAccount.subscribe((s, prev) => {
 // ---- opening ----------------------------------------------------------------------------------------------------
 function show(project: Project, ref: DocRef, media: MediaRef[]) {
   documentGeneration++;
+  retryAttempt = 0;
   const { project: relinked, missing } = autoRelink(project, media, useStore.getState().assets);
   loading = true;
   useStore.getState().openProject(relinked);
@@ -167,21 +227,27 @@ function show(project: Project, ref: DocRef, media: MediaRef[]) {
 }
 
 export async function openDoc(source: Source, id: string) {
-  clearTimeout(timer);
+  await flushPendingSave();
+  const unreadable = () => new Error('That project could not be read. It may come from a newer version of the editor.');
   if (source === 'local') {
     const rec = await tx<LocalRecord | undefined>('projects', 'readonly', (s) => s.get(id));
     if (!rec) throw new Error('That project is no longer on this device.');
-    show(rec.data, { source, id }, rec.media ?? []);
+    const project = toProject(rec.data);
+    if (!project) throw unreadable();
+    show(project, { source, id }, rec.media ?? []);
   } else {
     const p = await unwrap(api.GET('/v1/projects/{id}', { params: { path: { id } } }));
-    show(p.data as unknown as Project, { source, id, revision: p.revision }, p.media);
+    const project = toProject(p.data);
+    if (!project) throw unreadable();
+    show(project, { source, id, revision: p.revision }, p.media);
   }
 }
 
 /** Starts a new project (from a template) and saves it: to the account when signed in. */
-export function newDoc(project: Project) {
+export async function newDoc(project: Project) {
+  await flushPendingSave();
   documentGeneration++;
-  clearTimeout(timer);
+  retryAttempt = 0;
   loading = true;
   useStore.getState().openProject(project);
   loading = false;

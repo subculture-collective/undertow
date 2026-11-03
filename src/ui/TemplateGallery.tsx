@@ -124,7 +124,7 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
   const choose = (t: Template) => {
     const { project, assets } = useStore.getState();
     // A new project gets its own name; the current one stays in the library under its name.
-    newDoc({ ...build(t, project, assets), name: 'Untitled' });
+    void newDoc({ ...build(t, project, assets), name: 'Untitled' });
     onClose();
   };
 
