@@ -7,12 +7,13 @@
  *   read that job's layout and files while the job is running.
  */
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { and, eq, lt, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { renderJob, renderMedia, usageEvent } from '../db/schema.js';
 import { env } from '../env.js';
 import { fail } from '../lib/problem.js';
+import { requeueStaleRenders } from '../lib/render-cleanup.js';
 import { storage } from '../lib/storage.js';
 
 export const worker = new Hono();
@@ -20,9 +21,6 @@ export const worker = new Hono();
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 const bearer = (h: string | undefined) => h?.match(/^Bearer\s+(\S+)$/i)?.[1] ?? '';
 
-/** A worker that hasn't reported for this long is presumed dead; its job is retried once, then failed. */
-const STALE_MS = 3 * 60_000;
-const MAX_ATTEMPTS = 2;
 // output_bytes is a PostgreSQL integer. Reject before writing past its representable size.
 const MAX_OUTPUT_BYTES = 2 ** 31 - 1;
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -55,20 +53,11 @@ async function jobForToken(id: string, auth: string | undefined) {
   return job;
 }
 
-async function requeueStale() {
-  const cutoff = new Date(Date.now() - STALE_MS);
-  // Terminal files are removed by hourly reconciliation, which also retries failed deletions.
-  await db.update(renderJob).set({ status: 'failed', error: 'The render stopped responding.', finishedAt: new Date(), tokenHash: null })
-    .where(and(eq(renderJob.status, 'running'), lt(renderJob.heartbeatAt, cutoff), sql`${renderJob.attempts} >= ${MAX_ATTEMPTS}`));
-  await db.update(renderJob).set({ status: 'queued', tokenHash: null, workerId: null })
-    .where(and(eq(renderJob.status, 'running'), lt(renderJob.heartbeatAt, cutoff)));
-}
-
 // ---- worker ----------------------------------------------------------------------------------------------
 worker.post('/worker/claim', async (c) => {
   requireWorker(c.req.header('authorization'));
   const { workerId } = await c.req.json<{ workerId?: string }>().catch(() => ({ workerId: undefined }));
-  await requeueStale();
+  await requeueStaleRenders();
   const token = `rjt_${randomBytes(24).toString('base64url')}`;
   // SKIP LOCKED lets several workers claim concurrently without taking the same job.
   const { rows } = await db.execute<{ id: string }>(sql`
@@ -97,10 +86,19 @@ worker.put('/worker/jobs/:id/output', async (c) => {
   const id = c.req.param('id');
   if (!c.req.raw.body) fail(422, 'Send the MP4 as the body.');
   const body = c.req.raw.body;
+  const current = await db.query.renderJob.findFirst({ where: eq(renderJob.id, id) });
+  if (!current || current.status !== 'running' || current.tokenHash !== tokenHash) fail(409, 'This worker claim is no longer current.');
+  // Stream to a temporary file without a lock, so heartbeats and cancellation aren't blocked behind the upload.
+  let staged: { part: string };
+  try {
+    staged = await storage.stage(`${id}/output.mp4`, body, MAX_OUTPUT_BYTES);
+  } catch {
+    fail(413, 'The output upload failed or is too large.');
+  }
   // Keep cancellation, retry and another output writer out until the file and state agree.
   await db.transaction(async (tx) => {
     const job = await lockClaim(tx, id, tokenHash);
-    const bytes = await storage.put(`${id}/output.mp4`, body, MAX_OUTPUT_BYTES);
+    const bytes = await storage.commit(staged.part, `${id}/output.mp4`, false);
     await tx.update(renderJob).set({
       status: 'done', progress: 100, outputBytes: bytes, finishedAt: new Date(), tokenHash: null,
       expiresAt: new Date(Date.now() + env.RENDER_OUTPUT_DAYS * 86_400_000),
@@ -109,6 +107,9 @@ worker.put('/worker/jobs/:id/output', async (c) => {
     await tx.insert(usageEvent).values({
       userId: job.userId, apiKeyId: job.apiKeyId, method: 'RENDER', route: '/v1/renders', status: 200, units: job.durationSeconds,
     });
+  }).catch(async (error: unknown) => {
+    await storage.discard(staged.part);
+    throw error;
   });
   await storage.removeInputs(id).catch((error) => console.error('Render input cleanup failed', { jobId: id, error }));
   return c.body(null, 204);

@@ -31,6 +31,12 @@ After deploying, update the canonical host notes (see the homelab documentation 
 4. Check `https://<host>/healthz` and `/docs`.
 5. Back up PostgreSQL. It holds accounts, projects, API keys and render jobs. Render media is stored separately and is transient.
 
+### Database connection limits
+
+Each API process opens at most `DATABASE_POOL_MAX` connections (default 10); the worker talks to the API, not the database. Keep the total across API processes under PostgreSQL's `max_connections` (100 by default). A request that waits longer than `DATABASE_CONNECT_TIMEOUT_MS` (default 5000) for a free connection gets `503` with `Retry-After: 5` instead of waiting indefinitely. A single SQL statement is stopped after `DATABASE_STATEMENT_TIMEOUT_MS` (default 30000), and a transaction left idle for 15 seconds is closed. Migrations use their own connection without these limits.
+
+Uploads and Stripe calls don't hold a connection: render files stream to a temporary file first and are moved into place in a short transaction. A whole request may take up to 15 minutes, enough for a 48 MB chunk at about 1 Mbit/s.
+
 ## Behind Cloudflare
 
 Cloudflare rejects request bodies over 100 MB. The editor uploads render files in 48 MB chunks (`PUT …/media/{mediaId}?offset=N`), so larger files still get through. Auth rate limits read the visitor's address from `cf-connecting-ip`, then `x-forwarded-for`.

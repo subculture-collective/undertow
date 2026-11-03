@@ -1,8 +1,9 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { and, count, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { project } from '../db/schema.js';
 import { requireCaller } from '../lib/caller.js';
+import { withOwnerLock, type Transaction } from '../lib/quota.js';
 import { newId } from '../lib/ids.js';
 import { fail, problems } from '../lib/problem.js';
 import { iso, json, router, secured } from '../lib/router.js';
@@ -30,18 +31,20 @@ async function own(id: string, userId: string) {
   return r;
 }
 
-async function checkQuota(userId: string, max: number) {
-  const [{ n }] = await db.select({ n: count() }).from(project).where(eq(project.userId, userId));
+async function checkQuota(tx: Transaction, userId: string, max: number) {
+  const [{ n }] = await tx.select({ n: count() }).from(project).where(eq(project.userId, userId));
   if (n >= max) fail(403, `Your plan allows ${max} projects. Delete one to make room.`);
 }
 
-// Cursors are "<updatedAt ISO>|<id>" in base64url: stable ordering even when timestamps tie.
-const encodeCursor = (r: { updatedAt: Date; id: string }) => Buffer.from(`${r.updatedAt.toISOString()}|${r.id}`).toString('base64url');
+// Cursors are "<updatedAt>|<id>" in base64url: stable ordering even when timestamps tie. The timestamp keeps
+// PostgreSQL's microseconds; a JS Date would round them to milliseconds and skip rows written in the same millisecond.
+const CURSOR_TS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+const cursorTs = sql<string>`to_char(${project.updatedAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+const encodeCursor = (r: { cursorTs: string; id: string }) => Buffer.from(`${r.cursorTs}|${r.id}`).toString('base64url');
 function decodeCursor(c: string) {
   const [ts, id] = Buffer.from(c, 'base64url').toString().split('|');
-  const d = new Date(ts);
-  if (!id || Number.isNaN(d.getTime())) fail(400, 'Invalid cursor.');
-  return { d, id };
+  if (!id || !CURSOR_TS.test(ts ?? '') || Number.isNaN(Date.parse(ts))) fail(400, 'Invalid cursor.');
+  return { ts, id };
 }
 
 projects.openapi(createRoute({
@@ -59,10 +62,11 @@ projects.openapi(createRoute({
   const after = cursor ? decodeCursor(cursor) : null;
   const rows = await db.select({
     id: project.id, name: project.name, revision: project.revision, createdAt: project.createdAt, updatedAt: project.updatedAt,
-    hasThumbnail: sql<boolean>`${project.thumbnail} is not null`,
+    hasThumbnail: sql<boolean>`${project.thumbnail} is not null`, cursorTs,
   }).from(project)
+    // A row comparison matches the (updated_at, id) sort order exactly and can use an index on it.
     .where(and(eq(project.userId, userId), after
-      ? or(lt(project.updatedAt, after.d), and(eq(project.updatedAt, after.d), lt(project.id, after.id)))
+      ? sql`(${project.updatedAt}, ${project.id}) < (${after.ts}::timestamptz, ${after.id})`
       : undefined))
     .orderBy(desc(project.updatedAt), desc(project.id))
     .limit(limit + 1);
@@ -77,8 +81,11 @@ projects.openapi(createRoute({
 }), async (c) => {
   const body = c.req.valid('json');
   const { userId, plan } = c.get('caller');
-  await checkQuota(userId, plan.maxProjects);
-  const [r] = await db.insert(project).values({ id: newId('prj'), userId, name: body.name, data: body.data, media: body.media }).returning();
+  const r = await withOwnerLock(userId, async (tx) => {
+    await checkQuota(tx, userId, plan.maxProjects);
+    const [r] = await tx.insert(project).values({ id: newId('prj'), userId, name: body.name, data: body.data, media: body.media }).returning();
+    return r;
+  });
   return c.json(full(r), 201);
 });
 
@@ -132,12 +139,15 @@ projects.openapi(createRoute({
 }), async (c) => {
   const { userId, plan } = c.get('caller');
   const src = await own(c.req.valid('param').id, userId);
-  await checkQuota(userId, plan.maxProjects);
   const name = c.req.valid('json')?.name ?? `${src.name} copy`;
-  const [r] = await db.insert(project).values({
-    id: newId('prj'), userId, name, data: { ...(src.data as object), name }, media: src.media,
-    thumbnail: src.thumbnail, thumbnailType: src.thumbnailType,
-  }).returning();
+  const r = await withOwnerLock(userId, async (tx) => {
+    await checkQuota(tx, userId, plan.maxProjects);
+    const [r] = await tx.insert(project).values({
+      id: newId('prj'), userId, name, data: { ...(src.data as object), name }, media: src.media,
+      thumbnail: src.thumbnail, thumbnailType: src.thumbnailType,
+    }).returning();
+    return r;
+  });
   return c.json(full(r), 201);
 });
 

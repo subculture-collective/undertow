@@ -5,6 +5,12 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().default(8787),
   DATABASE_URL: z.string().url(),
+  /** Connections per API or worker process. Keep the total across processes under PostgreSQL's max_connections. */
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).default(10),
+  /** How long a request waits for a free connection before failing with 503, instead of queueing indefinitely. */
+  DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().min(100).default(5_000),
+  /** Upper bound for any single SQL statement. */
+  DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(100).default(30_000),
   PUBLIC_URL: z.string().url(),
   AUTH_SECRET: z.string().min(16, 'AUTH_SECRET must be at least 16 characters; use `openssl rand -base64 32`'),
   TRUSTED_ORIGINS: z.string().default(''),

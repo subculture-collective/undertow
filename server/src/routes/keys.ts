@@ -6,6 +6,7 @@ import { apikey } from '../db/auth-schema.js';
 import { db } from '../db/index.js';
 import { usageEvent } from '../db/schema.js';
 import { requireCaller } from '../lib/caller.js';
+import { withOwnerLock } from '../lib/quota.js';
 import { fail, problems } from '../lib/problem.js';
 import { iso, json, router, secured } from '../lib/router.js';
 import { ApiKey, CreateApiKey, CreatedApiKey, IdParam, Usage } from '../schemas.js';
@@ -39,12 +40,22 @@ keys.openapi(createRoute({
 }), async (c) => {
   const { userId, apiKeyId, plan } = c.get('caller');
   if (apiKeyId) fail(403, 'Manage API keys from a signed-in session, not with an API key.');
-  const [{ n }] = await db.select({ n: count() }).from(apikey).where(eq(apikey.referenceId, userId));
-  if (n >= plan.maxApiKeys) fail(403, `Your plan allows ${plan.maxApiKeys} API keys. Revoke one first.`);
   const body = c.req.valid('json');
+  const full = () => fail(403, `Your plan allows ${plan.maxApiKeys} API keys. Revoke one first.`);
+  const keyCount = async (executor: Pick<typeof db, 'select'>) =>
+    (await executor.select({ n: count() }).from(apikey).where(eq(apikey.referenceId, userId)))[0].n;
+  if (await keyCount(db) >= plan.maxApiKeys) full();
+  // Better Auth inserts the key on its own connection, so the limit is checked again afterwards under the
+  // owner lock: requests racing past the first check are counted one at a time, and any over the limit undo.
   const created = await auth.api.createApiKey({
     body: { name: body.name, userId, expiresIn: body.expiresInDays ? body.expiresInDays * 86_400 : null },
   });
+  const over = await withOwnerLock(userId, async (tx) => {
+    if (await keyCount(tx) <= plan.maxApiKeys) return false;
+    await tx.delete(apikey).where(eq(apikey.id, created.id));
+    return true;
+  });
+  if (over) full();
   const row = await db.query.apikey.findFirst({ where: eq(apikey.id, created.id) });
   if (!row) throw new Error(`API key ${created.id} was created but not found`);
   return c.json({ ...toKey(row), key: created.key }, 201);
@@ -71,7 +82,7 @@ keys.openapi(createRoute({
   const { userId, plan, planName } = c.get('caller');
   const since = new Date(Date.now() - c.req.valid('query').days * 86_400_000);
   const day = sql<string>`to_char(date_trunc('day', ${usageEvent.createdAt} at time zone 'UTC'), 'YYYY-MM-DD')`;
-  const rows = await db.select({ date: day, requests: count(), units: sql<number>`coalesce(sum(${usageEvent.units}), 0)::int` })
+  const rows = await db.select({ date: day, requests: sql<number>`(count(*) filter (where ${usageEvent.method} <> 'RENDER'))::int`, units: sql<number>`coalesce(sum(${usageEvent.units}), 0)::int` })
     .from(usageEvent).where(and(eq(usageEvent.userId, userId), gte(usageEvent.createdAt, since)))
     .groupBy(day).orderBy(day);
   return c.json({ plan: planName, limits: plan, renderSecondsThisMonth: await renderSecondsThisMonth(userId), days: rows }, 200);

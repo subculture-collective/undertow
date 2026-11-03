@@ -134,30 +134,42 @@ renders.openapi(createRoute({
   const { offset } = c.req.valid('query');
   if (!c.req.raw.body) fail(422, 'Send the file as the request body.');
   const body = c.req.raw.body;
+  const userId = c.get('caller').userId;
+  const key = `${id}/media-${mediaId}`;
+  const where = and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId));
+  const uploadable = (status: string) => {
+    if (status !== 'awaiting_upload') fail(409, `The job is ${status}; files can only be uploaded before it starts.`);
+  };
+  const checkOffset = async () => {
+    if (offset === 0) return;
+    const have = await storage.size(key);
+    if (have !== offset) fail(409, `This file has ${have} bytes so far; send the next chunk with offset=${have}.`, { 'Upload-Offset': String(have) });
+  };
+
+  // Check first, without holding a connection while the body streams in.
+  uploadable((await own(id, userId)).status);
+  const m = await db.query.renderMedia.findFirst({ where });
+  if (!m) fail(404, 'This job has no file with that id.');
+  await checkOffset();
+  let staged: { part: string };
+  try {
+    staged = await storage.stage(key, body, m.size - offset);
+  } catch {
+    // The stored file is untouched, so an earlier complete upload stays complete.
+    fail(413, 'The upload failed or exceeded its declared size.');
+  }
+
+  // Then a short transaction: the job row lock orders concurrent chunks, cancellation and cleanup.
   const total = await db.transaction(async (tx) => {
-    const job = await lockOwn(tx, id, c.get('caller').userId);
-    if (job.status !== 'awaiting_upload') fail(409, `The job is ${job.status}; files can only be uploaded before it starts.`);
-    const [m] = await tx.select().from(renderMedia).where(and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId)));
-    if (!m) fail(404, 'This job has no file with that id.');
-    const key = `${id}/media-${mediaId}`;
-    if (offset > 0) {
-      const have = await storage.size(key);
-      if (have !== offset) fail(409, `This file has ${have} bytes so far; send the next chunk with offset=${have}.`, { 'Upload-Offset': String(have) });
-    }
-    const where = and(eq(renderMedia.jobId, id), eq(renderMedia.mediaId, mediaId));
-    let bytes: number;
-    try {
-      bytes = await storage.put(key, body, m.size - offset, offset > 0);
-    } catch {
-      // Offset zero can replace a previously complete upload. Commit the real disk state even on failure.
-      await tx.update(renderMedia).set({ uploaded: (await storage.size(key)) === m.size }).where(where);
-      return null;
-    }
-    const total = offset + bytes;
-    await tx.update(renderMedia).set({ uploaded: total === m.size }).where(where);
-    return total;
+    uploadable((await lockOwn(tx, id, userId)).status);
+    await checkOffset();
+    const size = await storage.commit(staged.part, key, offset > 0);
+    await tx.update(renderMedia).set({ uploaded: size === m.size }).where(where);
+    return size;
+  }).catch(async (error: unknown) => {
+    await storage.discard(staged.part);
+    throw error;
   });
-  if (total === null) fail(413, 'The upload failed or exceeded its declared size.');
   return c.body(null, 204, { 'Upload-Offset': String(total) });
 });
 
