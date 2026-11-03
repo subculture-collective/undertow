@@ -3,7 +3,8 @@
  * the interface is small so an S3-compatible store can replace it.
  */
 import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, readdir, rm, stat, truncate } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
+import { mkdir, readdir, rename, rm, stat, truncate } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -46,6 +47,37 @@ export const storage = {
     }
     return bytes;
   },
+  /**
+   * Streams a body to a new temporary file next to `key`, so a slow upload
+   * holds no database lock. `commit` then moves it into place.
+   */
+  async stage(key: string, body: ReadableStream<Uint8Array>, maxBytes: number): Promise<{ part: string; bytes: number }> {
+    const part = `${key}.part-${randomBytes(6).toString('hex')}`;
+    return { part, bytes: await storage.put(part, body, maxBytes) };
+  },
+  /**
+   * Makes a staged file the content of `key` (replacing it) or, with `append`,
+   * adds it to the end. Returns the size of `key` afterwards. Run it while
+   * holding the lock that orders writers of `key`; it only touches local disk.
+   */
+  async commit(part: string, key: string, append: boolean): Promise<number> {
+    try {
+      if (!append) await rename(pathFor(part), pathFor(key));
+      else {
+        const before = await storage.size(key);
+        try {
+          await pipeline(createReadStream(pathFor(part)), createWriteStream(pathFor(key), { flags: 'a' }));
+        } catch (e) {
+          await truncate(pathFor(key), before);
+          throw e;
+        }
+      }
+    } finally {
+      await rm(pathFor(part), { force: true });
+    }
+    return storage.size(key);
+  },
+  async discard(part: string) { await rm(pathFor(part), { force: true }); },
   path: pathFor,
   /** Size in bytes, or 0 if the file doesn't exist yet. */
   async size(key: string) { return (await stat(pathFor(key)).catch(() => null))?.size ?? 0; },

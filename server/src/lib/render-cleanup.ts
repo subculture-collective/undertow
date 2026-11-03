@@ -1,9 +1,27 @@
-import { and, eq, lt } from 'drizzle-orm';
+import { and, eq, lt, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { renderJob } from '../db/schema.js';
 import { storage } from './storage.js';
 
 let cleaning: Promise<void> | null = null;
+
+/** A worker that hasn't reported for this long is presumed dead; its job is retried once, then failed. */
+export const STALE_MS = 3 * 60_000;
+const MAX_ATTEMPTS = 2;
+
+/**
+ * Requeues (or, after the last attempt, fails) running jobs whose worker went
+ * quiet. Workers run it when they claim, and the API runs it every minute, so a
+ * job isn't stuck as running when no worker is left to claim anything.
+ */
+export async function requeueStaleRenders() {
+  const cutoff = new Date(Date.now() - STALE_MS);
+  // Terminal files are removed by hourly reconciliation, which also retries failed deletions.
+  await db.update(renderJob).set({ status: 'failed', error: 'The render stopped responding.', finishedAt: new Date(), tokenHash: null })
+    .where(and(eq(renderJob.status, 'running'), lt(renderJob.heartbeatAt, cutoff), sql`${renderJob.attempts} >= ${MAX_ATTEMPTS}`));
+  await db.update(renderJob).set({ status: 'queued', tokenHash: null, workerId: null })
+    .where(and(eq(renderJob.status, 'running'), lt(renderJob.heartbeatAt, cutoff)));
+}
 
 /** Reconcile disk on each pass so interrupted or failed deletions get retried. */
 async function reconcile() {

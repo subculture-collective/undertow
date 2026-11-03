@@ -5,10 +5,12 @@
  * on any host that can reach the API. See docs/rendering.md.
  */
 import { spawn } from 'node:child_process';
-import { createReadStream } from 'node:fs';
-import { mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { mkdtemp, rm, stat } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { chromium } from 'playwright-core';
 import { z } from 'zod';
@@ -57,10 +59,19 @@ function run(cmd: string, args: string[]): Promise<string> {
 const claimAuth = (job: Claim) => ({ ...workerAuth, 'x-job-token': job.token });
 
 async function progress(job: Claim, pct: number) {
-  const res = await fetch(`${API}/internal/worker/jobs/${job.id}/progress`, {
-    method: 'POST', headers: { ...claimAuth(job), 'content-type': 'application/json' }, body: JSON.stringify({ progress: pct }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API}/internal/worker/jobs/${job.id}/progress`, {
+      method: 'POST', headers: { ...claimAuth(job), 'content-type': 'application/json' }, body: JSON.stringify({ progress: pct }),
+    });
+  } catch (e) {
+    // The API may be restarting. Skip this report: failing here would delete the job's uploads,
+    // while a longer outage lets the stale-claim check requeue the job instead.
+    log(job.id, `progress report skipped: ${(e as Error).message}`);
+    return;
+  }
   if (res.status === 409) throw new Cancelled('The worker claim expired.');
+  if (res.status >= 500) { log(job.id, `progress report skipped: HTTP ${res.status}`); return; }
   if (!res.ok) throw new Error(`Progress failed: HTTP ${res.status}`);
   const body = await res.json().catch(() => ({ continue: false })) as { continue: boolean };
   if (!body.continue) throw new Cancelled('The job was cancelled.');
@@ -114,9 +125,10 @@ async function mux(job: Claim, video: string, dir: string): Promise<string> {
   let song: string | null = null;
   if (songId && job.media.some((m) => m.mediaId === songId)) {
     const res = await fetch(`${API}/internal/jobs/${job.id}/media/${encodeURIComponent(songId)}`, { headers: { authorization: `Bearer ${job.token}` } });
-    if (!res.ok) throw new Error(`Could not fetch the song: HTTP ${res.status}`);
+    if (!res.ok || !res.body) throw new Error(`Could not fetch the song: HTTP ${res.status}`);
     song = join(dir, 'song');
-    await writeFile(song, Buffer.from(await res.arrayBuffer()));
+    // Streamed to disk: uploads can be up to a gigabyte, and Chrome shares the worker's memory limit.
+    await pipeline(Readable.fromWeb(res.body as never), createWriteStream(song));
   }
   const { start, end } = job.spec.options;
   const out = join(dir, 'out.mp4');
@@ -142,6 +154,24 @@ async function upload(job: Claim, file: string) {
   if (!res.ok) throw new Error(`Upload failed: HTTP ${res.status} ${await res.text()}`);
 }
 
+/**
+ * Keeps reporting progress while a long step (muxing, a re-encode, the upload)
+ * runs, so other workers don't take the claim as stale and requeue the job.
+ */
+async function withHeartbeat<T>(job: Claim, pct: number, step: () => Promise<T>): Promise<T> {
+  let stopped: Error | null = null;
+  const beat = setInterval(() => {
+    progress(job, pct).catch((e: Error) => { stopped ??= e; });
+  }, 30_000);
+  try {
+    const result = await step();
+    if (stopped) throw stopped;
+    return result;
+  } finally {
+    clearInterval(beat);
+  }
+}
+
 async function processJob(job: Claim) {
   const dir = await mkdtemp(join(tmpdir(), `undertow-${job.id}-`));
   const t0 = Date.now();
@@ -149,9 +179,9 @@ async function processJob(job: Claim) {
     log(job.id, `rendering "${job.spec.name}"`);
     const video = await render(job, dir);
     await progress(job, 93);
-    const out = await mux(job, video, dir);
+    const out = await withHeartbeat(job, 93, () => mux(job, video, dir));
     await progress(job, 97);
-    await upload(job, out);
+    await withHeartbeat(job, 97, () => upload(job, out));
     log(job.id, `done in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   } catch (e) {
     const cancelled = e instanceof Cancelled;

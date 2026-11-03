@@ -103,6 +103,13 @@ export function createApp() {
   app.notFound(() => problem(404, 'No such endpoint.'));
   app.onError((err) => {
     if (err instanceof ApiError) return problem(err.status, err.detail, err.headers);
+    // Every connection busy for DATABASE_CONNECT_TIMEOUT_MS, or a statement past its limit (57014): overloaded, not broken.
+    // Drizzle wraps driver errors; the pg error is the cause.
+    const cause = (err as { cause?: { message?: string; code?: string } }).cause;
+    if ([err, cause].some((e) => e && (/timeout exceeded when trying to connect/i.test(e.message ?? '') || (e as { code?: string }).code === '57014'))) {
+      console.error('database busy:', cause?.message ?? err.message);
+      return problem(503, 'The service is busy. Try again in a moment.', { 'Retry-After': '5' });
+    }
     console.error(err);
     return problem(500, isProd ? undefined : String(err));
   });
