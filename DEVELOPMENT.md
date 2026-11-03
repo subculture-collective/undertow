@@ -11,8 +11,10 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
 ## Features
 
 - **Templates**: a gallery of starting layouts (Classic, Vinyl, Karaoke, Neon,
-  Poster, Video loop). Applying one keeps your song, artwork, clip, lyrics,
-  title and socials, and undo restores the previous layout.
+  Poster, Video loop). Applying one starts a new project with your song,
+  artwork, clip, lyrics, title and socials; the previous project stays in
+  Projects. Media the template has no place for (a clip, extra lyrics, a logo)
+  comes along as a hidden layer in the same position.
 - **Layers**, stacked and blended: Milkdrop visualizer (395 Butterchurn presets,
   optional timed preset changes), images and logos (PNG, SVG, JPG, WebP), text,
   timed lyrics, socials with platform icons, waveform (live oscilloscope or

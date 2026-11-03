@@ -1,5 +1,5 @@
 import type { RuntimeAsset } from './assets';
-import { createLayer, L, P, S, starterProject, type Rects } from './defaults';
+import { createLayer, L, P, S, starterProject, uid, videoBackgroundIndex, type Rects } from './defaults';
 import type { BlendMode, Layer, LayerType, Project, PropsOf, Rect } from './types';
 
 export interface Template {
@@ -175,6 +175,8 @@ export const TEMPLATES: Template[] = [
  * Builds a template around the current project: the song, artwork, clip,
  * lyrics, title and socials carry over, so trying templates is non-destructive.
  */
+const MEDIA = new Set<LayerType>(['image', 'video', 'lyrics']);
+
 export function applyTemplate(t: Template, current: Project, assets: Record<string, RuntimeAsset>): Project {
   const next = t.build();
   next.name = current.name;
@@ -191,6 +193,19 @@ export function applyTemplate(t: Template, current: Project, assets: Record<stri
       l.props.assetId = fill[l.type];
       filled.add(l.type);
     }
+  }
+
+  // Media the template has no place for (a clip, lyrics, a logo) comes along hidden, where it was,
+  // so it isn't lost: switch it on in the layer list. Hidden layers carry over again on the next template.
+  const used = new Set(next.layers.map((l) => (MEDIA.has(l.type) ? (l.props as { assetId: string | null }).assetId : null)));
+  for (const l of current.layers) {
+    if (!MEDIA.has(l.type)) continue;
+    const assetId = (l.props as { assetId: string | null }).assetId;
+    if (!assetId || used.has(assetId) || !assets[assetId]) continue;
+    used.add(assetId);
+    const carried = { ...structuredClone(l), id: uid(), visible: false };
+    if (l.type === 'video') next.layers.splice(videoBackgroundIndex(next.layers), 0, carried);
+    else next.layers.push(carried);
   }
 
   // Keep the user's own words rather than the placeholder copy.

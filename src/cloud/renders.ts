@@ -41,6 +41,12 @@ export const useRenders = create<RendersState>((set, get) => ({
 }));
 
 let pollTimer = 0;
+/** Stops polling and forgets the jobs, on sign-out, so the next account doesn't see them. */
+export function resetRenders() {
+  clearTimeout(pollTimer);
+  useRenders.setState({ jobs: [] });
+}
+
 function schedulePoll() {
   clearTimeout(pollTimer);
   if (useRenders.getState().jobs.some(isActive)) {
@@ -85,17 +91,24 @@ export async function submitRender(
   const job = await unwrap(api.POST('/v1/renders', { body: { data: project as never, media, options } }));
   const total = job.uploads.reduce((s, u) => s + u.size, 0);
   let done = 0;
-  for (const u of job.uploads) {
-    // Chunks stay under the 100 MB request limit of the Cloudflare tunnel in front of the API.
-    const blob = assets[u.mediaId].blob;
-    for (let offset = 0; offset === 0 || offset < blob.size; offset += CHUNK) {
-      const chunk = blob.slice(offset, offset + CHUNK);
-      await uploadWithProgress(`/v1/renders/${job.id}/media/${encodeURIComponent(u.mediaId)}?offset=${offset}`, chunk, (n) => onUpload(done + n, total));
-      done += chunk.size;
+  try {
+    for (const u of job.uploads) {
+      // Chunks stay under the 100 MB request limit of the Cloudflare tunnel in front of the API.
+      const blob = assets[u.mediaId].blob;
+      for (let offset = 0; offset === 0 || offset < blob.size; offset += CHUNK) {
+        const chunk = blob.slice(offset, offset + CHUNK);
+        await uploadWithProgress(`/v1/renders/${job.id}/media/${encodeURIComponent(u.mediaId)}?offset=${offset}`, chunk, (n) => onUpload(done + n, total));
+        done += chunk.size;
+      }
     }
+  } catch (e) {
+    // A job left waiting for uploads still holds a render slot and its minutes; cancelling refunds them.
+    await api.DELETE('/v1/renders/{id}', { params: { path: { id: job.id } } }).catch(() => {});
+    throw e;
   }
   const started = await unwrap(api.POST('/v1/renders/{id}/start', { params: { path: { id: job.id } } }));
-  await useRenders.getState().refresh();
+  // The job is running; a failed list refresh must not report it as failed and invite a paid retry.
+  await useRenders.getState().refresh().catch(() => {});
   return started;
 }
 

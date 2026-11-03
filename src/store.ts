@@ -1,22 +1,19 @@
 import { create } from 'zustand';
 import { deleteStoredAsset, importFile, type RuntimeAsset } from './assets';
 import { createLayer, starterProject, uid } from './defaults';
+import { initialWorkingCopy } from './workingCopy';
 import { ASPECTS, type AspectId, type Layer, type LayerType, type Project, type PropsOf, type Rect } from './types';
 
-const SAVE_KEY = 'vizstudio:project';
 const COALESCE_MS = 400;
 const HISTORY_LIMIT = 100;
 
-export const hasSavedProject = () => { try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; } };
+export const hasSavedProject = () => !!initialWorkingCopy();
 
-/** The working copy: the open project as last edited in this browser, restored on reload. */
-function loadWorkingCopy(): Project {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) return JSON.parse(raw) as Project;
-  } catch { /* fall through to the starter project */ }
-  return starterProject();
-}
+/** Undo and redo can remove the selected layer; the selection goes with it. */
+const keepSelection = (p: Project, id: string | null) => (id && p.layers.some((l) => l.id === id) ? id : null);
+
+/** The open project as last edited in this browser, restored on reload; the document code keeps it saved. */
+const loadWorkingCopy = (): Project => initialWorkingCopy()?.project ?? starterProject();
 
 interface State {
   project: Project;
@@ -77,9 +74,11 @@ export const useStore = create<State>((set, get) => ({
   }),
   undo: () => set((s) => s.past.length ? {
     project: s.past[s.past.length - 1], past: s.past.slice(0, -1), future: [s.project, ...s.future], lastPush: 0,
+    selectedId: keepSelection(s.past[s.past.length - 1], s.selectedId),
   } : s),
   redo: () => set((s) => s.future.length ? {
     project: s.future[0], future: s.future.slice(1), past: [...s.past, s.project], lastPush: 0,
+    selectedId: keepSelection(s.future[0], s.selectedId),
   } : s),
   replaceProject: (p) => set((s) => ({ project: p, past: [...s.past, s.project], future: [], selectedId: null, lastPush: 0 })),
   openProject: (p) => set({ project: p, past: [], future: [], selectedId: null, lastPush: 0 }),
@@ -160,12 +159,5 @@ export const useStore = create<State>((set, get) => ({
     });
   },
 }));
-
-let saveTimer = 0;
-useStore.subscribe((s, prev) => {
-  if (s.project === prev.project) return;
-  clearTimeout(saveTimer);
-  saveTimer = window.setTimeout(() => localStorage.setItem(SAVE_KEY, JSON.stringify(s.project)), 300);
-});
 
 export const useSelectedLayer = () => useStore((s) => s.project.layers.find((l) => l.id === s.selectedId) ?? null);
