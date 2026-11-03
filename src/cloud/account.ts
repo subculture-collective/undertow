@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authClient } from '../api/auth';
 import { api, unwrap, type Schemas } from '../api/client';
+import { resetRenders } from './renders';
 import { hasDefaults, loadLocalDefaults, saveLocalDefaults, type Defaults } from './defaults';
 
 export type Me = Schemas['Me'];
@@ -47,8 +48,9 @@ export const useAccount = create<AccountState>((set, get) => ({
     // First sign-in from this browser: carry over defaults set while signed out.
     const local = loadLocalDefaults();
     if (!hasDefaults(me.defaults) && hasDefaults(local)) {
-      const saved = await unwrap(api.PUT('/v1/me/defaults', { body: local }));
-      me = { ...me, defaults: saved };
+      // Carrying them over is a convenience; a rejected upload must not block signing in.
+      const saved = await unwrap(api.PUT('/v1/me/defaults', { body: local })).catch(() => null);
+      if (saved) me = { ...me, defaults: saved };
     }
     set({ status: 'signed-in', me, defaults: me.defaults });
   },
@@ -65,6 +67,7 @@ export const useAccount = create<AccountState>((set, get) => ({
 
   signOut: async () => {
     await authClient.signOut();
+    resetRenders();
     set({ status: 'signed-out', me: null, defaults: loadLocalDefaults() });
   },
 }));

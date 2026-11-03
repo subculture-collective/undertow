@@ -26,7 +26,11 @@ export const billingCustomer = pgTable('billing_customer', {
   periodEnd: timestamp({ withTimezone: true }),
   cancelAtPeriodEnd: boolean().notNull().default(false),
   paused: boolean().notNull().default(false),
-  deleting: boolean().notNull().default(false),
+  /** Set when account deletion starts; checkout is refused while it is recent. A failed deletion lapses on its own. */
+  deletingAt: timestamp({ withTimezone: true }),
+  /** Billing work for this owner calls Stripe without holding a database transaction; this lease orders it. */
+  leaseToken: text(),
+  leaseUntil: timestamp({ withTimezone: true }),
   updatedAt: now(),
 });
 

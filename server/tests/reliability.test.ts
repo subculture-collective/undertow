@@ -1,12 +1,12 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import Stripe from 'stripe';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable Postgres', () => {
   let app: ReturnType<typeof import('../src/app.js').createApp>;
@@ -176,24 +176,27 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     expect(await readFile(join(dir, 'rnd_test/output.mp4'), 'utf8')).toBe('new output');
     expect((await database.db.query.usageEvent.findFirst())?.units).toBe(10);
   });
-  it('waits for a current output writer before deleting its files', async () => {
+  it('lets a cancellation during an output upload win and leaves no files behind', async () => {
     await job();
     let finish!: () => void;
     let started!: () => void;
     const ready = new Promise<void>((resolve) => { started = resolve; });
     const body = new ReadableStream<Uint8Array>({ start(controller) {
       controller.enqueue(new TextEncoder().encode('output'));
-      // The second pull means the handler has acquired its row lock and consumed the first bytes.
+      // The second pull means the handler is streaming the body.
       finish = () => controller.close();
     }, pull() { started(); } });
     const writing = app.request('/internal/worker/jobs/rnd_test/output', { method: 'PUT', headers: workerHeaders(newToken), body, duplex: 'half' } as RequestInit);
     await ready;
-    const deleting = app.request('/v1/renders/rnd_test', { method: 'DELETE', headers: { authorization: `Bearer ${key}` } });
+    // The upload holds no lock while streaming, so cancelling doesn't wait for it.
+    expect((await app.request('/v1/renders/rnd_test', { method: 'DELETE', headers: { authorization: `Bearer ${key}` } })).status).toBe(204);
     finish();
-    expect((await writing).status).toBe(204);
-    expect((await deleting).status).toBe(204);
-    expect((await database.db.query.renderJob.findFirst())?.status).toBe('expired');
-    expect(await storage.size('rnd_test/output.mp4')).toBe(0);
+    expect((await writing).status).toBe(409);
+    const cancelled = await database.db.query.renderJob.findFirst();
+    expect(cancelled?.status).toBe('cancelled');
+    expect(cancelled?.outputBytes).toBeNull();
+    expect(await readdir(join(dir, 'rnd_test')).catch(() => [])).toEqual([]);
+    expect((await database.db.select().from(schema.usageEvent).where(eq(schema.usageEvent.method, 'RENDER')))).toHaveLength(0);
   });
   it('reserves at most three active jobs under concurrent submissions', async () => {
     const responses = await Promise.all(Array.from({ length: 8 }, () => app.request('/v1/renders', { method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' }, body: JSON.stringify({ data: spec.data, options: spec.options, media: [] }) })));
@@ -234,8 +237,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
     expect(response.headers.get('upload-offset')).toBe(String(size));
     const oversized = await app.request('/v1/renders/rnd_test/media/song', { method: 'PUT', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/octet-stream' }, body: new Uint8Array(size + 1) });
     expect(oversized.status).toBe(413);
-    expect((await database.db.query.renderMedia.findFirst())?.uploaded).toBe(false);
-    expect(await storage.size('rnd_test/media-song')).toBe(0);
+    // The replacement streams to a temporary file, so the earlier complete upload is untouched.
+    expect((await database.db.query.renderMedia.findFirst())?.uploaded).toBe(true);
+    expect(await storage.size('rnd_test/media-song')).toBe(size);
+    expect((await readdir(join(dir, 'rnd_test'))).filter((f) => f.includes('.part-'))).toEqual([]);
   });
   it('rejects oversized thumbnails and JSON, with or without Content-Length', async () => {
     for (const [path, type, bytes] of [['/v1/projects/missing/thumbnail', 'image/png', 256 * 1024 + 1], ['/v1/projects', 'application/json', 2 * 1024 * 1024 + 1]] as const) {
@@ -248,5 +253,114 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)('API reliability with disposable
         expect(response.headers.get('content-type')).toContain('application/problem+json');
       }
     }
+  });
+  it('revokes API keys when their account is deleted', async () => {
+    const auth = (await import('../src/auth.js')).auth;
+    const headers = { authorization: `Bearer ${key}` };
+    expect((await app.request('/v1/projects', { headers })).status).toBe(200);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    // Better Auth deletes the user row, then runs afterDelete; the key table has no foreign key to cascade.
+    await database.db.delete(database.schema.user);
+    await auth.options.user!.deleteUser!.afterDelete!({ id: owner } as never);
+    expect((await app.request('/v1/projects', { headers })).status).toBe(401);
+  });
+  it('rejects render media ids that the upload path and storage could never accept', async () => {
+    const create = (media: { id: string }[]) => app.request('/v1/renders', {
+      method: 'POST', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ data: spec.data, options: spec.options, media: media.map((m) => ({ ...m, kind: 'image', name: 'a.png', size: 10 })) }),
+    });
+    for (const id of ['x'.repeat(65), 'has space', 'a:b', '..', '.hidden']) expect((await create([{ id }])).status, id).toBe(422);
+    expect((await create([{ id: 'same' }, { id: 'same' }])).status).toBe(422);
+    expect(await database.db.select().from(schema.renderJob)).toHaveLength(0);
+  });
+  it('does not count finished renders as API requests in usage', async () => {
+    await database.db.insert(schema.usageEvent).values([
+      { userId: owner, method: 'GET', route: '/v1/projects', status: 200 },
+      { userId: owner, method: 'RENDER', route: '/v1/renders/:id', status: 200, units: 30 },
+    ]);
+    const usage = await (await app.request('/v1/usage', { headers: { authorization: `Bearer ${key}` } })).json() as { days: { requests: number; units: number }[] };
+    expect(usage.days).toHaveLength(1);
+    expect(usage.days[0]).toMatchObject({ requests: 1, units: 31 });
+  });
+  it('holds no database connection while an upload body streams, and orders racing chunks by offset', async () => {
+    await job('awaiting_upload');
+    await database.db.insert(schema.renderMedia).values({ jobId: 'rnd_test', mediaId: 'song', kind: 'audio', name: 'song', size: 10 });
+    const put = (offset: number, body: BodyInit) => app.request(`/v1/renders/rnd_test/media/song?offset=${offset}`,
+      { method: 'PUT', headers: { authorization: `Bearer ${key}`, 'content-type': 'application/octet-stream' }, body, duplex: 'half' } as RequestInit);
+    let finish!: () => void;
+    let streaming!: () => void;
+    const ready = new Promise<void>((resolve) => { streaming = resolve; });
+    const slow = new ReadableStream<Uint8Array>({ start(controller) {
+      controller.enqueue(new Uint8Array(4));
+      finish = () => controller.close();
+    }, pull() { streaming(); } });
+    const first = put(0, slow);
+    await ready;
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(database.pool.totalCount - database.pool.idleCount).toBe(0);
+    finish();
+    expect((await first).headers.get('upload-offset')).toBe('4');
+    // Two clients send the same next chunk: one is appended, the other learns the new offset.
+    const racing = await Promise.all([put(4, new Uint8Array(3)), put(4, new Uint8Array(3))]);
+    expect(racing.map((r) => r.status).sort()).toEqual([204, 409]);
+    expect(racing.find((r) => r.status === 409)?.headers.get('upload-offset')).toBe('7');
+    expect((await put(7, new Uint8Array(3))).headers.get('upload-offset')).toBe('10');
+    expect((await database.db.query.renderMedia.findFirst())?.uploaded).toBe(true);
+    expect(await readdir(join(dir, 'rnd_test'))).toEqual(expect.arrayContaining(['media-song']));
+    expect((await readdir(join(dir, 'rnd_test'))).filter((f) => f.includes('.part-'))).toEqual([]);
+  });
+  it('keeps plan limits under concurrent creates', async () => {
+    const headers = { authorization: `Bearer ${key}`, 'content-type': 'application/json' };
+    const filler = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}_fill${i}`, userId: owner, name: 'x', data: spec.data }));
+    await database.db.insert(schema.project).values(filler('prj', 499).map((p) => ({ ...p, media: [] })));
+    const projects = await Promise.all(Array.from({ length: 6 }, () => app.request('/v1/projects', { method: 'POST', headers, body: JSON.stringify({ name: 'P', data: spec.data, media: [] }) })));
+    expect(projects.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(projects.filter((r) => r.status === 403)).toHaveLength(5);
+    expect(await database.db.$count(schema.project)).toBe(500);
+    await database.db.insert(schema.template).values(filler('tpl', 199));
+    const templates = await Promise.all(Array.from({ length: 6 }, () => app.request('/v1/templates', { method: 'POST', headers, body: JSON.stringify({ name: 'T', data: spec.data }) })));
+    expect(templates.filter((r) => r.status === 201)).toHaveLength(1);
+    expect(await database.db.$count(schema.template)).toBe(200);
+  });
+  it('requeues, then fails, running jobs whose worker went quiet without any worker claiming', async () => {
+    const { requeueStaleRenders } = await import('../src/lib/render-cleanup.js');
+    await job();
+    const old = new Date(Date.now() - 10 * 60_000);
+    await database.db.update(schema.renderJob).set({ heartbeatAt: old, attempts: 1 });
+    await requeueStaleRenders();
+    expect(await database.db.query.renderJob.findFirst()).toMatchObject({ status: 'queued', tokenHash: null });
+    await database.db.update(schema.renderJob).set({ status: 'running', heartbeatAt: old, attempts: 2 });
+    await requeueStaleRenders();
+    expect(await database.db.query.renderJob.findFirst()).toMatchObject({ status: 'failed', error: 'The render stopped responding.' });
+    await database.db.update(schema.renderJob).set({ status: 'running', heartbeatAt: new Date(), attempts: 1 });
+    await requeueStaleRenders();
+    expect((await database.db.query.renderJob.findFirst())?.status).toBe('running');
+  });
+  it('pages through projects saved within the same millisecond without skipping any', async () => {
+    const at = (us: string) => sql`${'2026-01-01 00:00:00.' + us + '+00'}::timestamptz`;
+    await database.db.insert(schema.project).values([
+      { id: 'prj_a', userId: owner, name: 'A', data: spec.data, media: [], updatedAt: at('123456') as never },
+      { id: 'prj_z', userId: owner, name: 'Z', data: spec.data, media: [], updatedAt: at('123200') as never },
+      { id: 'prj_y', userId: owner, name: 'Y', data: spec.data, media: [], updatedAt: at('123200') as never },
+    ]);
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    do {
+      const query: string = cursor ? `?limit=1&cursor=${cursor}` : '?limit=1';
+      const page = await (await app.request(`/v1/projects${query}`, { headers: { authorization: `Bearer ${key}` } })).json() as { items: { id: string }[]; nextCursor: string | null };
+      seen.push(...page.items.map((p) => p.id));
+      cursor = page.nextCursor;
+    } while (cursor);
+    expect(seen).toEqual(['prj_a', 'prj_z', 'prj_y']);
+    expect((await app.request('/v1/projects?cursor=bm90LWEtY3Vyc29y', { headers: { authorization: `Bearer ${key}` } })).status).toBe(400);
+  });
+  it('blocks checkout only while an account deletion is recent', async () => {
+    await billing.checkout(owner);
+    stripeState.open = false;
+    await database.db.update(schema.billingCustomer).set({ deletingAt: new Date() });
+    await expect(billing.checkout(owner)).rejects.toMatchObject({ status: 409 });
+    await database.db.update(schema.billingCustomer).set({ deletingAt: new Date(Date.now() - 20 * 60_000) });
+    expect(await billing.checkout(owner)).toBe('https://checkout.stripe.com/test');
+    expect((await database.db.query.billingCustomer.findFirst())?.leaseToken).toBeNull();
   });
 });

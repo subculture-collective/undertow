@@ -17,13 +17,19 @@ export class ClipReader {
   /** `maxWidth` caps decode size, so a 4K clip in a 1080p export isn't scaled on every frame. */
   static async open(blob: Blob, name: string, maxWidth: number): Promise<ClipReader> {
     const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
-    const track = await input.getPrimaryVideoTrack();
-    if (!track) throw new Error(`${name} has no video track.`);
-    if (!(await track.canDecode())) throw new Error(`This browser cannot decode the video in ${name}. Try an H.264 MP4.`);
-    const width = Math.min(track.displayWidth, maxWidth);
-    // Three canvases are in use at once (current, next, being decoded); a ring of four leaves headroom.
-    const sink = new CanvasSink(track, { width, poolSize: 4 });
-    return new ClipReader(input, sink, await track.getFirstTimestamp());
+    try {
+      const track = await input.getPrimaryVideoTrack();
+      if (!track) throw new Error(`${name} has no video track.`);
+      if (!(await track.canDecode())) throw new Error(`This browser cannot decode the video in ${name}. Try an H.264 MP4.`);
+      const width = Math.min(track.displayWidth, maxWidth);
+      // Three canvases are in use at once (current, next, being decoded); a ring of four leaves headroom.
+      const sink = new CanvasSink(track, { width, poolSize: 4 });
+      return new ClipReader(input, sink, await track.getFirstTimestamp());
+    } catch (e) {
+      // The caller never receives this reader, so release the demuxer here.
+      input.dispose();
+      throw e;
+    }
   }
 
   private async pull() {

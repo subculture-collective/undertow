@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { fontFamily, loadStoredAssets, type RuntimeAsset } from './assets';
 import { LOGO_RECTS, videoBackgroundIndex } from './defaults';
 import { hasSavedProject, useStore } from './store';
-import { ASPECTS, ASPECT_IDS, type Project } from './types';
+import { toProject } from './projectShape';
+import { ASPECTS, ASPECT_IDS } from './types';
 import { ExportDialog } from './ui/ExportDialog';
 import { Inspector } from './ui/Inspector';
 import { LayerPanel } from './ui/LayerPanel';
@@ -180,7 +181,8 @@ export default function App() {
       else if ((e.key === 'Delete' || e.key === 'Backspace') && s.selectedId) s.removeLayer(s.selectedId);
       else if (e.key.startsWith('Arrow') && s.selectedId) {
         e.preventDefault();
-        const l = s.project.layers.find((x) => x.id === s.selectedId)!;
+        const l = s.project.layers.find((x) => x.id === s.selectedId);
+        if (!l) return;
         const r = l.rects[s.aspect], A = ASPECTS[s.aspect], step = e.shiftKey ? 10 : 1;
         const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
         const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
@@ -245,7 +247,11 @@ export default function App() {
         <input ref={projectInput} type="file" hidden accept=".json" onChange={async (e) => {
           const f = e.target.files?.[0];
           if (f) {
-            try { newDoc(JSON.parse(await f.text()) as Project); }
+            try {
+              const imported = toProject(JSON.parse(await f.text()));
+              if (!imported) throw new Error('not a layout');
+              await newDoc(imported);
+            }
             catch { void noticeAsk({ title: 'That file didn’t open', body: `It isn’t an ${BRAND.name} layout. Layouts are the .json files from “Download layout”.` }); }
           }
           e.target.value = '';
