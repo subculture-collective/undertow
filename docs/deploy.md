@@ -164,6 +164,13 @@ an application cutover or recovery of transient render media.
 
 ## Deployment and rollback
 
+The canonical main workflow now automates compatible API/editor image delivery
+after native checks and real restored-data qualification. It preserves the
+database and render volume and refuses active render work or migration changes.
+Read [automatic preview delivery](ci-deployment.md) for its restricted receiver,
+encrypted backup, isolated restore, exact public checks and rollback boundary.
+Worker and database-changing releases still use the native procedure below.
+
 Before replacing the preview, record the revision in `DEPLOYED_COMMIT`, archive
 its tracked source under `/srv/apps/undertow-releases/`, tag both existing images
 as `undertow-api:rollback-<revision>` and `undertow-worker:rollback-<revision>`,
