@@ -37,7 +37,7 @@ export const DEFAULT_PROPS: { [T in LayerType]: PropsOf<T> } = {
   particles: {
     style: 'dust', count: 160, color: '#ffffff', color2: '#9fd8ff', size: 1, speed: 1, direction: 270, react: 0.6, seed: 1,
   },
-  milkdrop: { preset: '', cycle: 0, blendTime: 2.7, seed: 1, gain: 1 },
+  milkdrop: { preset: '', cycle: 0, blendTime: 2.7, seed: 1, gain: 1, pool: 'all', favourites: [] },
   image: { assetId: null, fit: 'cover', radius: 0.03, shadow: 0.5, pulse: 0, spin: 0, circle: false },
   text: { ...TEXT, text: 'Artist — Song Title' },
   lyrics: { ...TEXT, assetId: null, offset: 0, mode: 'karaoke', highlight: '#ffd84d', dimColor: '#8d8d9c', fade: 0.25 },
