@@ -1,5 +1,6 @@
 import butterchurnModule from 'butterchurn';
 import type { AudioFrame } from '../audio/analysis';
+import { pickPreset, presetPool } from './presetPool';
 import type { MilkdropProps } from '../types';
 
 type PresetMap = Record<string, object>;
@@ -28,14 +29,6 @@ export function loadPresets(): Promise<PresetMap> {
 }
 export const getPresetNames = () => presetNames;
 
-/** Deterministic pick for cycle segment k, so previews and exports agree. */
-function pickPreset(seed: number, k: number): string {
-  let h = (Math.imul(seed | 0, 0x9e3779b1) ^ Math.imul(k + 1, 0x85ebca6b)) >>> 0;
-  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
-  h = (h ^ (h >>> 12)) >>> 0;
-  return presetNames[h % presetNames.length];
-}
-
 let sharedAudioCtx: AudioContext | null = null;
 
 // The UMD bundle can arrive wrapped in one or two `default` layers depending on the bundler.
@@ -57,6 +50,7 @@ export class MilkInstance {
   readonly canvas = document.createElement('canvas');
   private viz: Visualizer;
   private loadedKey = '';
+  private poolFor: { key: string; pool: readonly string[] } = { key: '', pool: [] };
   private bytes = [new Uint8Array(1024), new Uint8Array(1024), new Uint8Array(1024)];
 
   constructor(w: number, h: number) {
@@ -76,7 +70,10 @@ export class MilkInstance {
   render(p: MilkdropProps, t: number, dt: number, frame: AudioFrame) {
     if (!presets || !presetNames.length) return false;
     const k = p.cycle > 0 ? Math.floor(t / p.cycle) : 0;
-    const name = k === 0 && presets[p.preset] ? p.preset : pickPreset(p.seed, k);
+    const pool = p.cycle > 0 ? this.pool(p) : presetNames;
+    // With a favourites pool, the chosen preset opens the cycle only if it is one of them.
+    const opens = !!presets[p.preset] && (pool === presetNames || pool.includes(p.preset));
+    const name = k === 0 && opens ? p.preset : pickPreset(p.seed, k, pool);
     const key = `${name}|${k}`;
     if (key !== this.loadedKey) {
       // Blend on scheduled changes; switch instantly on the first load or a manual pick.
@@ -94,6 +91,13 @@ export class MilkInstance {
       audioLevels: { timeByteArray: this.bytes[0], timeByteArrayL: this.bytes[1], timeByteArrayR: this.bytes[2] },
     });
     return true;
+  }
+
+  private pool(p: MilkdropProps) {
+    const key = p.pool === 'favourites' ? `${presetNames.length}|${p.favourites.join('\n')}` : '';
+    if (!key) return presetNames;
+    if (this.poolFor.key !== key) this.poolFor = { key, pool: presetPool(p, presetNames) };
+    return this.poolFor.pool;
   }
 
   currentPreset() { return this.loadedKey.split('|')[0]; }

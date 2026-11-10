@@ -16,7 +16,8 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   Projects. Media the template has no place for (a clip, extra lyrics, a logo)
   comes along as a hidden layer in the same position.
 - **Layers**, stacked and blended: Milkdrop visualizer (395 Butterchurn presets,
-  optional timed preset changes), images and logos (PNG, SVG, JPG, WebP), text,
+  favourites starred per browser, optional timed preset changes from all presets or
+  the favourites saved with the project), images and logos (PNG, SVG, JPG, WebP), text,
   timed lyrics, socials with platform icons, waveform (live oscilloscope or
   whole-song progress), spectrum (bars with optional LED segments, peak caps and reflection;
   mirrored, radial ring, line; bar count or 1/3- and 1/6-octave bands) and VU meter
@@ -76,7 +77,8 @@ that disposable database for you. Install the root and server dependencies first
 | `src/audio/lyrics.ts` | LRC/SRT/VTT parsing |
 | `src/render/compositor.ts` | Draws a project frame; shared by preview and export |
 | `src/render/layers.ts` | Drawing code for each layer type |
-| `src/render/milkdrop.ts` | Butterchurn wrapper with deterministic preset changes |
+| `src/render/milkdrop.ts`, `src/render/presetPool.ts` | Butterchurn wrapper with deterministic preset changes; the preset pool and pick |
+| `src/favourites.ts` | Starred Milkdrop presets, kept in this browser's localStorage |
 | `src/effects.ts`, `src/render/postfx.ts` | Whole-frame effect settings and the WebGL2 pass that draws them |
 | `src/render/particles.ts` | Particle fields computed from time, so export matches preview |
 | `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4/WebM encode (Mediabunny) |
