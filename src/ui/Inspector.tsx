@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fontFamily, fontLabel } from '../assets';
 import { resolveFont } from '../fonts';
 import { spectrumBands } from '../render/layers';
+import { useFavourites } from '../favourites';
+import { byCodeUnit } from '../render/presetPool';
 import { getPresetNames, loadPresets } from '../render/milkdrop';
 import { SOCIAL_ICONS } from '../render/icons';
 import { useSelectedLayer, useStore } from '../store';
 import {
-  ASPECTS, ASPECT_IDS, BUILTIN_FONTS, type AssetKind, type BlendMode, type Layer, type ParticleStyle, type ParticlesProps,
+  ASPECTS, ASPECT_IDS, BUILTIN_FONTS, type AssetKind, type BlendMode, type Layer, type MilkdropProps, type ParticleStyle, type ParticlesProps,
   type SocialPlatform, type TextStyle,
 } from '../types';
 import { Color, NumberInput, Row, Select, Slider, Toggle } from './controls';
@@ -47,20 +49,30 @@ function AssetPicker({ kind, value, onChange, accept }: { kind: AssetKind; value
   );
 }
 
-function PresetPicker({ layerId, value, onChange }: { layerId: string; value: string; onChange: (v: string) => void }) {
+function PresetPicker({ layerId, value, onChange, onStar }: {
+  layerId: string; value: string; onChange: (v: string) => void;
+  /** Called after a star toggle, so a favourites pool can follow it. */
+  onStar: (name: string, starred: boolean) => void;
+}) {
   const [names, setNames] = useState(getPresetNames());
   const [q, setQ] = useState('');
+  const [onlyFavs, setOnlyFavs] = useState(false);
+  const favs = useFavourites((s) => s.names);
+  const toggle = useFavourites((s) => s.toggle);
+  const starred = useMemo(() => new Set(favs), [favs]);
   useEffect(() => { loadPresets().then(() => setNames(getPresetNames())); }, []);
   const filtered = useMemo(() => {
     const s = q.toLowerCase();
-    return s ? names.filter((n) => n.toLowerCase().includes(s)) : names;
-  }, [names, q]);
+    return names.filter((n) => (!onlyFavs || starred.has(n)) && (!s || n.toLowerCase().includes(s)));
+  }, [names, q, onlyFavs, starred]);
   const idx = names.indexOf(value);
   const step = (d: number) => names.length && onChange(names[(idx + d + names.length) % names.length]);
+  const star = (n: string) => { if (n) onStar(n, toggle(n)); };
   const shown = filtered.slice(0, 300);
   const list = useRef<HTMLDivElement>(null);
-  // Arrow keys move through the list as shown, so a search narrows what they step over.
+  // Arrow keys move through the list as shown, so a search narrows what they step over. F stars the selected preset.
   const onListKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'f' || e.key === 'F') { e.preventDefault(); star(value); return; }
     const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
     if (!d || !shown.length) return;
     e.preventDefault();
@@ -70,21 +82,68 @@ function PresetPicker({ layerId, value, onChange }: { layerId: string; value: st
   useEffect(() => { list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' }); }, [value]);
   return (
     <div className="preset-picker" key={layerId}>
-      <div className="preset-current" title={value || 'Random (from seed)'}>{value || 'Random (from seed)'}</div>
+      <div className="preset-current-row">
+        <div className="preset-current" title={value || 'Random (from seed)'}>{value || 'Random (from seed)'}</div>
+        {value && (
+          <button className="icon star" aria-pressed={starred.has(value)} title={starred.has(value) ? 'Remove from favourites' : 'Add to favourites'}
+            aria-label={starred.has(value) ? 'Remove from favourites' : 'Add to favourites'} onClick={() => star(value)}>
+            <Icon name={starred.has(value) ? 'star-filled' : 'star'} size={14} />
+          </button>
+        )}
+      </div>
       <div className="preset-buttons">
         <button onClick={() => step(-1)}><Icon name="prev" size={12} /> Prev</button>
         <button onClick={() => onChange(names[Math.floor(Math.random() * names.length)])}>Random</button>
         <button onClick={() => step(1)}>Next <Icon name="next" size={12} /></button>
       </div>
-      <input aria-label="Search presets" placeholder={`Search ${names.length} presets…`} value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="preset-search">
+        <input aria-label="Search presets" placeholder={`Search ${names.length} presets…`} value={q} onChange={(e) => setQ(e.target.value)} />
+        <button aria-pressed={onlyFavs} title="Show only favourites" onClick={() => setOnlyFavs((v) => !v)}>
+          <Icon name={onlyFavs ? 'star-filled' : 'star'} size={12} /> {favs.length}
+        </button>
+      </div>
       <div className="preset-list" ref={list} role="listbox" aria-label="Presets" tabIndex={0} onKeyDown={onListKey}
         aria-activedescendant={shown.includes(value) ? `preset-${shown.indexOf(value)}` : undefined}>
         {shown.map((n, i) => (
-          <div key={n} id={`preset-${i}`} role="option" aria-selected={n === value} onClick={() => onChange(n)}>{n}</div>
+          <div key={n} id={`preset-${i}`} role="option" aria-selected={n === value} onClick={() => onChange(n)}>
+            <span className="preset-name">{n}</span>
+            <span className={`preset-star${starred.has(n) ? ' on' : ''}`} aria-hidden="true" title={starred.has(n) ? 'Remove from favourites' : 'Add to favourites'}
+              onClick={(e) => { e.stopPropagation(); star(n); }}>
+              <Icon name={starred.has(n) ? 'star-filled' : 'star'} size={12} />
+            </span>
+          </div>
         ))}
+        {onlyFavs && !shown.length && <p className="hint">No favourites yet. Star presets to add them.</p>}
       </div>
     </div>
   );
+}
+
+/** Where automatic changes pick from, and which saved favourites the packs no longer have. */
+function PoolFields({ p, set }: { p: MilkdropProps; set: (patch: Partial<MilkdropProps>) => void }) {
+  const mine = useFavourites((s) => s.names);
+  const [names, setNames] = useState(getPresetNames());
+  useEffect(() => { loadPresets().then(() => setNames(getPresetNames())); }, []);
+  const missing = useMemo(() => {
+    if (p.pool !== 'favourites' || !names.length) return [];
+    const have = new Set(names);
+    return p.favourites.filter((n) => !have.has(n));
+  }, [p.pool, p.favourites, names]);
+  const usable = p.favourites.length - missing.length;
+  const differs = p.favourites.join('\n') !== mine.join('\n');
+  return <>
+    <Select label="Pick from" value={p.pool} options={[['all', 'All presets'], ['favourites', 'Favourites']] as const}
+      onChange={(pool) => set(pool === 'favourites' && !p.favourites.length ? { pool, favourites: [...mine] } : { pool })} />
+    {p.pool === 'favourites' && <>
+      <p className="hint">
+        {usable > 0
+          ? `Changes pick from ${usable} favourite${usable === 1 ? '' : 's'} saved with this project, so exports and other browsers show the same sequence.`
+          : 'No saved favourites yet, so changes pick from all presets. Star some presets.'}
+        {missing.length > 0 && ` ${missing.length} saved favourite${missing.length === 1 ? ' is' : 's are'} not in the preset packs and ${missing.length === 1 ? 'is' : 'are'} skipped.`}
+      </p>
+      {differs && mine.length > 0 && <button onClick={() => set({ favourites: [...mine] })}>Use my {mine.length} starred presets</button>}
+    </>}
+  </>;
 }
 
 function FontPicker({ value: stored, onChange }: { value: string; onChange: (font: string) => void }) {
@@ -168,9 +227,15 @@ function TypeFields({ layer }: { layer: Layer }) {
     case 'milkdrop': {
       const p = layer.props;
       return <>
-        <PresetPicker layerId={layer.id} value={p.preset} onChange={(preset) => set({ preset })} />
+        <PresetPicker layerId={layer.id} value={p.preset} onChange={(preset) => set({ preset })} onStar={(name, starred) => {
+          // A favourites pool follows stars made here; the browser's list and the project's stay in step.
+          if (p.pool !== 'favourites') return;
+          const next = starred ? [...new Set([...p.favourites, name])].sort(byCodeUnit) : p.favourites.filter((n) => n !== name);
+          set({ favourites: next });
+        }} />
         <Slider label="Change every" value={p.cycle} min={0} max={120} step={1} onChange={(cycle) => set({ cycle })} format={(v) => (v ? `${v}s` : 'never')} />
         {p.cycle > 0 && <>
+          <PoolFields p={p} set={set} />
           <Slider label="Blend time" value={p.blendTime} min={0} max={10} step={0.1} onChange={(blendTime) => set({ blendTime })} format={(v) => `${v}s`} />
           <NumberInput label="Shuffle seed" value={p.seed} onChange={(seed) => set({ seed })} />
         </>}

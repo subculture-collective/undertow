@@ -113,6 +113,16 @@ main { grid-area: main; display: flex; flex-direction: column; min-width: 0; min
 .preset-list [role="option"]:hover { background: var(--surface-hover); }
 .preset-list [aria-selected="true"] { background: var(--accent-soft); color: var(--accent-hi); }
 .preset-buttons button { gap: var(--space-2); }
+.preset-current-row { display: flex; align-items: center; gap: var(--space-2); }
+.preset-current-row .preset-current { flex: 1; min-width: 0; }
+.preset-search { display: flex; gap: var(--space-2); }
+.preset-search input { flex: 1; min-width: 0; }
+.preset-search button { gap: var(--space-1); }
+.preset-list [role="option"] { display: flex; align-items: center; gap: var(--space-2); }
+.preset-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.preset-star { display: inline-flex; color: var(--text-dim); opacity: 0.45; }
+.preset-list [role="option"]:hover .preset-star, .preset-star.on { opacity: 1; }
+.preset-star.on, .star[aria-pressed="true"] { color: var(--accent-hi); }
 
 .socials { display: grid; gap: var(--space-3); }
 .social-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: var(--space-2); }

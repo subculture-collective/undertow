@@ -63,6 +63,10 @@ export interface MilkdropProps {
   blendTime: number;
   seed: number;
   gain: number;
+  /** Which presets automatic changes pick from. */
+  pool: 'all' | 'favourites';
+  /** The favourites pool, saved with the project so another browser renders the same sequence. */
+  favourites: string[];
 }
 
 export interface ImageProps {
