@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fontFamily, fontLabel } from '../assets';
+import { EFFECT_RANGES as FX, defaultEffects } from '../effects';
 import { resolveFont } from '../fonts';
 import { getPresetNames, loadPresets } from '../render/milkdrop';
 import { SOCIAL_ICONS } from '../render/icons';
@@ -24,6 +25,7 @@ const PARTICLE_STYLES: Record<ParticleStyle, { label: string; preset: Partial<Pa
   starfield: { label: 'Starfield warp', preset: { count: 350 } },
 };
 const pct = (v: number) => `${Math.round(v * 100)}%`;
+const range = ([min, max]: [number, number]) => ({ min, max });
 
 function AssetPicker({ kind, value, onChange, accept }: { kind: AssetKind; value: string | null; onChange: (id: string | null) => void; accept: string }) {
   const assets = useStore((s) => s.assets);
@@ -293,7 +295,14 @@ export function Inspector() {
   const layer = useSelectedLayer();
   const aspect = useStore((s) => s.aspect);
   const { updateLayer, setRect, copyRectToAll } = useStore.getState();
-  if (!layer) return <aside className="inspector empty"><p>Select a layer to edit it, or drop images, songs and lyric files anywhere.</p></aside>;
+  if (!layer) {
+    return (
+      <aside className="inspector">
+        <p className="hint">Select a layer to edit it, or drop images, songs and lyric files anywhere.</p>
+        <EffectsSection />
+      </aside>
+    );
+  }
 
   const r = layer.rects[aspect], A = ASPECTS[aspect];
   const setPx = (k: 'x' | 'y' | 'w' | 'h', v: number) => setRect(layer.id, aspect, { ...r, [k]: v / (k === 'x' || k === 'w' ? A.w : A.h) });
@@ -325,6 +334,42 @@ export function Inspector() {
         </div>
         <p className="hint">Each format keeps its own layout. Drag to move, pull the handles to resize. Shift keeps proportions and Alt turns off snapping.</p>
       </section>
+      <EffectsSection />
     </aside>
+  );
+}
+
+/** Whole-frame effects, drawn over every layer in preview and export. Each effect's settings show when it is on. */
+function EffectsSection() {
+  const fx = useStore((s) => s.project.effects) ?? defaultEffects();
+  const set = useStore.getState().setEffect;
+  const px = (v: number) => `${Math.round(v)} px`;
+  return (
+    <section>
+      <h4>Effects</h4>
+      <Toggle label="Film grain" value={fx.grain.on} onChange={(on) => set('grain', { on })} />
+      {fx.grain.on && <>
+        <Slider label="Amount" value={fx.grain.amount} {...range(FX.grain.amount)} onChange={(amount) => set('grain', { amount })} format={pct} />
+        <Slider label="Size" value={fx.grain.size} {...range(FX.grain.size)} step={0.5} onChange={(size) => set('grain', { size })} />
+        <Toggle label="Animated" value={fx.grain.animated} onChange={(animated) => set('grain', { animated })} />
+      </>}
+      <Toggle label="Colour split" value={fx.aberration.on} onChange={(on) => set('aberration', { on })} />
+      {fx.aberration.on && <>
+        <Slider label="Offset" value={fx.aberration.offset} {...range(FX.aberration.offset)} step={0.5} onChange={(offset) => set('aberration', { offset })} format={px} />
+        <Slider label="Bass reacts" value={fx.aberration.bass} {...range(FX.aberration.bass)} onChange={(bass) => set('aberration', { bass })} />
+      </>}
+      <Toggle label="Scanlines" value={fx.crt.on} onChange={(on) => set('crt', { on })} />
+      {fx.crt.on && <>
+        <Slider label="Lines" value={fx.crt.density} {...range(FX.crt.density)} step={10} onChange={(density) => set('crt', { density })} format={(v) => String(Math.round(v))} />
+        <Slider label="Line strength" value={fx.crt.strength} {...range(FX.crt.strength)} onChange={(strength) => set('crt', { strength })} format={pct} />
+        <Slider label="Curvature" value={fx.crt.curvature} {...range(FX.crt.curvature)} onChange={(curvature) => set('crt', { curvature })} />
+      </>}
+      <Toggle label="Vignette" value={fx.vignette.on} onChange={(on) => set('vignette', { on })} />
+      {fx.vignette.on && <>
+        <Slider label="Amount" value={fx.vignette.amount} {...range(FX.vignette.amount)} onChange={(amount) => set('vignette', { amount })} format={pct} />
+        <Slider label="Softness" value={fx.vignette.softness} {...range(FX.vignette.softness)} onChange={(softness) => set('vignette', { softness })} format={pct} />
+      </>}
+      <p className="hint">Applied to the whole frame after all layers, in preview and export.</p>
+    </section>
   );
 }

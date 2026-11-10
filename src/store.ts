@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { deleteStoredAsset, importFile, type RuntimeAsset } from './assets';
 import { createLayer, starterProject, uid } from './defaults';
+import { defaultEffects, type EffectId, type Effects } from './effects';
 import { initialWorkingCopy } from './workingCopy';
 import { ASPECTS, type AspectId, type Layer, type LayerType, type Project, type PropsOf, type Rect } from './types';
 
@@ -44,6 +45,8 @@ interface State {
   removeLayer: (id: string) => void;
   duplicateLayer: (id: string) => void;
   moveLayer: (id: string, delta: number) => void;
+  /** Changes one whole-frame effect; projects without effects get the defaults first. */
+  setEffect: <K extends EffectId>(id: K, patch: Partial<Effects[K]>) => void;
 
   registerAssets: (a: RuntimeAsset[]) => void;
   importFiles: (files: File[]) => Promise<RuntimeAsset[]>;
@@ -138,6 +141,10 @@ export const useStore = create<State>((set, get) => ({
     });
     set({ lastPush: 0 });
   },
+  setEffect: (id, patch) => get().change((p) => {
+    const fx = p.effects ?? defaultEffects();
+    return { ...p, effects: { ...fx, [id]: { ...fx[id], ...patch } } };
+  }),
 
   registerAssets: (list) => set((s) => ({ assets: { ...s.assets, ...Object.fromEntries(list.map((a) => [a.meta.id, a])) } })),
   importFiles: async (files) => {

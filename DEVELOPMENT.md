@@ -21,6 +21,10 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   whole-song progress), spectrum (bars, mirrored, radial ring, line) and VU meter
   (LED, bar, analogue needles), looping video backgrounds (MP4, MOV, WebM) and
   particles (dust, bokeh, embers, snow, starfield warp).
+- **Effects** over the whole frame, after all layers: film grain, colour split
+  (chromatic aberration, optionally widened by bass), scanlines with CRT
+  curvature, and vignette. One WebGL2 pass, the same in preview and export.
+  With every effect off no WebGL context is created.
 - **Custom fonts**: upload TTF, OTF, WOFF or WOFF2 files and pick them in any
   text, lyrics or socials layer. They're stored with the other files.
 - **Per-format layouts**: each layer has its own position in landscape 16:9,
@@ -71,6 +75,7 @@ that disposable database for you. Install the root and server dependencies first
 | `src/render/compositor.ts` | Draws a project frame; shared by preview and export |
 | `src/render/layers.ts` | Drawing code for each layer type |
 | `src/render/milkdrop.ts` | Butterchurn wrapper with deterministic preset changes |
+| `src/effects.ts`, `src/render/postfx.ts` | Whole-frame effect settings and the WebGL2 pass that draws them |
 | `src/render/particles.ts` | Particle fields computed from time, so export matches preview |
 | `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4 encode (Mediabunny) |
 | `src/export/clipReader.ts` | Exact frame decoding for video layers during export |
@@ -145,6 +150,14 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
   for each output frame.
 - Browsers without an audio encoder export silent video; the export dialog
   says so next to the download.
+- Effects read the composited 2D canvas into a WebGL2 texture, run one
+  fragment shader and draw the result back, so the exporter captures it.
+  Grain is seeded from the frame time, so two exports decode to the same
+  frames. Without WebGL2 the frame renders without effects and the console
+  warns once. Measured 2026-11-10, Chromium 156 headless on Kvant (AMD Radeon
+  iGPU through ANGLE GL; the machine was busy), 1080p30 export: about
+  +3.3 ms/frame with all four effects on (10–13 ms/frame off, 13–16 on, 24–36%
+  slower). On SwiftShader (no GPU) the same export went from ~11 to ~50 ms/frame.
 - Milkdrop output isn't bit-identical between preview and export, because each
   one runs its own Butterchurn instance, but preset choices and timing match.
 
