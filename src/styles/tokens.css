@@ -7,6 +7,8 @@
   --surface-hover: #2b2650;
   --surface-sunken: #0f0c1c;
   --surface-overlay: rgb(10 8 20 / 0.86);
+  /* Behind docked dialogs that leave the stage visible. */
+  --surface-scrim: rgb(10 8 20 / 0.35);
   --line: #2c2749;
   --line-strong: #4b4378;
   /* Field outlines and slider tracks: 3:1 or better against every surface. */

@@ -4,6 +4,7 @@ import { Compositor } from '../render/compositor';
 import { loadPresets } from '../render/milkdrop';
 import { useStore } from '../store';
 import { ASPECTS, type Rect } from '../types';
+import { withLyricPreview } from './LyricTimingEditor';
 import { currentTime, usePlayer } from './player';
 
 type Handle = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
@@ -59,7 +60,9 @@ export function Stage() {
       last = now;
       const s = useStore.getState();
       const track = s.project.audioAssetId ? s.assets[s.project.audioAssetId]?.track ?? null : null;
-      comp.render({ project: s.project, aspect: s.aspect, t: currentTime(), dt, track, assets: s.assets, preview: true, milkScale: 0.75, playing: usePlayer.getState().playing });
+      // An open lyric timing editor shows its working cues here.
+      const { project, assets } = withLyricPreview(s.project, s.assets);
+      comp.render({ project, aspect: s.aspect, t: currentTime(), dt, track, assets, preview: true, milkScale: 0.75, playing: usePlayer.getState().playing });
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
