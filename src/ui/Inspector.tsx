@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fontFamily, fontLabel } from '../assets';
 import { resolveFont } from '../fonts';
+import { spectrumBands } from '../render/layers';
 import { getPresetNames, loadPresets } from '../render/milkdrop';
 import { SOCIAL_ICONS } from '../render/icons';
 import { useSelectedLayer, useStore } from '../store';
@@ -248,9 +249,18 @@ function TypeFields({ layer }: { layer: Layer }) {
       const p = layer.props;
       return <>
         <Select label="Style" value={p.style} options={[['bars', 'Bars'], ['mirror', 'Mirrored bars'], ['radial', 'Radial ring'], ['line', 'Smooth line']] as const} onChange={(style) => set({ style })} />
-        <Slider label="Bars" value={p.bars} min={8} max={256} step={1} onChange={(bars) => set({ bars })} />
+        <Select label="Spacing" value={p.spacing} options={[['count', 'Bar count'], ['octave-1/3', '1/3 octave'], ['octave-1/6', '1/6 octave']] as const} onChange={(spacing) => set({ spacing })} />
+        {p.spacing === 'count'
+          ? <Slider label="Bars" value={p.bars} min={8} max={256} step={1} onChange={(bars) => set({ bars })} />
+          : <p className="hint">{spectrumBands(p).length} bands between the low and high cut.</p>}
         <Color label="Colour" value={p.color} onChange={(color) => set({ color })} />
         <Color label="Colour 2" value={p.color2} onChange={(color2) => set({ color2 })} />
+        {p.style === 'bars' && <>
+          <Toggle label="LED segments" value={p.led} onChange={(led) => set({ led })} />
+          {p.led && <Slider label="Segments" value={p.segments} min={4} max={48} step={1} onChange={(segments) => set({ segments })} />}
+          <Toggle label="Peak caps" value={p.peaks} onChange={(peaks) => set({ peaks })} />
+          <Slider label="Reflection" value={p.reflection} min={0} max={1} onChange={(reflection) => set({ reflection })} format={(v) => (v ? pct(v) : 'off')} />
+        </>}
         <Slider label="Gap" value={p.gap} min={0} max={0.9} onChange={(gap) => set({ gap })} format={pct} />
         <Toggle label="Rounded" value={p.rounded} onChange={(rounded) => set({ rounded })} />
         <Slider label="Smoothing" value={p.smoothing} min={0} max={0.95} onChange={(smoothing) => set({ smoothing })} />

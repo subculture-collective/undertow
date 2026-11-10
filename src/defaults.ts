@@ -50,6 +50,7 @@ export const DEFAULT_PROPS: { [T in LayerType]: PropsOf<T> } = {
   spectrum: {
     style: 'bars', bars: 64, color: '#4fd1ff', color2: '#ff4fd8', gap: 0.3, rounded: true, smoothing: 0.6,
     minHz: 30, maxHz: 16000, glow: 0.4, sensitivity: 1,
+    led: false, segments: 16, peaks: false, reflection: 0, spacing: 'count',
   },
   vu: { style: 'led', orientation: 'vertical', low: '#3ddc84', mid: '#ffd84d', high: '#ff4d4d', segments: 20, peakHold: true, sensitivity: 1 },
 };
