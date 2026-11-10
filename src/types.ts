@@ -60,8 +60,12 @@ export interface ParticlesProps {
 
 export interface MilkdropProps {
   preset: string;
-  /** Seconds between automatic preset changes; 0 keeps one preset. */
+  /** Seconds between automatic preset changes; 0 keeps one preset. Also the fallback for 'bars' while no tempo is known. */
   cycle: number;
+  /** Whether changes follow `cycle` seconds or every `cycleBars` bars of the project's tempo. */
+  cycleUnit: 'seconds' | 'bars';
+  /** Bars (of four beats) between changes when `cycleUnit` is 'bars'. */
+  cycleBars: number;
   blendTime: number;
   seed: number;
   gain: number;
@@ -186,6 +190,19 @@ export type Layer =
 
 export type PropsOf<T extends LayerType> = Extract<Layer, { type: T }>['props'];
 
+/** One tempo for the whole song: a beat grid starting at `offset`. */
+export interface Tempo {
+  bpm: number;
+  /** Seconds to the first beat. */
+  offset: number;
+  /** The song this grid was found for; a different song gets a fresh detection. */
+  audioAssetId: string;
+  /** Edited by hand, so detection leaves it alone. */
+  manual: boolean;
+  /** How clear the detected beat was, 0..1; absent for hand-set values. */
+  confidence?: number;
+}
+
 export interface Project {
   version: 1;
   name: string;
@@ -194,6 +211,8 @@ export interface Project {
   audioAssetId: string | null;
   /** Whole-frame effects after all layers. Absent in projects saved before effects existed; that means all off. */
   effects?: Effects;
+  /** Tempo of the song, detected after loading it or set by hand. Absent until known. */
+  tempo?: Tempo;
 }
 
 export type AssetKind = 'image' | 'audio' | 'lyrics' | 'video' | 'font';

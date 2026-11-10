@@ -1,6 +1,6 @@
 import { createLayer } from './defaults';
 import { normalizeEffects } from './effects';
-import { ASPECT_IDS, type Layer, type LayerType, type Project, type Rect } from './types';
+import { ASPECT_IDS, type Layer, type LayerType, type Project, type Rect, type Tempo } from './types';
 
 const LAYER_TYPES: readonly LayerType[] = ['solid', 'video', 'particles', 'milkdrop', 'image', 'text', 'lyrics', 'socials', 'waveform', 'spectrum', 'vu'];
 
@@ -33,13 +33,27 @@ export function toProject(x: unknown): Project | null {
       props: { ...def.props, ...(isObj(l.props) ? l.props : {}) },
     } as Layer);
   }
-  const { effects, ...rest } = x;
+  const { effects, tempo, ...rest } = x;
+  const t = toTempo(tempo);
   return {
     ...rest,
     ...(effects === undefined ? {} : { effects: normalizeEffects(effects) }),
+    ...(t ? { tempo: t } : {}),
     version: 1,
     name: typeof x.name === 'string' ? x.name : 'Untitled',
     audioAssetId: typeof x.audioAssetId === 'string' ? x.audioAssetId : null,
     layers,
   } as Project;
+}
+
+/** A saved tempo, or undefined when it is missing or unusable (detection then runs again). */
+function toTempo(v: unknown): Tempo | undefined {
+  if (!isObj(v) || !isNum(v.bpm) || v.bpm < 20 || v.bpm > 400 || !isNum(v.offset) || typeof v.audioAssetId !== 'string') return undefined;
+  return {
+    bpm: v.bpm,
+    offset: Math.max(0, v.offset),
+    audioAssetId: v.audioAssetId,
+    manual: v.manual === true,
+    ...(isNum(v.confidence) ? { confidence: v.confidence } : {}),
+  };
 }

@@ -1,4 +1,4 @@
-import type { MilkdropProps } from '../types';
+import type { MilkdropProps, Project, Tempo } from '../types';
 
 /** Plain code-unit order, so a saved list sorts the same in every browser and locale. */
 export const byCodeUnit = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -21,4 +21,28 @@ export function pickPreset(seed: number, k: number, pool: readonly string[]): st
   h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
   h = (h ^ (h >>> 12)) >>> 0;
   return pool[h % pool.length];
+}
+
+export const BEATS_PER_BAR = 4;
+
+/** The project's tempo, if it belongs to the project's current song. */
+export const activeTempo = (p: Pick<Project, 'tempo' | 'audioAssetId'>): Tempo | null =>
+  p.tempo && p.tempo.audioAssetId === p.audioAssetId && p.tempo.bpm > 0 ? p.tempo : null;
+
+/**
+ * Which preset segment time t falls in. In seconds mode that is floor(t / cycle).
+ * In bars mode segments start on the beat grid, every cycleBars bars of four
+ * beats from the first beat; time before the first beat stays in segment 0.
+ * Without a tempo, bars mode falls back to the seconds setting.
+ */
+export function cycleSegment(
+  p: Pick<MilkdropProps, 'cycle' | 'cycleUnit' | 'cycleBars'>, t: number, tempo: Pick<Tempo, 'bpm' | 'offset'> | null,
+): number {
+  if (!(p.cycle > 0)) return 0;
+  if (p.cycleUnit === 'bars' && tempo && tempo.bpm > 0) {
+    const len = (Math.max(1, Math.round(p.cycleBars)) * BEATS_PER_BAR * 60) / tempo.bpm;
+    // A microsecond of slack keeps a frame that lands exactly on a bar line from rounding into the previous segment.
+    return Math.max(0, Math.floor((t - tempo.offset + 1e-6) / len));
+  }
+  return Math.floor(t / p.cycle);
 }
