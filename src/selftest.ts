@@ -94,6 +94,8 @@ async function run() {
       out[`video ${w}x${h}`] = await getFirstEncodableVideoCodec(['avc', 'hevc', 'vp9', 'av1'], { width: w, height: h });
     }
     out.audio = await getFirstEncodableAudioCodec(['aac', 'opus'], { numberOfChannels: 2, sampleRate: 44100 });
+    out['webm video 1920x1080'] = await getFirstEncodableVideoCodec(['vp9', 'av1'], { width: 1920, height: 1080 });
+    out['webm audio'] = await getFirstEncodableAudioCodec(['opus'], { numberOfChannels: 2, sampleRate: 44100 });
     return out;
   });
 
@@ -145,6 +147,17 @@ async function run() {
       out[t.id] = { msPerFrame: Math.round(res.msPerFrame), duration: info.duration, audio: info.audio?.codec ?? null };
     }
     return out;
+  });
+
+  await check('export: WebM (VP9/AV1 + Opus), 720p, 2 s', async () => {
+    const res = await exportVideo(deterministicProject(), track, { [audioAsset.meta.id]: audioAsset }, { ...opts, end: 2, container: 'webm' }, () => {}, signal);
+    if (res.blob.type !== 'video/webm') throw new Error(`blob type ${res.blob.type}`);
+    const { input, v, info } = await readMp4(res.blob);
+    input.dispose();
+    if (!v || !['vp9', 'av1'].includes(info.video!.codec ?? '')) throw new Error(`video codec ${info.video?.codec}`);
+    if (info.audio?.codec !== 'opus') throw new Error(`audio codec ${info.audio?.codec}`);
+    if (Math.abs(info.duration - 2) > 0.1) throw new Error(`duration ${info.duration}, expected 2`);
+    return { ...summary(res), file: info };
   });
 
   await check('export: looping video background decoded from an MP4', async () => {
