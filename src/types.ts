@@ -138,7 +138,18 @@ export interface SpectrumProps {
   maxHz: number;
   glow: number;
   sensitivity: number;
+  /** Bars style only: draw each bar as stacked LED segments. */
+  led: boolean;
+  segments: number;
+  /** Bars style only: a cap above each bar that holds briefly, then falls. */
+  peaks: boolean;
+  /** Bars style only: strength of a faded mirror image below the bars, 0 disables. */
+  reflection: number;
+  /** 'count' spaces `bars` evenly on a log scale; octave options use ISO band centres and derive the count. */
+  spacing: SpectrumSpacing;
 }
+
+export type SpectrumSpacing = 'count' | 'octave-1/3' | 'octave-1/6';
 
 export interface VuProps {
   style: 'led' | 'bar' | 'needle';
