@@ -1,4 +1,5 @@
 import { createLayer } from './defaults';
+import { normalizeEffects } from './effects';
 import { ASPECT_IDS, type Layer, type LayerType, type Project, type Rect } from './types';
 
 const LAYER_TYPES: readonly LayerType[] = ['solid', 'video', 'particles', 'milkdrop', 'image', 'text', 'lyrics', 'socials', 'waveform', 'spectrum', 'vu'];
@@ -32,8 +33,10 @@ export function toProject(x: unknown): Project | null {
       props: { ...def.props, ...(isObj(l.props) ? l.props : {}) },
     } as Layer);
   }
+  const { effects, ...rest } = x;
   return {
-    ...x,
+    ...rest,
+    ...(effects === undefined ? {} : { effects: normalizeEffects(effects) }),
     version: 1,
     name: typeof x.name === 'string' ? x.name : 'Untitled',
     audioAssetId: typeof x.audioAssetId === 'string' ? x.audioAssetId : null,

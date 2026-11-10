@@ -26,6 +26,8 @@ Open the editor at <https://undertow.subcult.tv>. Product page:
   out of the same file.
 - **Templates:** Classic, Vinyl, Karaoke, Neon, Poster and Video loop. Each one
   carries over your song, artwork, clip and lyrics.
+- **Effects:** film grain, colour split, scanlines with CRT curvature and a
+  vignette over the whole frame. The colour split can widen on the bass.
 - **Fonts:** six built in, or upload your own TTF, OTF, WOFF or WOFF2.
 - Undo, snapping guides, browser autosave and layout save and load.
 
