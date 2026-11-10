@@ -1,11 +1,13 @@
 import { silentFrame, type AudioTrack } from '../audio/analysis';
 import type { RuntimeAsset } from '../assets';
+import { anyEffectOn } from '../effects';
 import type { AspectId, Layer, Project, VideoLayer } from '../types';
 import {
   clipTime, drawImage, drawLyrics, drawSocials, drawSolid, drawSpectrum, drawText, drawVideo, drawVu, drawWaveform, type Box, type DrawCtx,
 } from './layers';
 import { MilkInstance } from './milkdrop';
 import { drawParticles } from './particles';
+import { PostFx } from './postfx';
 
 export type DecodedFrame = HTMLCanvasElement | OffscreenCanvas;
 
@@ -36,6 +38,8 @@ export class Compositor {
   private drawn = new Set<string>();
   private state = new Map<string, Record<string, unknown>>();
   private lastT = -1;
+  /** Created on the first frame with an effect on; null after a failed attempt, so it is tried only once. */
+  private fx: PostFx | null | undefined;
 
   constructor(readonly ctx: CanvasRenderingContext2D) {}
 
@@ -78,6 +82,12 @@ export class Compositor {
         console.error(`layer ${layer.name} failed`, e);
       }
       ctx.restore();
+    }
+
+    const fx = r.project.effects;
+    if (fx && anyEffectOn(fx)) {
+      if (this.fx === undefined) this.fx = PostFx.create();
+      this.fx?.apply(ctx, fx, r.t, Math.min(1, Math.max(0, d.frame.bass)));
     }
 
     for (const [id, m] of this.milk) if (!live.has(id)) { m.dispose(); this.milk.delete(id); }
@@ -160,6 +170,8 @@ export class Compositor {
     this.milk.clear();
     for (const v of this.videos.values()) stopVideo(v);
     this.videos.clear();
+    this.fx?.dispose();
+    this.fx = undefined;
   }
 }
 
