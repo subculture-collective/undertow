@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAccount } from '../cloud/account';
 import { loadUsage, submitRender, useRenders, type RenderJob, type Usage } from '../cloud/renders';
-import { exportVideo, type ExportOptions, type ExportProgress } from '../export/exportVideo';
+import { getFirstEncodableVideoCodec } from 'mediabunny';
+import type { Container } from '../export/blobOutput';
+import { CONTAINER_CODECS, exportVideo, type ExportOptions, type ExportProgress } from '../export/exportVideo';
 import { useStore } from '../store';
 import { ASPECTS, ASPECT_IDS, type AspectId } from '../types';
 import { BRAND, visibleLink } from '../brand';
@@ -12,7 +14,26 @@ import { RenderRow } from './RendersDialog';
 import { Icon } from './icons';
 import { Modal } from './Modal';
 
-interface Result { aspect: AspectId; url: string; size: number; silent: boolean }
+interface Result { aspect: AspectId; url: string; size: number; silent: boolean; container: Container; videoCodec: string; audioCodec: string | null }
+
+const CODEC_NAMES: Record<string, string> = { avc: 'H.264', hevc: 'HEVC', vp9: 'VP9', av1: 'AV1', aac: 'AAC', opus: 'Opus' };
+const codecName = (c: string) => CODEC_NAMES[c] ?? c;
+
+/** Which containers this browser can encode at the chosen size, and whether MP4 gets H.264/HEVC or falls back to VP9/AV1. */
+function useEncodeSupport(shortSide: ExportOptions['shortSide']) {
+  const [support, setSupport] = useState<{ webm: boolean; mp4Native: boolean } | null>(null);
+  useEffect(() => {
+    let live = true;
+    const size = { width: Math.round((shortSide * 16) / 9 / 2) * 2, height: shortSide };
+    Promise.all([
+      getFirstEncodableVideoCodec([...CONTAINER_CODECS.webm.video], size),
+      getFirstEncodableVideoCodec(['avc', 'hevc'], size),
+    ]).then(([webm, native]) => { if (live) setSupport({ webm: !!webm, mp4Native: !!native }); })
+      .catch(() => { if (live) setSupport({ webm: false, mp4Native: true }); });
+    return () => { live = false; };
+  }, [shortSide]);
+  return support;
+}
 
 type Where = 'local' | 'cloud';
 
@@ -28,6 +49,10 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
   const [fps, setFps] = useState<ExportOptions['fps']>(30);
   const [quality, setQuality] = useState<ExportOptions['quality']>('high');
   const [range, setRange] = useState<'full' | 'preview'>('full');
+  const [chosenContainer, setContainer] = useState<Container>('mp4');
+  const support = useEncodeSupport(shortSide);
+  // Only offer WebM where VP9 or AV1 can be encoded; otherwise MP4 is the only choice.
+  const container: Container = support?.webm ? chosenContainer : 'mp4';
   const [progress, setProgress] = useState<(ExportProgress & { aspect: AspectId }) | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [error, setError] = useState('');
@@ -72,13 +97,15 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
     setRendering(true);
     try {
       for (const aspect of aspects) {
-        const res = await exportVideo(project, track, assets, { aspect, shortSide, fps, quality, start, end },
+        const res = await exportVideo(project, track, assets, { aspect, shortSide, fps, quality, start, end, container },
           (p) => setProgress({ ...p, aspect }), abort.current.signal);
         if (abort.current.signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
         const silent = !!track && !res.audioCodec;
         const url = URL.createObjectURL(res.blob);
         resultUrls.current.push(url);
-        setResults((r) => [...r, { aspect, url, size: res.blob.size, silent }]);
+        setResults((r) => [...r, {
+          aspect, url, size: res.blob.size, silent, container: res.container, videoCodec: res.videoCodec, audioCodec: res.audioCodec,
+        }]);
       }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') setError((e as Error).message);
@@ -156,6 +183,16 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
         options={[[720, '720p'], [1080, '1080p'], [1440, '1440p'], [2160, '4K']] as const} />
       <Select label="Frame rate" value={fps} onChange={setFps} options={[[24, '24 fps'], [30, '30 fps'], [60, '60 fps']] as const} />
       <Select label="Quality" value={quality} onChange={setQuality} options={[['high', 'High'], ['very-high', 'Very high (bigger file)']] as const} />
+      {where === 'local' && support?.webm && (
+        <Select label="File type" value={container} onChange={setContainer}
+          options={[['mp4', 'MP4'], ['webm', 'WebM (VP9 or AV1, Opus audio)']] as const} />
+      )}
+      {where === 'local' && support && !support.mp4Native && container === 'mp4' && (
+        <p className="warn">
+          This browser can't encode H.264 at this size, so the MP4 will hold {support.webm ? 'VP9 or AV1' : 'other'} video, which some players and editors handle poorly.
+          {support.webm && ' WebM is the usual container for it.'}
+        </p>
+      )}
       <Select label="Length" value={range} onChange={setRange}
         options={[['full', track ? `Whole song (${fmtTime(duration)})` : `Silent video (${fmtTime(duration)})`], ['preview', `15 s from playhead (${fmtTime(start)})`]] as const} />
 
@@ -178,8 +215,10 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
       {error && <p className="warn">{error}</p>}
       {results.map((r) => (
         <p key={r.aspect}>
-          <a className="download" href={r.url} download={`${base}-${r.aspect}.mp4`}><Icon name="download" /> Download {ASPECTS[r.aspect].label}</a>
-          <span className="hint"> {(r.size / 1e6).toFixed(1)} MB</span>
+          <a className="download" href={r.url} download={`${base}-${r.aspect}.${r.container}`}><Icon name="download" /> Download {ASPECTS[r.aspect].label}</a>
+          <span className="hint">
+            {' '}{r.container === 'webm' ? 'WebM' : 'MP4'} · {codecName(r.videoCodec)}{r.audioCodec ? ` + ${codecName(r.audioCodec)}` : ''} · {(r.size / 1e6).toFixed(1)} MB
+          </span>
           {r.silent && <span className="warn"> · silent: this browser has no audio encoder</span>}
         </p>
       ))}
