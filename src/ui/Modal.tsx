@@ -7,10 +7,11 @@ import { useLayoutEffect, useRef, type FormEvent, type ReactNode } from 'react';
  * its own backdrop; clicking outside the box closes it.
  *
  * `locked` holds it open while work that shouldn't be abandoned is running.
- * With `onSubmit` the box is a <form>.
+ * With `onSubmit` the box is a <form>. `backClassName` styles the backdrop,
+ * for example `dock`, which sits the box at the bottom over a light scrim.
  */
-export function Modal({ className = '', labelledBy, onClose, locked = false, onSubmit, children }: {
-  className?: string; labelledBy: string; onClose: () => void; locked?: boolean;
+export function Modal({ className = '', backClassName = '', labelledBy, onClose, locked = false, onSubmit, children }: {
+  className?: string; backClassName?: string; labelledBy: string; onClose: () => void; locked?: boolean;
   onSubmit?: (e: FormEvent) => void; children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -22,7 +23,7 @@ export function Modal({ className = '', labelledBy, onClose, locked = false, onS
   }, []);
   const Box = onSubmit ? 'form' : 'div';
   return (
-    <dialog ref={ref} className="modal-back" aria-labelledby={labelledBy}
+    <dialog ref={ref} className={`modal-back ${backClassName}`} aria-labelledby={labelledBy}
       onCancel={(e) => { e.preventDefault(); if (!locked) onClose(); }}
       onPointerDown={(e) => { if (e.target === e.currentTarget && !locked) onClose(); }}>
       <Box className={`modal ${className}`} onSubmit={onSubmit}>{children}</Box>

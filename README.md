@@ -20,7 +20,9 @@ Open the editor at <https://undertow.subcult.tv>. Product page:
   artwork and logos, text, socials, and looping video backgrounds. Stack them,
   blend them, hide the ones you don't want.
 - **Lyrics:** LRC, SRT or VTT, with a sync offset. Enhanced LRC word timings
-  give word-by-word karaoke.
+  give word-by-word karaoke. No timed file? Paste the words into the timing
+  editor, tap along to the song, then drag lines on the waveform to fix them.
+  It saves a new LRC file and leaves the original alone.
 - **Three frames from one project:** every layer keeps its own position in
   16:9, 9:16 and 1:1, so the landscape cut, the vertical and the square all come
   out of the same file.

@@ -25,6 +25,7 @@ import { BrandLogo, PatreonButton, SocialLinks } from './ui/Brand';
 import { BRAND, visibleLink } from './brand';
 import { audioEl, currentTime, fmtTime, usePlayer } from './ui/player';
 import { AskHost, noticeAsk } from './ui/ask';
+import { LyricEditorHost } from './ui/LyricTimingEditor';
 import { Icon } from './ui/icons';
 import { Scrubber } from './ui/Scrubber';
 
@@ -286,6 +287,7 @@ export default function App() {
       {dialog?.kind === 'projects' && (
         <ProjectsDialog onClose={close} onNew={() => setDialog({ kind: 'gallery' })} onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} />
       )}
+      <LyricEditorHost />
       <AskHost />
       {toast && <div className="toast" role="status" onClick={() => setToast('')}>{toast}</div>}
       {dragOver && <div className="drop-hint">Drop songs, images, video clips, fonts or lyric files</div>}

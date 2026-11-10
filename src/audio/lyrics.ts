@@ -90,3 +90,39 @@ export function cueAt(cues: LyricCue[], t: number): number {
   for (let i = found; i >= 0; i--) if (t < cues[i].end) return i;
   return -1;
 }
+
+/**
+ * An LRC time stamp without brackets: `mm:ss.xx`, or `mm:ss.xxx` when the
+ * time has millisecond detail (from SRT or VTT), so nothing is rounded away.
+ */
+export function lrcTime(t: number): string {
+  t = Math.max(0, t);
+  const cs = t * 100;
+  const centis = Math.abs(cs - Math.round(cs)) < 1e-6;
+  const per = centis ? 100 : 1000;
+  const units = Math.round(t * per);
+  const m = Math.floor(units / (60 * per)), rest = units - m * 60 * per;
+  const s = Math.floor(rest / per), frac = rest - s * per;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(frac).padStart(centis ? 2 : 3, '0')}`;
+}
+
+/**
+ * Writes cues as LRC, one `[mm:ss.xx]` line per cue, with enhanced-LRC word
+ * stamps where the cue has them. LRC has no end times: a line lasts until the
+ * next one starts, so a cue that ends earlier is followed by a blank stamped
+ * line, which parseLrc reads as an instrumental gap. A cue that overlaps the
+ * next one ends where the next one starts.
+ */
+export function toLrc(cues: LyricCue[]): string {
+  const sorted = [...cues].sort((a, b) => a.start - b.start);
+  const out: string[] = [];
+  sorted.forEach((c, i) => {
+    const body = c.words?.length ? c.words.map((w) => `<${lrcTime(w.t)}>${w.text}`).join('') : c.text;
+    out.push(`[${lrcTime(c.start)}]${body}`);
+    const next = sorted[i + 1];
+    // Without a following stamp parseLrc gives the last line five seconds.
+    const gap = next ? c.end < next.start - 0.0005 : Math.abs(c.end - (c.start + 5)) > 0.0005;
+    if (gap) out.push(`[${lrcTime(c.end)}]`);
+  });
+  return out.join('\n') + '\n';
+}

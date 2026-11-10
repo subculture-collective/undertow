@@ -32,6 +32,13 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   portrait 9:16 and square 1:1, so one project exports every format.
 - **Lyrics**: LRC (including enhanced LRC word timing for karaoke), SRT and VTT,
   with a sync offset.
+- **Lyric timing editor** ("Edit timing…" on a lyrics layer): paste plain text
+  or start from the layer's file, stamp line starts with Space while the song
+  plays (0.5×, 0.75× or 1×), then drag lines, or their ends, on a zoomable
+  waveform. The stage previews the edit. Saving writes a new LRC file, points the
+  layer at it (undoable) and leaves the original untouched; the file can also be
+  downloaded. Other code opens it with `openLyricEditor()` in
+  `src/ui/LyricTimingEditor.tsx`.
 - **Export**: MP4 (H.264 with AAC audio where the browser can encode them) or WebM (VP9 or AV1 with Opus,
   offered where the browser can encode VP9 or AV1), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
@@ -73,7 +80,8 @@ that disposable database for you. Install the root and server dependencies first
 | `src/types.ts`, `src/defaults.ts` | Project model, layer defaults, starter template |
 | `src/templates.ts` | Template gallery layouts and how they adopt the current project's files |
 | `src/audio/analysis.ts` | Decoding, FFT, per-frame levels, whole-song overview |
-| `src/audio/lyrics.ts` | LRC/SRT/VTT parsing |
+| `src/audio/lyrics.ts` | LRC/SRT/VTT parsing and LRC writing (`toLrc`) |
+| `src/audio/lyricTiming.ts`, `src/ui/LyricTimingEditor.tsx` | Lyric timing editor: editing rules, dialog, waveform timeline |
 | `src/render/compositor.ts` | Draws a project frame; shared by preview and export |
 | `src/render/layers.ts` | Drawing code for each layer type |
 | `src/render/milkdrop.ts` | Butterchurn wrapper with deterministic preset changes |
