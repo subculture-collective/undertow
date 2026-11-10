@@ -1,6 +1,6 @@
 import {
   AudioBufferSource, VideoSample, VideoSampleSource, QUALITY_HIGH, QUALITY_VERY_HIGH,
-  getFirstEncodableAudioCodec, getFirstEncodableVideoCodec, type AudioCodec,
+  getFirstEncodableAudioCodec, getFirstEncodableVideoCodec, type AudioCodec, type VideoCodec,
 } from 'mediabunny';
 import type { AudioTrack } from '../audio/analysis';
 import type { RuntimeAsset } from '../assets';
@@ -10,7 +10,7 @@ import { loadPresets } from '../render/milkdrop';
 import { ASPECTS, type AspectId, type Project, type VideoLayer } from '../types';
 import { builtinFontsReady } from '../fonts';
 import { ClipReader } from './clipReader';
-import { createBlobOutput } from './blobOutput';
+import { createBlobOutput, type Container } from './blobOutput';
 
 /** Yields a macrotask so the page stays responsive; encoder promises can resolve without ever doing so. */
 const channel = new MessageChannel();
@@ -84,12 +84,21 @@ export interface ExportOptions {
   quality: 'high' | 'very-high';
   /** Encode the song into the file (default). Cloud renders skip this and mux the original song afterwards. */
   includeAudio?: boolean;
+  /** MP4 (default) or WebM with VP9/AV1 video and Opus audio. */
+  container?: Container;
 }
+
+/** Codecs to try, best first, for each container. MP4 falls back to VP9/AV1 and Opus where H.264 or AAC can't be encoded. */
+export const CONTAINER_CODECS = {
+  mp4: { video: ['avc', 'hevc', 'vp9', 'av1'], audio: ['aac', 'opus'] },
+  webm: { video: ['vp9', 'av1'], audio: ['opus'] },
+} as const satisfies Record<Container, { video: readonly VideoCodec[]; audio: readonly AudioCodec[] }>;
 
 export interface ExportProgress { frame: number; frames: number; fps: number; eta: number }
 
 export interface ExportResult {
   blob: Blob;
+  container: Container;
   width: number;
   height: number;
   videoCodec: string;
@@ -108,8 +117,14 @@ export async function exportVideo(
   const even = (n: number) => Math.round(n / 2) * 2;
   const W = even(base.w * k), H = even(base.h * k);
 
-  const videoCodec = await getFirstEncodableVideoCodec(['avc', 'hevc', 'vp9', 'av1'], { width: W, height: H });
-  if (!videoCodec) throw new Error(`This browser cannot encode ${W}x${H} video. Try a lower resolution or Chrome.`);
+  const container = o.container ?? 'mp4';
+  const codecs = CONTAINER_CODECS[container];
+  const videoCodec = await getFirstEncodableVideoCodec([...codecs.video], { width: W, height: H });
+  if (!videoCodec) {
+    throw new Error(container === 'webm'
+      ? `This browser cannot encode ${W}x${H} VP9 or AV1 video for WebM. Try MP4 or a lower resolution.`
+      : `This browser cannot encode ${W}x${H} video. Try a lower resolution or Chrome.`);
+  }
 
   if (project.layers.some((l) => l.type === 'milkdrop' && l.visible)) await loadPresets();
   await builtinFontsReady();
@@ -120,7 +135,7 @@ export async function exportVideo(
   const comp = new Compositor(ctx);
   const capturer = frameCapturer(canvas, ctx);
 
-  const blobOutput = createBlobOutput();
+  const blobOutput = createBlobOutput(container);
   const { output } = blobOutput;
   const bitrate = o.quality === 'very-high' ? QUALITY_VERY_HIGH : QUALITY_HIGH;
   const video = new VideoSampleSource({ codec: videoCodec, bitrate, keyFrameInterval: 2 });
@@ -129,7 +144,7 @@ export async function exportVideo(
   let audio: AudioBufferSource | null = null;
   let audioCodec: AudioCodec | null = null;
   if (track && o.includeAudio !== false) {
-    audioCodec = await getFirstEncodableAudioCodec(['aac', 'opus'], {
+    audioCodec = await getFirstEncodableAudioCodec([...codecs.audio], {
       numberOfChannels: track.buffer.numberOfChannels, sampleRate: track.sampleRate,
     });
     if (audioCodec) {
@@ -189,6 +204,7 @@ export async function exportVideo(
   }
   return {
     blob: blobOutput.finish(),
+    container,
     width: W, height: H, videoCodec, audioCodec: audio ? audioCodec : null, capture: capturer.mode(), msPerFrame,
   };
 }

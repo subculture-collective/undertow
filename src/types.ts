@@ -1,3 +1,5 @@
+import type { Effects } from './effects';
+
 export type AspectId = 'landscape' | 'portrait' | 'square';
 
 export const ASPECTS: Record<AspectId, { label: string; w: number; h: number }> = {
@@ -190,6 +192,8 @@ export interface Project {
   /** Bottom-most layer first. */
   layers: Layer[];
   audioAssetId: string | null;
+  /** Whole-frame effects after all layers. Absent in projects saved before effects existed; that means all off. */
+  effects?: Effects;
 }
 
 export type AssetKind = 'image' | 'audio' | 'lyrics' | 'video' | 'font';

@@ -23,13 +23,18 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   mirrored, radial ring, line; bar count or 1/3- and 1/6-octave bands) and VU meter
   (LED, bar, analogue needles), looping video backgrounds (MP4, MOV, WebM) and
   particles (dust, bokeh, embers, snow, starfield warp).
+- **Effects** over the whole frame, after all layers: film grain, colour split
+  (chromatic aberration, optionally widened by bass), scanlines with CRT
+  curvature, and vignette. One WebGL2 pass, the same in preview and export.
+  With every effect off no WebGL context is created.
 - **Custom fonts**: upload TTF, OTF, WOFF or WOFF2 files and pick them in any
   text, lyrics or socials layer. They're stored with the other files.
 - **Per-format layouts**: each layer has its own position in landscape 16:9,
   portrait 9:16 and square 1:1, so one project exports every format.
 - **Lyrics**: LRC (including enhanced LRC word timing for karaoke), SRT and VTT,
   with a sync offset.
-- **Export**: MP4 (H.264 with AAC audio where the browser can encode them), 720p to 4K, 24/30/60 fps, whole song or
+- **Export**: MP4 (H.264 with AAC audio where the browser can encode them) or WebM (VP9 or AV1 with Opus,
+  offered where the browser can encode VP9 or AV1), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
 - Undo/redo, autosave (layout in localStorage, files in IndexedDB), layout
   save/load as JSON, snapping guides, keyboard nudging.
@@ -74,8 +79,9 @@ that disposable database for you. Install the root and server dependencies first
 | `src/render/layers.ts` | Drawing code for each layer type |
 | `src/render/milkdrop.ts`, `src/render/presetPool.ts` | Butterchurn wrapper with deterministic preset changes; the preset pool and pick |
 | `src/favourites.ts` | Starred Milkdrop presets, kept in this browser's localStorage |
+| `src/effects.ts`, `src/render/postfx.ts` | Whole-frame effect settings and the WebGL2 pass that draws them |
 | `src/render/particles.ts` | Particle fields computed from time, so export matches preview |
-| `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4 encode (Mediabunny) |
+| `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4/WebM encode (Mediabunny) |
 | `src/export/clipReader.ts` | Exact frame decoding for video layers during export |
 | `src/selftest.ts`, `selftest.html` | Browser export self-test (dev server only) |
 | `src/brand.ts`, `src/ui/Brand.tsx`, `src/ui/AboutDialog.tsx` | Brand settings, logomark, social and Patreon links |
@@ -148,6 +154,14 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
   for each output frame.
 - Browsers without an audio encoder export silent video; the export dialog
   says so next to the download.
+- Effects read the composited 2D canvas into a WebGL2 texture, run one
+  fragment shader and draw the result back, so the exporter captures it.
+  Grain is seeded from the frame time, so two exports decode to the same
+  frames. Without WebGL2 the frame renders without effects and the console
+  warns once. Measured 2026-11-10, Chromium 156 headless on Kvant (AMD Radeon
+  iGPU through ANGLE GL; the machine was busy), 1080p30 export: about
+  +3.3 ms/frame with all four effects on (10–13 ms/frame off, 13–16 on, 24–36%
+  slower). On SwiftShader (no GPU) the same export went from ~11 to ~50 ms/frame.
 - Milkdrop output isn't bit-identical between preview and export, because each
   one runs its own Butterchurn instance, but preset choices and timing match.
 

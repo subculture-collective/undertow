@@ -1,11 +1,16 @@
-import { Mp4OutputFormat, Output, StreamTarget } from 'mediabunny';
+import { Mp4OutputFormat, Output, StreamTarget, WebMOutputFormat } from 'mediabunny';
+
+export type Container = 'mp4' | 'webm';
+export const CONTAINER_MIME: Record<Container, string> = { mp4: 'video/mp4', webm: 'video/webm' };
 
 const CHUNK_SIZE = 4 * 1024 * 1024;
 
-/** Seekable Blob chunks let the muxer patch MP4 headers without a file-sized ArrayBuffer. */
+/** Seekable Blob chunks let the muxer patch MP4 and WebM headers without a file-sized ArrayBuffer. */
 export class BlobChunks {
   private chunks = new Map<number, Blob>();
   private size = 0;
+
+  constructor(private readonly type = 'video/mp4') {}
 
   write(data: Uint8Array<ArrayBuffer>, position: number) {
     for (let offset = 0; offset < data.length;) {
@@ -33,19 +38,20 @@ export class BlobChunks {
       parts.push(new Blob([chunk, new Uint8Array(Math.max(0, length - chunk.size))]));
     }
     this.clear();
-    return new Blob(parts, { type: 'video/mp4' });
+    return new Blob(parts, { type: this.type });
   }
 
   clear() { this.chunks.clear(); this.size = 0; }
 }
 
-export function createBlobOutput() {
-  const chunks = new BlobChunks();
+export function createBlobOutput(container: Container = 'mp4') {
+  const chunks = new BlobChunks(CONTAINER_MIME[container]);
   const target = new StreamTarget(new WritableStream({
     write: ({ data, position }) => chunks.write(data, position),
     abort: () => chunks.clear(),
   }), { chunked: true, chunkSize: CHUNK_SIZE });
-  // Write media as it arrives, then patch the size header and append metadata.
-  const output = new Output({ format: new Mp4OutputFormat({ fastStart: false }), target });
+  // Write media as it arrives, then patch the size header (MP4) or duration and cues (WebM) at the end.
+  const format = container === 'webm' ? new WebMOutputFormat() : new Mp4OutputFormat({ fastStart: false });
+  const output = new Output({ format, target });
   return { output, finish: () => chunks.finish(), clear: () => chunks.clear() };
 }
