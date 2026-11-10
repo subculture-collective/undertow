@@ -64,3 +64,17 @@ it('exports and demuxes a file larger than the permitted individual ArrayBuffer 
     expect(count).toBe(12);
   } finally { input.dispose(); }
 });
+
+it('writes WebM through the same chunked output, typed video/webm', async () => {
+  const webm = createBlobOutput('webm');
+  await mux(webm.output);
+  const blob = webm.finish();
+  expect(blob.type).toBe('video/webm');
+  const input = new Input({ source: new BlobSource(blob), formats: ALL_FORMATS });
+  try {
+    expect((await input.getFormat()).name).toBe('WebM');
+    const track = (await input.getPrimaryVideoTrack())!;
+    expect(track.codec).toBe('vp9');
+    expect(await input.computeDuration()).toBeCloseTo(12 / 30);
+  } finally { input.dispose(); }
+});

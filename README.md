@@ -32,8 +32,8 @@ Open the editor at <https://undertow.subcult.tv>. Product page:
 ### It renders on your machine
 
 A local export analyzes, draws and encodes the video in your browser. Your
-audio doesn't leave it. Export the whole song or a 15-second preview as MP4,
-from 720p to 4K at 24, 30 or 60 frames per second.
+audio doesn't leave it. Export the whole song or a 15-second preview as MP4
+or WebM, from 720p to 4K at 24, 30 or 60 frames per second.
 
 Codec support and render speed depend on your browser and hardware. The
 exporter asks for H.264 first and falls back to HEVC, VP9 or AV1 if the browser
@@ -135,7 +135,7 @@ of `UNDERTOW_BIND`; session cookies are `Secure` in production. Check
 | --- | --- |
 | `src/render/` | Compositor and layer drawing, shared by preview and export |
 | `src/audio/` | Audio analysis and lyrics parsing |
-| `src/export/` | Frame-by-frame render and MP4 encode (Mediabunny) |
+| `src/export/` | Frame-by-frame render and MP4/WebM encode (Mediabunny) |
 | `src/ui/` | Editor components |
 | `src/cloud/`, `src/api/` | Accounts, project library and the typed API client |
 | `server/` | The API: Hono, Better Auth, PostgreSQL through Drizzle; the render worker is in `server/src/worker/` |

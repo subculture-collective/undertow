@@ -28,7 +28,8 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   portrait 9:16 and square 1:1, so one project exports every format.
 - **Lyrics**: LRC (including enhanced LRC word timing for karaoke), SRT and VTT,
   with a sync offset.
-- **Export**: MP4 (H.264 with AAC audio where the browser can encode them), 720p to 4K, 24/30/60 fps, whole song or
+- **Export**: MP4 (H.264 with AAC audio where the browser can encode them) or WebM (VP9 or AV1 with Opus,
+  offered where the browser can encode VP9 or AV1), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
 - Undo/redo, autosave (layout in localStorage, files in IndexedDB), layout
   save/load as JSON, snapping guides, keyboard nudging.
@@ -73,7 +74,7 @@ that disposable database for you. Install the root and server dependencies first
 | `src/render/layers.ts` | Drawing code for each layer type |
 | `src/render/milkdrop.ts` | Butterchurn wrapper with deterministic preset changes |
 | `src/render/particles.ts` | Particle fields computed from time, so export matches preview |
-| `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4 encode (Mediabunny) |
+| `src/export/exportVideo.ts` | Offline frame-by-frame render and MP4/WebM encode (Mediabunny) |
 | `src/export/clipReader.ts` | Exact frame decoding for video layers during export |
 | `src/selftest.ts`, `selftest.html` | Browser export self-test (dev server only) |
 | `src/brand.ts`, `src/ui/Brand.tsx`, `src/ui/AboutDialog.tsx` | Brand settings, logomark, social and Patreon links |
