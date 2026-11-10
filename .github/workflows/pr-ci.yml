@@ -1,0 +1,74 @@
+name: PR CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Build, audit and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: npm --prefix server ci
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high
+      - name: Audit API dependencies
+        run: npm --prefix server audit --audit-level=high
+      - run: npm run build
+      - run: npm --prefix server run build
+      - run: bash scripts/test-with-postgres.sh
+
+  api-image:
+    name: Build and qualify API image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and qualify the API image
+        env:
+          REVISION: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          image="fleet-deploy/undertow/api:$REVISION"
+          docker build \
+            --label "org.opencontainers.image.revision=$REVISION" \
+            --label "org.opencontainers.image.source=https://git.subcult.tv/subculture-collective/undertow" \
+            -t "$image" .
+          python3 scripts/predeploy-ci.py --image-check "$image" "$REVISION"
+
+  ci-gate:
+    name: CI gate
+    if: always()
+    needs: [checks, api-image]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every verification job
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ["RESULTS"])
+          expected = {'checks', 'api-image'}
+          assert set(results) == expected, results
+          for name, result in results.items():
+              assert result["result"] == "success", name + " did not pass"
+          PY
