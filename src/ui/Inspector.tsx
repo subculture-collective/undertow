@@ -4,7 +4,8 @@ import { EFFECT_RANGES as FX, defaultEffects } from '../effects';
 import { resolveFont } from '../fonts';
 import { spectrumBands } from '../render/layers';
 import { useFavourites } from '../favourites';
-import { byCodeUnit } from '../render/presetPool';
+import { activeTempo, byCodeUnit } from '../render/presetPool';
+import { useTempoStatus } from '../audio/tempoDetection';
 import { getPresetNames, loadPresets } from '../render/milkdrop';
 import { SOCIAL_ICONS } from '../render/icons';
 import { useSelectedLayer, useStore } from '../store';
@@ -122,6 +123,42 @@ function PresetPicker({ layerId, value, onChange, onStar }: {
   );
 }
 
+/** The song's tempo: detected in the background, editable, with half/double for detectors that land an octave off. */
+function TempoFields({ fallback }: { fallback: number }) {
+  const audioId = useStore((s) => s.project.audioAssetId);
+  const tempo = useStore((s) => activeTempo(s.project));
+  const status = useTempoStatus((s) => (audioId ? s[audioId] : undefined));
+  const setTempo = useStore((s) => s.setTempo);
+  if (!audioId) return <p className="hint">Add a song to detect its tempo. Until then presets change every {fallback}s.</p>;
+  const edit = (patch: { bpm?: number; offset?: number }) => {
+    const base = tempo ?? { bpm: 120, offset: 0, audioAssetId: audioId, manual: true };
+    const bpm = Math.min(300, Math.max(30, patch.bpm ?? base.bpm));
+    // Up to a bar, so the first beat can be moved onto the downbeat.
+    const offset = Math.min((4 * 60) / bpm, Math.max(0, patch.offset ?? base.offset));
+    setTempo({ bpm, offset, audioAssetId: audioId, manual: true });
+  };
+  return <>
+    {!tempo && status === 'running' && <p className="hint">Finding the tempo… presets change every {fallback}s until then.</p>}
+    {!tempo && (status === 'none' || status === 'failed') && (
+      <p className="warn">No steady beat found, so presets change every {fallback}s. Enter the tempo to use bars.</p>
+    )}
+    <Row label="Tempo (BPM)" group>
+      <input type="number" aria-label="Tempo in beats per minute" step={0.1} min={30} max={300}
+        value={tempo ? Math.round(tempo.bpm * 10) / 10 : ''} placeholder="—" onChange={(e) => e.target.value && edit({ bpm: Number(e.target.value) })} />
+      <button title="Half the tempo" disabled={!tempo} onClick={() => tempo && edit({ bpm: tempo.bpm / 2 })}>½×</button>
+      <button title="Double the tempo" disabled={!tempo} onClick={() => tempo && edit({ bpm: tempo.bpm * 2 })}>2×</button>
+    </Row>
+    {tempo && <NumberInput label="First beat (s)" value={tempo.offset} step={0.01} onChange={(offset) => edit({ offset })} />}
+    {tempo && (
+      <p className="hint">
+        {tempo.manual ? 'Set by hand.' : `Detected${tempo.confidence !== undefined && tempo.confidence < 0.25 ? ', but the beat is faint: check the changes by ear' : ''}.`}
+        {' '}Bars are four beats from the first beat; if changes land mid-bar, move the first beat by a beat or two. Detectors often land on half or double the tempo; ½× and 2× fix that.
+      </p>
+    )}
+    {tempo?.manual && <button className="sm" onClick={() => setTempo(undefined)}>Detect again</button>}
+  </>;
+}
+
 /** Where automatic changes pick from, and which saved favourites the packs no longer have. */
 function PoolFields({ p, set }: { p: MilkdropProps; set: (patch: Partial<MilkdropProps>) => void }) {
   const mine = useFavourites((s) => s.names);
@@ -236,7 +273,16 @@ function TypeFields({ layer }: { layer: Layer }) {
           const next = starred ? [...new Set([...p.favourites, name])].sort(byCodeUnit) : p.favourites.filter((n) => n !== name);
           set({ favourites: next });
         }} />
-        <Slider label="Change every" value={p.cycle} min={0} max={120} step={1} onChange={(cycle) => set({ cycle })} format={(v) => (v ? `${v}s` : 'never')} />
+        <Select label="Change preset" value={p.cycle > 0 ? p.cycleUnit : 'never'}
+          options={[['never', 'Never'], ['seconds', 'Every few seconds'], ['bars', 'Every few bars']] as const}
+          onChange={(mode) => set(mode === 'never' ? { cycle: 0 } : { cycle: p.cycle > 0 ? p.cycle : 20, cycleUnit: mode })} />
+        {p.cycle > 0 && p.cycleUnit === 'seconds' && (
+          <Slider label="Every" value={p.cycle} min={1} max={120} step={1} onChange={(cycle) => set({ cycle })} format={(v) => `${v}s`} />
+        )}
+        {p.cycle > 0 && p.cycleUnit === 'bars' && <>
+          <Slider label="Every" value={p.cycleBars} min={1} max={32} step={1} onChange={(cycleBars) => set({ cycleBars })} format={(v) => `${v} bar${v === 1 ? '' : 's'}`} />
+          <TempoFields fallback={p.cycle} />
+        </>}
         {p.cycle > 0 && <>
           <PoolFields p={p} set={set} />
           <Slider label="Blend time" value={p.blendTime} min={0} max={10} step={0.1} onChange={(blendTime) => set({ blendTime })} format={(v) => `${v}s`} />
