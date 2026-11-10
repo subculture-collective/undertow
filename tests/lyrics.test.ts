@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { cueAt, parseLrc, parseLyrics, parseSubtitles } from '../src/audio/lyrics';
+import { cueAt, lrcTime, parseLrc, parseLyrics, parseSubtitles, toLrc } from '../src/audio/lyrics';
 
 it('gives each repeat of an enhanced LRC line its own word timings', () => {
   const cues = parseLrc('[offset:-500]\n[00:10.00][00:30.00]<00:10.00>Hey <00:11.00>you');
@@ -34,4 +34,36 @@ it('keeps a long subtitle cue on screen after a shorter overlapping one ends', (
   expect(cueAt(cues, 2.5)).toBe(1);
   expect(cues[cueAt(cues, 5)].text).toBe('A');
   expect(cueAt(cues, 11)).toBe(-1);
+});
+
+const LRC = `[ti:Song]
+[00:01.00]First line
+[00:04.50]<00:04.50>Second <00:05.25>line <00:06.00>here
+[00:08.00]
+[00:10.00][00:30.00]Chorus
+[01:02.34]Last`;
+
+it('writes LRC that parses back to identical cues', () => {
+  const cues = parseLrc(LRC);
+  expect(parseLrc(toLrc(cues))).toEqual(cues);
+  expect(toLrc(cues)).toBe('[00:01.00]First line\n[00:04.50]<00:04.50>Second <00:05.25>line <00:06.00>here\n[00:08.00]\n'
+    + '[00:10.00]Chorus\n[00:30.00]Chorus\n[01:02.34]Last\n');
+});
+
+it('round-trips enhanced LRC with an offset and text before the first word stamp', () => {
+  const cues = parseLrc('[offset:-500]\n[00:01.00]Intro <00:02.00>word\n[00:03.00]next');
+  expect(parseLrc(toLrc(cues))).toEqual(cues);
+});
+
+it('turns SRT into LRC, keeping milliseconds and gaps between cues', () => {
+  const cues = parseSubtitles('1\n00:00:01,250 --> 00:00:02,000\nhi\n\n2\n00:00:03,000 --> 00:00:04,125\nyo');
+  const lrc = toLrc(cues);
+  expect(lrc).toBe('[00:01.25]hi\n[00:02.00]\n[00:03.00]yo\n[00:04.125]\n');
+  expect(parseLrc(lrc)).toEqual(cues);
+});
+
+it('formats LRC times past an hour and clamps negatives', () => {
+  expect(lrcTime(3725.5)).toBe('62:05.50');
+  expect(lrcTime(-1)).toBe('00:00.00');
+  expect(lrcTime(59.999)).toBe('00:59.999');
 });

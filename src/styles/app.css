@@ -379,6 +379,46 @@ header .menu summary:has(.avatar) { padding: 0 var(--space-3); }
   .social-row { grid-template-columns: 90px minmax(0, 1fr) auto; }
 }
 
+/* ---- lyric timing editor (ui/LyricTimingEditor.tsx) ------------------------------------------------------- */
+/* Docked to the bottom over a light scrim, so the stage above shows the lyrics being edited. */
+dialog.modal-back.dock { background: var(--surface-scrim); }
+dialog.modal-back.dock[open] { align-items: flex-end; }
+.modal.lyric-editor { width: min(1100px, calc(100vw - 32px)); max-height: 62vh; margin-bottom: var(--space-6); gap: var(--space-4); }
+.lyric-editor .grow { flex: 1; }
+.lyric-editor-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.lyric-editor-head h3 { margin: 0; }
+.lyric-editor-head .time { min-width: 60px; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.lyric-editor-foot { align-items: center; margin-top: 0; }
+.lyric-paste { display: grid; gap: var(--space-4); }
+.lyric-paste textarea { width: 100%; resize: vertical; font: inherit; }
+.lyric-tap { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: var(--space-5); min-height: 0; }
+.lyric-lines {
+  list-style: none; margin: 0; padding: 0; max-height: 32vh; overflow-y: auto;
+  background: var(--surface-sunken); border: var(--border-w) solid var(--line);
+}
+.lyric-lines button {
+  width: 100%; justify-content: flex-start; gap: var(--space-5); min-height: var(--control-h);
+  border: 0; background: transparent; box-shadow: none; text-align: left;
+}
+.lyric-lines li.next button { background: var(--surface-raised); box-shadow: inset 3px 0 0 var(--accent-2); }
+.lyric-lines li.playing .lyric-text { color: var(--accent-2); }
+.lyric-time { min-width: 60px; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.lyric-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lyric-tap-side { display: grid; gap: var(--space-4); align-content: start; }
+.lyric-tap-button { min-height: 96px; flex-direction: column; justify-content: center; gap: var(--space-2); font-size: var(--text-md); }
+.lyric-tap-button small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); font-size: var(--text-xs); }
+.lyric-adjust { display: grid; gap: var(--space-4); min-width: 0; }
+.lyric-timeline { display: block; width: 100%; height: 140px; touch-action: none; border: var(--border-w) solid var(--line-field); }
+.lyric-zoom { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.lyric-zoom input[type=range] { flex: 1 1 160px; }
+.lyric-selected { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-4); }
+.lyric-selected-text { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: center; }
+.lyric-selected .field input { width: 96px; }
+@media (max-width: 700px) {
+  .lyric-tap { grid-template-columns: 1fr; }
+  .lyric-tap-button { min-height: 64px; }
+}
+
 /* ---- small dialogs: confirm, rename, notices (ui/ask.tsx) -------------------------------------------------- */
 .modal.ask { width: 400px; }
 .modal.ask p { color: var(--text-dim); }
