@@ -399,14 +399,46 @@ export function drawWaveform(d: DrawCtx, b: Box, p: WaveformProps) {
 }
 
 // ---- spectrum ---------------------------------------------------------------
-export function spectrumBars(d: DrawCtx, p: SpectrumProps, st: { bars?: Float32Array }) {
-  const f = d.frame, bins = f.spectrum, hz = f.sampleRate / (bins.length * 2);
+/** Base-ten octave ratio (IEC 61260), which gives the familiar ISO centres 20, 25, 31.5, 40 … 20k Hz. */
+const OCTAVE = Math.pow(10, 0.3);
+
+/**
+ * Frequency edges of each bar, in Hz. 'count' splits minHz..maxHz into `bars`
+ * equal steps on a log scale. The octave options use 1/3- or 1/6-octave bands
+ * centred on 1 kHz and keep every band that overlaps minHz..maxHz, so 20 Hz to
+ * 20 kHz at 1/3 octave gives the 31 ISO bands from 20 Hz to 20 kHz.
+ */
+export function spectrumBands(p: Pick<SpectrumProps, 'bars' | 'minHz' | 'maxHz' | 'spacing'>): [number, number][] {
+  if (p.spacing === 'octave-1/3' || p.spacing === 'octave-1/6') {
+    const b = p.spacing === 'octave-1/3' ? 3 : 6, half = Math.pow(OCTAVE, 1 / (2 * b));
+    const out: [number, number][] = [];
+    const k0 = Math.floor(b * Math.log(Math.max(1, p.minHz) / 1000) / Math.log(OCTAVE)) - 1;
+    for (let k = k0; ; k++) {
+      const fc = 1000 * Math.pow(OCTAVE, k / b), lo = fc / half, hi = fc * half;
+      if (lo >= p.maxHz) break;
+      if (hi > p.minHz) out.push([lo, hi]);
+    }
+    if (out.length) return out;
+  }
   const n = Math.max(4, Math.round(p.bars));
-  if (st.bars?.length !== n) st.bars = new Float32Array(n);
   const lo = Math.log(Math.max(10, p.minHz)), hi = Math.log(Math.max(p.minHz + 10, p.maxHz));
+  return Array.from({ length: n }, (_, i) => [Math.exp(lo + ((hi - lo) * i) / n), Math.exp(lo + ((hi - lo) * (i + 1)) / n)]);
+}
+
+interface SpectrumState {
+  bars?: Float32Array; bandKey?: string; bands?: [number, number][];
+  peaks?: Float32Array; held?: Float32Array; scratch?: HTMLCanvasElement;
+}
+
+export function spectrumBars(d: DrawCtx, p: SpectrumProps, st: SpectrumState) {
+  const f = d.frame, bins = f.spectrum, hz = f.sampleRate / (bins.length * 2);
+  const key = `${p.spacing}|${p.bars}|${p.minHz}|${p.maxHz}`;
+  if (st.bandKey !== key) { st.bands = spectrumBands(p); st.bandKey = key; }
+  const bands = st.bands!, n = bands.length;
+  if (st.bars?.length !== n) st.bars = new Float32Array(n);
   const keep = Math.pow(clamp(p.smoothing, 0, 0.98), d.dt * 60);
   for (let i = 0; i < n; i++) {
-    const a = Math.exp(lo + ((hi - lo) * i) / n) / hz, bEnd = Math.exp(lo + ((hi - lo) * (i + 1)) / n) / hz;
+    const a = bands[i][0] / hz, bEnd = bands[i][1] / hz;
     let v = 0;
     if (bEnd - a < 1) {
       const c = (a + bEnd) / 2, k = Math.floor(c), fr = c - k;
@@ -421,7 +453,49 @@ export function spectrumBars(d: DrawCtx, p: SpectrumProps, st: { bars?: Float32A
   return st.bars;
 }
 
-export function drawSpectrum(d: DrawCtx, b: Box, p: SpectrumProps, st: { bars?: Float32Array }) {
+/** Seconds a peak cap waits at its highest point, and how fast it then falls, in bar heights per second. */
+export const PEAK_HOLD = 0.6, PEAK_FALL = 1.2;
+
+/**
+ * Moves each peak cap one frame forward. Caps jump up with their bar, hold for
+ * PEAK_HOLD seconds, then fall at PEAK_FALL per second. Everything is scaled by
+ * dt, so exports at 24, 30 and 60 fps fall at the same speed.
+ */
+export function stepPeaks(levels: Float32Array, peaks: Float32Array, held: Float32Array, dt: number) {
+  for (let i = 0; i < levels.length; i++) {
+    if (levels[i] >= peaks[i]) { peaks[i] = levels[i]; held[i] = PEAK_HOLD; }
+    else if (held[i] > 0) held[i] -= dt;
+    else peaks[i] = Math.max(levels[i], peaks[i] - PEAK_FALL * dt);
+  }
+}
+
+/** Adds the bars (plain or LED) and peak caps of the 'bars' style to two paths, lit and unlit. */
+function barShapes(p: SpectrumProps, v: Float32Array, peaks: Float32Array | undefined, b: Box, u: number) {
+  const n = v.length, slot = b.w / n, bw = slot * (1 - clamp(p.gap, 0, 0.9));
+  const r = p.rounded ? Math.min(bw / 2, 20 * u) : 0;
+  const lit = new Path2D(), dim = new Path2D();
+  const segs = Math.max(4, Math.round(p.segments)), sh = b.h / segs, sg = sh * 0.25;
+  for (let i = 0; i < n; i++) {
+    const x = b.x + i * slot + (slot - bw) / 2;
+    if (p.led) {
+      const on = Math.round(v[i] * segs), pk = peaks ? Math.min(segs, Math.round(peaks[i] * segs)) : 0;
+      for (let s = 0; s < segs; s++) {
+        const y = b.y + b.h - (s + 1) * sh + sg / 2;
+        (s < on || (pk > 0 && s === pk - 1) ? lit : dim).rect(x, y, bw, sh - sg);
+      }
+      continue;
+    }
+    const h = Math.max(2 * u, v[i] * b.h);
+    lit.roundRect(x, b.y + b.h - h, bw, h, [r, r, 0, 0]);
+    if (peaks && peaks[i] > 0.01) {
+      const ch = Math.max(2 * u, b.h * 0.018), y = b.y + b.h - Math.max(peaks[i] * b.h, h) - ch * 1.6;
+      lit.rect(x, Math.max(b.y, y), bw, ch);
+    }
+  }
+  return { lit, dim, led: p.led };
+}
+
+export function drawSpectrum(d: DrawCtx, b: Box, p: SpectrumProps, st: SpectrumState) {
   const { ctx, u } = d;
   const v = spectrumBars(d, p, st), n = v.length;
   if (p.glow > 0) { ctx.shadowColor = p.color; ctx.shadowBlur = p.glow * 30 * u; }
@@ -467,20 +541,69 @@ export function drawSpectrum(d: DrawCtx, b: Box, p: SpectrumProps, st: { bars?: 
     ctx.stroke();
     return;
   }
-  const slot = b.w / n, bw = slot * (1 - clamp(p.gap, 0, 0.9));
-  const r = p.rounded ? Math.min(bw / 2, 20 * u) : 0;
-  ctx.beginPath();
-  for (let i = 0; i < n; i++) {
-    const x = b.x + i * slot + (slot - bw) / 2;
-    if (p.style === 'mirror') {
+  if (p.style === 'mirror') {
+    const slot = b.w / n, bw = slot * (1 - clamp(p.gap, 0, 0.9));
+    const r = p.rounded ? Math.min(bw / 2, 20 * u) : 0;
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = b.x + i * slot + (slot - bw) / 2;
       const h = Math.max(bw, v[i] * b.h);
       ctx.roundRect(x, b.y + (b.h - h) / 2, bw, h, r);
-    } else {
-      const h = Math.max(2 * u, v[i] * b.h);
-      ctx.roundRect(x, b.y + b.h - h, bw, h, [r, r, 0, 0]);
     }
+    ctx.fill();
+    return;
   }
-  ctx.fill();
+
+  // Bars: the reflection, when on, takes the lower part of the box.
+  let peaks: Float32Array | undefined;
+  if (p.peaks) {
+    if (st.peaks?.length !== n) { st.peaks = new Float32Array(n); st.held = new Float32Array(n); }
+    stepPeaks(v, st.peaks, st.held!, d.dt);
+    peaks = st.peaks;
+  }
+  const refl = clamp(p.reflection);
+  const bars: Box = refl > 0 ? { ...b, h: b.h * 0.7 } : b;
+  const shapes = barShapes(p, v, peaks, bars, u);
+  ctx.fill(shapes.lit);
+  if (shapes.led) {
+    ctx.save(); ctx.shadowBlur = 0; ctx.globalAlpha *= 0.12; ctx.fill(shapes.dim); ctx.restore();
+  }
+  if (refl > 0) drawReflection(d, b, bars, p, shapes, refl, st);
+}
+
+/** Mirrors the bars below their baseline into the rest of the box, fading out downwards. */
+function drawReflection(
+  d: DrawCtx, b: Box, bars: Box, p: SpectrumProps, shapes: ReturnType<typeof barShapes>, strength: number, st: SpectrumState,
+) {
+  const { ctx } = d;
+  const rh = b.y + b.h - (bars.y + bars.h);
+  const w = Math.max(1, Math.ceil(b.w)), h = Math.max(1, Math.ceil(rh));
+  const c = (st.scratch ??= document.createElement('canvas'));
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  const g = c.getContext('2d')!;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = 1;
+  g.clearRect(0, 0, w, h);
+  // Flip around the baseline: bar y = bars.y + bars.h maps to scratch y = 0.
+  g.setTransform(1, 0, 0, -1, -b.x, bars.y + bars.h);
+  const grad = g.createLinearGradient(b.x, 0, b.x + b.w, 0);
+  grad.addColorStop(0, p.color);
+  grad.addColorStop(1, p.color2);
+  g.fillStyle = grad;
+  g.fill(shapes.lit);
+  if (shapes.led) { g.globalAlpha = 0.12; g.fill(shapes.dim); g.globalAlpha = 1; }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'destination-in';
+  const fade = g.createLinearGradient(0, 0, 0, h);
+  fade.addColorStop(0, `rgba(0,0,0,${0.6 * strength})`);
+  fade.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = fade;
+  g.fillRect(0, 0, w, h);
+  ctx.save();
+  ctx.shadowBlur = 0;
+  ctx.drawImage(c, b.x, bars.y + bars.h, w, h);
+  ctx.restore();
 }
 
 // ---- VU meter ---------------------------------------------------------------

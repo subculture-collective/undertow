@@ -18,7 +18,8 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
 - **Layers**, stacked and blended: Milkdrop visualizer (395 Butterchurn presets,
   optional timed preset changes), images and logos (PNG, SVG, JPG, WebP), text,
   timed lyrics, socials with platform icons, waveform (live oscilloscope or
-  whole-song progress), spectrum (bars, mirrored, radial ring, line) and VU meter
+  whole-song progress), spectrum (bars with optional LED segments, peak caps and reflection;
+  mirrored, radial ring, line; bar count or 1/3- and 1/6-octave bands) and VU meter
   (LED, bar, analogue needles), looping video backgrounds (MP4, MOV, WebM) and
   particles (dust, bokeh, embers, snow, starfield warp).
 - **Custom fonts**: upload TTF, OTF, WOFF or WOFF2 files and pick them in any
