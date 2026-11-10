@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fontFamily, loadStoredAssets, type RuntimeAsset } from './assets';
 import { LOGO_RECTS, videoBackgroundIndex } from './defaults';
+import { useTempoDetection } from './audio/tempoDetection';
 import { hasSavedProject, useStore } from './store';
 import { toProject } from './projectShape';
 import { ASPECTS, ASPECT_IDS } from './types';
@@ -137,6 +138,7 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null);
   const projectInput = useRef<HTMLInputElement>(null);
 
+  useTempoDetection();
   useEffect(() => { loadStoredAssets().then((list) => { registerAssets(list); refreshMissing(); }); }, [registerAssets]);
 
   // Account state, and the links that bring people back from email and OAuth.

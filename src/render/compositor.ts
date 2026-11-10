@@ -6,6 +6,7 @@ import {
   clipTime, drawImage, drawLyrics, drawSocials, drawSolid, drawSpectrum, drawText, drawVideo, drawVu, drawWaveform, type Box, type DrawCtx,
 } from './layers';
 import { MilkInstance } from './milkdrop';
+import { activeTempo } from './presetPool';
 import { drawParticles } from './particles';
 import { PostFx } from './postfx';
 
@@ -150,7 +151,7 @@ export class Compositor {
         let m = this.milk.get(layer.id);
         if (!m) this.milk.set(layer.id, (m = new MilkInstance(w, h)));
         m.resize(w, h);
-        if (m.render(layer.props, d.t, d.dt, d.frame)) this.ctx.drawImage(m.canvas, box.x, box.y, box.w, box.h);
+        if (m.render(layer.props, d.t, d.dt, d.frame, activeTempo(r.project))) this.ctx.drawImage(m.canvas, box.x, box.y, box.w, box.h);
         return;
       }
       case 'image': return drawImage(d, box, layer.props, r.assets[layer.props.assetId ?? '']?.image, this.st(layer.id));

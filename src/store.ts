@@ -3,7 +3,7 @@ import { deleteStoredAsset, importFile, type RuntimeAsset } from './assets';
 import { createLayer, starterProject, uid } from './defaults';
 import { defaultEffects, type EffectId, type Effects } from './effects';
 import { initialWorkingCopy } from './workingCopy';
-import { ASPECTS, type AspectId, type Layer, type LayerType, type Project, type PropsOf, type Rect } from './types';
+import { ASPECTS, type AspectId, type Layer, type LayerType, type Project, type PropsOf, type Rect, type Tempo } from './types';
 
 const COALESCE_MS = 400;
 const HISTORY_LIMIT = 100;
@@ -47,6 +47,8 @@ interface State {
   moveLayer: (id: string, delta: number) => void;
   /** Changes one whole-frame effect; projects without effects get the defaults first. */
   setEffect: <K extends EffectId>(id: K, patch: Partial<Effects[K]>) => void;
+  /** Sets the song's tempo; detection results skip the undo history (`record` false), hand edits don't. */
+  setTempo: (tempo: Tempo | undefined, record?: boolean) => void;
 
   registerAssets: (a: RuntimeAsset[]) => void;
   importFiles: (files: File[]) => Promise<RuntimeAsset[]>;
@@ -145,6 +147,11 @@ export const useStore = create<State>((set, get) => ({
     const fx = p.effects ?? defaultEffects();
     return { ...p, effects: { ...fx, [id]: { ...fx[id], ...patch } } };
   }),
+
+  setTempo: (tempo, record = true) => {
+    if (record) get().change((p) => ({ ...p, tempo }));
+    else set((s) => ({ project: { ...s.project, tempo } }));
+  },
 
   registerAssets: (list) => set((s) => ({ assets: { ...s.assets, ...Object.fromEntries(list.map((a) => [a.meta.id, a])) } })),
   importFiles: async (files) => {

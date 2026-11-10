@@ -1,7 +1,7 @@
 import butterchurnModule from 'butterchurn';
 import type { AudioFrame } from '../audio/analysis';
-import { pickPreset, presetPool } from './presetPool';
-import type { MilkdropProps } from '../types';
+import { cycleSegment, pickPreset, presetPool } from './presetPool';
+import type { MilkdropProps, Tempo } from '../types';
 
 type PresetMap = Record<string, object>;
 let presets: PresetMap | null = null;
@@ -67,9 +67,9 @@ export class MilkInstance {
     this.viz.setRendererSize(w, h);
   }
 
-  render(p: MilkdropProps, t: number, dt: number, frame: AudioFrame) {
+  render(p: MilkdropProps, t: number, dt: number, frame: AudioFrame, tempo: Tempo | null = null) {
     if (!presets || !presetNames.length) return false;
-    const k = p.cycle > 0 ? Math.floor(t / p.cycle) : 0;
+    const k = cycleSegment(p, t, tempo);
     const pool = p.cycle > 0 ? this.pool(p) : presetNames;
     // With a favourites pool, the chosen preset opens the cycle only if it is one of them.
     const opens = !!presets[p.preset] && (pool === presetNames || pool.includes(p.preset));
