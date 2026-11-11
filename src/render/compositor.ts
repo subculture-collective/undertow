@@ -26,6 +26,11 @@ export interface RenderInput {
   milkScale?: number;
   /** Preview only: whether playback is running, so video layers play rather than seek. */
   playing?: boolean;
+  /**
+   * Export only: leave the effects result on the effects canvas instead of copying it back into the 2D canvas.
+   * `render` then returns that canvas, which must be read before the current task ends.
+   */
+  keepEffectsCanvas?: boolean;
   /** Export only: exact decoded frames for video layers, by layer id. Preview plays <video> elements instead. */
   videoFrames?: Map<string, DecodedFrame | null>;
 }
@@ -45,7 +50,8 @@ export class Compositor {
 
   constructor(readonly ctx: CanvasRenderingContext2D) {}
 
-  render(r: RenderInput) {
+  /** Draws the frame and returns the canvas holding it: the 2D canvas, or the effects canvas with `keepEffectsCanvas`. */
+  render(r: RenderInput): HTMLCanvasElement {
     const { ctx } = this;
     const W = ctx.canvas.width, H = ctx.canvas.height;
     // A seek or loop makes smoothed values meaningless; start them fresh.
@@ -98,15 +104,17 @@ export class Compositor {
     }
 
     const fx = r.project.effects;
+    let out: HTMLCanvasElement = ctx.canvas;
     if (fx && anyEffectOn(fx)) {
       if (this.fx === undefined) this.fx = PostFx.create();
-      this.fx?.apply(ctx, fx, r.t, Math.min(1, Math.max(0, d.frame.bass)));
+      out = this.fx?.apply(ctx, fx, r.t, Math.min(1, Math.max(0, d.frame.bass)), !r.keepEffectsCanvas) ?? ctx.canvas;
     }
 
     for (const [id, m] of this.milk) if (!live.has(id)) { m.dispose(); this.milk.delete(id); }
     for (const [id, v] of this.videos) {
       if (!live.has(id)) { stopVideo(v); this.videos.delete(id); } else if (!this.drawn.has(id)) v.pause();
     }
+    return out;
   }
 
   /** Keeps a preview <video> near the playhead: free-running while playing, seeking exactly while paused. */
