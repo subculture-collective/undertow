@@ -180,9 +180,16 @@ same bytes):
 uv run scripts/stems/export-umxhq.py public/models/umxhq-int8.onnx
 ```
 
-`STEM_MODEL` in `src/audio/stems.ts` holds the file's URL, size and SHA-256;
-the worker refuses a file that doesn't match. `public/models/` is gitignored,
-so for local work run the script above. The editor caches the model with the
+The file is published as a GitHub release asset
+([`models-umxhq-int8-v1`](https://github.com/subculture-collective/undertow/releases/tag/models-umxhq-int8-v1))
+rather than committed. `sh scripts/stems/fetch-model.sh` downloads it into
+`public/models/` and checks its SHA-256; the Docker build runs the same script,
+so the site serves the model from its own origin at `/models/umxhq-int8.onnx`.
+Run the script once for local work. The licence and attribution ship beside it
+as `public/models/umxhq-int8.LICENSE.txt`. `STEM_MODEL` in `src/audio/stems.ts`
+holds the file's URL, size and SHA-256; the worker refuses a file that doesn't
+match. A new model needs a new release tag, `STEM_MODEL` and the script updated
+together. The editor caches the model with the
 Cache API (`undertow-models-v1`). onnxruntime-web's WebAssembly runtime
 (14.2 MB, 3.7 MB gzipped) is part of the build and loads only when someone
 separates a song. The site isn't cross-origin isolated, so it runs on one
