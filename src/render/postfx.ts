@@ -131,12 +131,14 @@ export class PostFx {
   }
 
   /**
-   * Reads the 2D canvas, runs the pass and draws the result back over it. `t` seeds animated grain, so the same
-   * time always gives the same frame. Returns false when the context is lost; the frame is then left as it was.
+   * Reads the 2D canvas and runs the pass. `t` seeds animated grain, so the same time always gives the same frame.
+   * With `copyBack` the result is drawn back over the 2D canvas and that canvas is returned; without it the result
+   * stays on the WebGL canvas, which is returned instead and is only valid until the current task ends.
+   * Returns null when the context is lost; the 2D canvas is then left as it was.
    */
-  apply(ctx: CanvasRenderingContext2D, e: Effects, t: number, bass: number): boolean {
+  apply(ctx: CanvasRenderingContext2D, e: Effects, t: number, bass: number, copyBack = true): HTMLCanvasElement | null {
     const { gl, canvas } = this;
-    if (gl.isContextLost()) { warnOnce('the WebGL2 context was lost.'); return false; }
+    if (gl.isContextLost()) { warnOnce('the WebGL2 context was lost.'); return null; }
     const W = ctx.canvas.width, H = ctx.canvas.height;
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
     const unit = Math.min(W, H) / 1080;
@@ -170,6 +172,7 @@ export class PostFx {
     gl.uniform1f(l.grainCell, Math.max(1, e.grain.size * unit));
     gl.uniform1ui(l.seed, e.grain.animated ? grainSeed(t) : 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    if (!copyBack) return canvas;
 
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -177,7 +180,7 @@ export class PostFx {
     ctx.globalCompositeOperation = 'copy';
     ctx.drawImage(canvas, 0, 0); // same task as the draw, so the buffer is still valid without preserveDrawingBuffer
     ctx.restore();
-    return true;
+    return ctx.canvas;
   }
 
   dispose() {

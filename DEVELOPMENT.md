@@ -164,14 +164,18 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
   for each output frame.
 - Browsers without an audio encoder export silent video; the export dialog
   says so next to the download.
-- Effects read the composited 2D canvas into a WebGL2 texture, run one
-  fragment shader and draw the result back, so the exporter captures it.
-  Grain is seeded from the frame time, so two exports decode to the same
-  frames. Without WebGL2 the frame renders without effects and the console
-  warns once. Measured 2026-11-10, Chromium 156 headless on Kvant (AMD Radeon
-  iGPU through ANGLE GL; the machine was busy), 1080p30 export: about
-  +3.3 ms/frame with all four effects on (10–13 ms/frame off, 13–16 on, 24–36%
-  slower). On SwiftShader (no GPU) the same export went from ~11 to ~50 ms/frame.
+- Effects read the composited 2D canvas into a WebGL2 texture and run one
+  fragment shader. The preview draws the result back into the 2D canvas; the
+  exporter captures the WebGL canvas directly, saving that full-frame copy
+  (its readback fallback still copies first). Grain is seeded from the frame
+  time, so two exports decode to the same frames. Without WebGL2 the frame
+  renders without effects and the console warns once. Measured 2026-11-10,
+  Chromium 158 headless on Kvant (AMD Radeon iGPU through ANGLE GL; load
+  average about 29), 1080p30, 4 s, six rounds each: effects off 10.0 ms/frame;
+  all four effects on 12.1 ms/frame with direct capture (21% slower, median
+  20%), against 13.3 ms/frame when the result was copied back first (33%).
+  On SwiftShader (no GPU) an export with effects went from ~11 to ~50 ms/frame
+  before this change; not re-measured.
 - Milkdrop output isn't bit-identical between preview and export, because each
   one runs its own Butterchurn instance, but preset choices and timing match.
 
