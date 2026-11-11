@@ -19,7 +19,7 @@
     </header>
     <main>
       <h1>Privacy policy</h1>
-      <p class="legal-date">Last updated October 2, 2026</p>
+      <p class="legal-date">Last updated November 10, 2026</p>
 
       <section class="legal-summary" aria-labelledby="short">
         <h2 id="short">In short</h2>
@@ -27,6 +27,7 @@
           <li>The editor works without an account. Your songs, images, clips and fonts stay on your device.</li>
           <li>An account stores your email address, your name and your project layouts. It does not store your media.</li>
           <li>Media is uploaded only when you choose a cloud render. The uploaded files are deleted when that render ends, and the finished video is deleted after 7 days.</li>
+          <li>Automatic lyric alignment runs in your browser. It downloads a speech model from Hugging Face; your song is not sent anywhere.</li>
           <li>We don't show ads, sell data or set tracking cookies.</li>
         </ul>
       </section>
@@ -40,7 +41,11 @@
         <li>The files you add (songs, images, video clips, fonts and lyrics) are kept in your browser's storage on your device. They are not sent to us.</li>
         <li>Your project layouts and your defaults are saved in the same browser. Clearing the site's data in your browser removes them.</li>
         <li>"Export on this computer" analyses, renders and encodes the video in your browser. Nothing is uploaded.</li>
+        <li>"Align to song" in the lyric timing editor listens to your song in your browser. Your song and lyrics are not uploaded.</li>
       </ul>
+
+      <h2 id="alignment">Automatic lyric alignment</h2>
+      <p>Lyric alignment uses a speech-recognition model (OpenAI Whisper, converted for browsers by Hugging Face). The first time you use a model, your browser downloads its files, 64 to 510 MB depending on the model, from <a href="https://huggingface.co/privacy">Hugging Face</a>'s servers and keeps them in its cache for next time. Like any download, that request shows Hugging Face your IP address and browser details. Only the model files are requested: the song, its lyrics and the result stay on your device. Nothing is downloaded until you choose a model and start alignment. Clearing the site's data in your browser removes the cached model.</p>
 
       <h2 id="account">What an account stores</h2>
       <p>An account is optional. If you create one, we store the following on our servers.</p>
@@ -75,7 +80,7 @@
       <h2 id="cookies">Cookies and browser storage</h2>
       <ul>
         <li>When you sign in, we set a session cookie that keeps you signed in. Signing in with Google also sets short-lived cookies that protect the sign-in exchange.</li>
-        <li>The editor uses your browser's storage for your files, projects and defaults, as described above.</li>
+        <li>The editor uses your browser's storage for your files, projects and defaults, as described above, and its cache for downloaded speech models.</li>
         <li>We set no advertising or cross-site tracking cookies.</li>
       </ul>
 
@@ -87,6 +92,7 @@
         <li>Brevo delivers account email.</li>
         <li><a href="https://policies.google.com/privacy">Google</a> handles sign-in if you choose Google, and tells us the name, email address and picture on that account.</li>
       </ul>
+      <p>Hugging Face is not on this list because it does not process your data for us: your browser downloads model files from it directly when you use lyric alignment, as described above.</p>
       <p>We may disclose information when the law requires it.</p>
 
       <h2 id="where">Where data is kept</h2>

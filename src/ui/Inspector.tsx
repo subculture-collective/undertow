@@ -317,6 +317,7 @@ function TypeFields({ layer }: { layer: Layer }) {
         <AssetPicker kind="lyrics" value={p.assetId} accept=".lrc,.srt,.vtt,.txt" onChange={(assetId) => set({ assetId })} />
         <div className="buttons">
           <button title="Tap along to the song, or drag lines on the waveform. Saves a new LRC file." onClick={() => void editLayerTiming(layer.id)}>Edit timing…</button>
+          <button title="Time the lines and words from the song with a speech model that runs in this browser. You review the result before saving." onClick={() => void editLayerTiming(layer.id, { align: true })}>Align to song…</button>
         </div>
         <Select label="Style" value={p.mode} options={[['karaoke', 'Karaoke highlight'], ['line', 'Current line'], ['line+next', 'Current + next line']] as const} onChange={(mode) => set({ mode })} />
         <Slider label="Sync offset" value={p.offset} min={-5} max={5} step={0.05} onChange={(offset) => set({ offset })} format={(v) => `${v > 0 ? '+' : ''}${v.toFixed(2)}s`} />
@@ -324,7 +325,7 @@ function TypeFields({ layer }: { layer: Layer }) {
         {p.mode === 'karaoke' && <Color label="Highlight" value={p.highlight} onChange={(highlight) => set({ highlight })} />}
         <Color label="Dim colour" value={p.dimColor} onChange={(dimColor) => set({ dimColor })} />
         <TextStyleFields p={p} set={set} />
-        <p className="hint">Enhanced LRC word timings give word-by-word karaoke. Otherwise the highlight sweeps evenly across each line. No timed file? Pick a .txt or paste the words in Edit timing.</p>
+        <p className="hint">Enhanced LRC word timings give word-by-word karaoke. Otherwise the highlight sweeps evenly across each line. No timed file? Pick a .txt or paste the words, then Align to song or tap along in Edit timing.</p>
       </>;
     }
     case 'socials': {

@@ -41,6 +41,11 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   layer at it (undoable) and leaves the original untouched; the file can also be
   downloaded. Other code opens it with `openLyricEditor()` in
   `src/ui/LyricTimingEditor.tsx`.
+- **Automatic lyric alignment** ("Align to song…" on a lyrics layer, or "Align
+  automatically…" in the timing editor): a Whisper model with word timestamps
+  listens to the song in a worker, and the lyric text is aligned to what it
+  heard. The result opens in the timing editor for review. See
+  [Lyric alignment](#lyric-alignment) below.
 - **Export**: MP4 (H.264 with AAC audio where the browser can encode them) or WebM (VP9 or AV1 with Opus,
   offered where the browser can encode VP9 or AV1), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
@@ -84,6 +89,7 @@ that disposable database for you. Install the root and server dependencies first
 | `src/audio/analysis.ts` | Decoding, FFT, per-frame levels, whole-song overview |
 | `src/audio/lyrics.ts` | LRC/SRT/VTT parsing and LRC writing (`toLrc`) |
 | `src/audio/lyricTiming.ts`, `src/ui/LyricTimingEditor.tsx` | Lyric timing editor: editing rules, dialog, waveform timeline |
+| `src/audio/lyricAlign.ts`, `src/audio/lyricRecognise.ts`, `src/audio/lyricAlign.worker.ts`, `src/audio/lyricAlignClient.ts`, `src/ui/LyricAlignPanel.tsx` | Automatic lyric alignment: text-to-recognition alignment, windowed Whisper recognition, the worker and the editor step |
 | `src/audio/tempo.ts`, `src/audio/tempoDetection.ts` | Single-tempo beat grid (BPM and first beat) found in a worker after a song loads |
 | `src/render/compositor.ts` | Draws a project frame; shared by preview and export |
 | `src/render/layers.ts` | Drawing code for each layer type |
