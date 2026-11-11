@@ -414,6 +414,9 @@ dialog.modal-back.dock[open] { align-items: flex-end; }
 .lyric-selected { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-4); }
 .lyric-selected-text { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; align-self: center; }
 .lyric-selected .field input { width: 96px; }
+.lyric-unsure { text-decoration: underline dotted var(--warn); text-underline-offset: 3px; }
+.lyric-align { display: grid; gap: var(--space-4); max-width: 72ch; }
+.lyric-align p { margin: 0; }
 @media (max-width: 700px) {
   .lyric-tap { grid-template-columns: 1fr; }
   .lyric-tap-button { min-height: 64px; }

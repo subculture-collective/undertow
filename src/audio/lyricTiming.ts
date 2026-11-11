@@ -53,7 +53,7 @@ export function moveLine(l: TimedLine, start: number): TimedLine {
   start = Math.max(0, step(start));
   if (l.start === null) return { ...l, start };
   const d = start - l.start;
-  return { ...l, start, end: l.end === null ? null : tidy(l.end + d), words: l.words?.map((w) => ({ t: tidy(w.t + d), text: w.text })) };
+  return { ...l, start, end: l.end === null ? null : tidy(l.end + d), words: l.words?.map((w) => ({ ...w, t: tidy(w.t + d) })) };
 }
 
 /** Drags the start edge; the line keeps at least MIN_LINE. */
