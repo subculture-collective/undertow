@@ -20,20 +20,32 @@ const yieldToBrowser = () => new Promise<void>((resolve) => {
 });
 
 /**
- * Turns the canvas into an encoder frame. The fast path copies a GPU frame
+ * Turns the rendered frame into an encoder frame. `src` is the 2D canvas, or the
+ * effects canvas when whole-frame effects are on (reading it directly saves a
+ * full-frame copy back into the 2D canvas). The fast path copies a GPU frame
  * into CPU memory: handing a GPU canvas frame straight to the encoder measured
  * ~75 ms/frame at 1080p in Chrome on Apple silicon, copying first ~6 ms/frame.
  * Where that copy is unavailable (no pixel format reported, or copyTo fails)
- * it falls back to reading the pixels with getImageData.
+ * it falls back to reading the pixels of the 2D canvas with getImageData,
+ * drawing the effects result into it first.
  */
 function frameCapturer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
   let pixels: Uint8Array | null = null;
   let mode: 'copy' | 'readback' = 'copy';
   const W = canvas.width, H = canvas.height;
-  const capture = async (t: number, dur: number): Promise<VideoSample> => {
+  const toCanvas = (img: CanvasImageSource) => {
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'copy';
+    ctx.drawImage(img, 0, 0, W, H);
+    ctx.restore();
+  };
+  const capture = async (src: HTMLCanvasElement, t: number, dur: number): Promise<VideoSample> => {
     const us = Math.round(t * 1e6), dus = Math.round(dur * 1e6);
     if (mode === 'copy') {
-      const gpu = new VideoFrame(canvas, { timestamp: us });
+      // Taken before any await: the effects canvas only holds the frame until this task ends.
+      const gpu = new VideoFrame(src, { timestamp: us });
       try {
         const format = gpu.format;
         if (!format) throw new Error('canvas VideoFrame has no pixel format');
@@ -45,10 +57,11 @@ function frameCapturer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D)
       } catch (e) {
         console.warn('VideoFrame copy unavailable, reading canvas pixels instead:', e);
         mode = 'readback';
+        if (src !== canvas) toCanvas(gpu);
       } finally {
         gpu.close();
       }
-    }
+    } else if (src !== canvas) toCanvas(src);
     const img = ctx.getImageData(0, 0, W, H);
     const cpu = new VideoFrame(img.data, { format: 'RGBA', codedWidth: W, codedHeight: H, timestamp: us, duration: dus });
     return new VideoSample(cpu, { timestamp: t, duration: dur });
@@ -182,8 +195,8 @@ export async function exportVideo(
       checkCancelled();
       const t = o.start + i / o.fps;
       for (const c of clips) videoFrames.set(c.id, await c.reader.frameAt(clipTime(c.layer.props, c.duration, t)));
-      comp.render({ project, aspect: o.aspect, t, dt: 1 / o.fps, track, assets, preview: false, videoFrames });
-      const sample = await capturer.capture(i / o.fps, 1 / o.fps);
+      const frame = comp.render({ project, aspect: o.aspect, t, dt: 1 / o.fps, track, assets, preview: false, videoFrames, keepEffectsCanvas: true });
+      const sample = await capturer.capture(frame, i / o.fps, 1 / o.fps);
       try { await video.add(sample); } finally { sample.close(); }
       await yieldToBrowser();
       if (i % 5 === 0 || i === frames - 1) {
