@@ -8,6 +8,9 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY index.html render.html styleguide.html terms.html privacy.html vite.config.ts tsconfig.json ./
 COPY public ./public
+COPY scripts/stems/fetch-model.sh ./scripts/stems/fetch-model.sh
+# The stem separation model is a release asset, not a file in git; the script checks its SHA-256.
+RUN sh scripts/stems/fetch-model.sh
 COPY src ./src
 # The selftest page stays in development; the styleguide ships with the editor.
 RUN npm run build

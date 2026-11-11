@@ -1,5 +1,6 @@
 import { decodeAudio, type AudioTrack } from './audio/analysis';
 import { parseLyrics, type LyricCue } from './audio/lyrics';
+import { stemsKey, type StemTracks } from './audio/stems';
 import { uid } from './defaults';
 import { tx } from './idb';
 import type { AssetKind, AssetMeta } from './types';
@@ -10,6 +11,8 @@ export interface RuntimeAsset {
   url: string;
   image?: HTMLImageElement;
   track?: AudioTrack;
+  /** Separated stems of a song, once separated or loaded from storage (see audio/stemSeparation.ts). */
+  stems?: StemTracks;
   cues?: LyricCue[];
   video?: { duration: number; width: number; height: number };
   font?: FontFace;
@@ -119,4 +122,6 @@ export async function loadStoredAssets(): Promise<RuntimeAsset[]> {
 
 export async function deleteStoredAsset(id: string) {
   await tx('assets', 'readwrite', (s) => s.delete(id));
+  // A song's separated stems go with it.
+  await tx('stems', 'readwrite', (s) => s.delete(stemsKey(id))).catch((e) => console.warn('could not delete stems', e));
 }

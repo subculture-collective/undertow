@@ -1,4 +1,5 @@
-import { silentFrame, type AudioTrack } from '../audio/analysis';
+import { silentFrame, type AudioFrame, type AudioTrack } from '../audio/analysis';
+import { layerSource, pickTrack, type StemSource } from '../audio/stems';
 import type { RuntimeAsset } from '../assets';
 import { anyEffectOn } from '../effects';
 import type { AspectId, Layer, Project, VideoLayer } from '../types';
@@ -71,6 +72,17 @@ export class Compositor {
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
 
+    // Layers set to a stem read that stem's analysis; one frame per stem, computed when first needed.
+    const stems = r.project.audioAssetId ? r.assets[r.project.audioAssetId]?.stems : undefined;
+    const frames = new Map<StemSource, AudioFrame>();
+    const sourced = (layer: Layer): DrawCtx => {
+      const { track, stem } = pickTrack(layerSource(layer), r.track, stems);
+      if (!stem || !track) return d;
+      let frame = frames.get(stem);
+      if (!frame) frames.set(stem, (frame = track.frame(r.t)));
+      return { ...d, frame, track };
+    };
+
     const live = new Set<string>();
     this.drawn.clear();
     for (const layer of r.project.layers) {
@@ -84,7 +96,7 @@ export class Compositor {
       ctx.globalAlpha = layer.opacity;
       ctx.globalCompositeOperation = layer.blend;
       try {
-        this.drawLayer(d, layer, box, r);
+        this.drawLayer(sourced(layer), layer, box, r);
       } catch (e) {
         console.error(`layer ${layer.name} failed`, e);
       }
