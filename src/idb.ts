@@ -1,11 +1,12 @@
 /**
  * The editor's IndexedDB database. `assets` holds uploaded files; `projects`
- * holds projects saved in this browser. The name predates the Undertow rename
+ * holds projects saved in this browser; `stems` holds separated stems per song
+ * (see src/audio/stems.ts). The name predates the Undertow rename
  * and stays so existing libraries keep working.
  */
 const DB = 'vizstudio';
-const VERSION = 2;
-export type StoreName = 'assets' | 'projects';
+const VERSION = 3;
+export type StoreName = 'assets' | 'projects' | 'stems';
 
 let dbp: Promise<IDBDatabase> | null = null;
 function open() {
@@ -14,7 +15,7 @@ function open() {
     const req = indexedDB.open(DB, VERSION);
     let blocked = false;
     req.onupgradeneeded = () => {
-      for (const name of ['assets', 'projects'] as const) {
+      for (const name of ['assets', 'projects', 'stems'] as const) {
         if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
       }
     };

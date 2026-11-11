@@ -4,3 +4,5 @@ dist
 selftest-results
 deploy/undertow.env
 client_secret_*.json
+# Stem model (see scripts/stems/export-umxhq.py); hosting is decided in src/audio/stems.ts
+public/models/*.onnx

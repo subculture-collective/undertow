@@ -6,6 +6,8 @@ import { spectrumBands } from '../render/layers';
 import { useFavourites } from '../favourites';
 import { activeTempo, byCodeUnit } from '../render/presetPool';
 import { useTempoStatus } from '../audio/tempoDetection';
+import { isReactive, layerSource, STEM_SOURCES, stemDownloadMB } from '../audio/stems';
+import { cancelStems, isModelCached, lowMemoryWarning, separateStems, stemSupportProblem, useStemState } from '../audio/stemSeparation';
 import { getPresetNames, loadPresets } from '../render/milkdrop';
 import { SOCIAL_ICONS } from '../render/icons';
 import { useSelectedLayer, useStore } from '../store';
@@ -440,6 +442,7 @@ export function Inspector() {
         <h4>{layer.type === 'milkdrop' ? 'Visualizer' : 'Content'}</h4>
         <TypeFields layer={layer} />
       </section>
+      {isReactive(layer.type) && <SourceSection layer={layer} />}
       <section>
         <h4>Layer</h4>
         <Slider label="Opacity" value={layer.opacity} min={0} max={1} onChange={(opacity) => updateLayer(layer.id, { opacity })} format={pct} />
@@ -462,6 +465,58 @@ export function Inspector() {
       </section>
       <EffectsSection />
     </aside>
+  );
+}
+
+const PHASES = { load: 'Loading the model', download: 'Downloading the model', separate: 'Separating', save: 'Saving' } as const;
+
+/** Which part of the song a reactive layer follows, and the controls to separate the stems it needs. */
+function SourceSection({ layer }: { layer: Layer }) {
+  const source = layerSource(layer);
+  const audioId = useStore((s) => s.project.audioAssetId);
+  const hasTrack = useStore((s) => !!(audioId && s.assets[audioId]?.track));
+  const ready = useStore((s) => !!(audioId && s.assets[audioId]?.stems));
+  const state = useStemState((s) => (audioId ? s[audioId] : undefined));
+  const [cached, setCached] = useState<boolean | null>(null);
+  const needsStems = source !== 'mix' && hasTrack && !ready;
+  useEffect(() => { if (needsStems) isModelCached().then(setCached); }, [needsStems, state?.status]);
+  const label = STEM_SOURCES.find(([id]) => id === source)?.[1].toLowerCase();
+  const unsupported = needsStems ? stemSupportProblem() : null;
+  const lowMemory = needsStems ? lowMemoryWarning() : null;
+
+  return (
+    <section>
+      <h4>Reacts to</h4>
+      <Select label="Source" value={source} options={STEM_SOURCES}
+        onChange={(v) => useStore.getState().updateProps(layer.id, { source: v })} />
+      {source !== 'mix' && !hasTrack && <p className="hint">Add a song first. Stems are separated from the song in this browser.</p>}
+      {source !== 'mix' && ready && <p className="hint">Follows the separated {label}.</p>}
+      {source !== 'mix' && ready && state?.status === 'failed' && <p className="warn">{state.message}</p>}
+      {needsStems && <>
+        {state?.status !== 'running' && (
+          <p className="warn">This song's stems aren't separated yet, so the layer follows the whole song.</p>
+        )}
+        {state?.status === 'failed' && <p className="warn">{state.message}</p>}
+        {state?.status === 'running' ? (
+          <div className="progress">
+            <div className="bar"><div style={{ width: `${Math.round(state.progress * 100)}%` }} /></div>
+            <span className="hint">{PHASES[state.phase]}… {Math.round(state.progress * 100)}%</span>
+            {state.phase !== 'save' && <button className="sm" onClick={() => audioId && cancelStems(audioId)}>Cancel</button>}
+          </div>
+        ) : unsupported ? (
+          <p className="warn">{unsupported}</p>
+        ) : state?.status !== 'checking' && <>
+          <button className="sm" onClick={() => audioId && separateStems(audioId)}>
+            {cached ? 'Separate stems' : `Separate stems (${stemDownloadMB()} MB download)`}
+          </button>
+          {lowMemory && <p className="warn">{lowMemory}</p>}
+          <p className="hint">
+            Runs in this browser; the song isn't uploaded. The model downloads once. On the desktop we tested, a 3½-minute song
+            took under a minute. The stems are kept with the song in this browser.
+          </p>
+        </>}
+      </>}
+    </section>
   );
 }
 
