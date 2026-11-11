@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 import type { AudioTrack } from '../audio/analysis';
+import type { AlignResult } from '../audio/lyricAlign';
 import { linesFromCues, linesFromText, MIN_LINE, moveLine, setEnd, setStart, spans, stampLine, toCues, type TimedLine } from '../audio/lyricTiming';
-import { cueAt, toLrc, type LyricCue } from '../audio/lyrics';
+import { cueAt, toLrc, type LyricCue, type LyricWord } from '../audio/lyrics';
 import type { RuntimeAsset } from '../assets';
 import { refreshMissing } from '../cloud/documents';
 import { useStore } from '../store';
 import type { Layer, Project } from '../types';
 import { confirmAsk } from './ask';
 import { Icon } from './icons';
+import { LyricAlignPanel } from './LyricAlignPanel';
 import { Modal } from './Modal';
 import { audioEl, currentTime, usePlayer } from './player';
 
@@ -29,6 +31,8 @@ export interface LyricEditorOptions {
   text?: string;
   /** The source file's name; the saved file is named after it. */
   name?: string;
+  /** Open on the "Align automatically" step (after pasting lines, when there are none). */
+  align?: boolean;
 }
 
 interface Request extends LyricEditorOptions { id: number; resolve: (assetId: string | null) => void }
@@ -45,14 +49,14 @@ export function openLyricEditor(options: LyricEditorOptions): Promise<string | n
 }
 
 /** Opens the editor on a lyrics layer's current file. A plain-text file opens as untimed lines. */
-export async function editLayerTiming(layerId: string): Promise<string | null> {
+export async function editLayerTiming(layerId: string, opts: { align?: boolean } = {}): Promise<string | null> {
   const s = useStore.getState();
   const layer = s.project.layers.find((l) => l.id === layerId);
   if (layer?.type !== 'lyrics') return null;
   const asset = layer.props.assetId ? s.assets[layer.props.assetId] : undefined;
   const timed = !!asset?.cues?.length;
   return openLyricEditor({
-    layerId, name: asset?.meta.name,
+    layerId, name: asset?.meta.name, align: opts.align,
     cues: timed ? asset!.cues : undefined,
     text: asset && !timed ? await asset.blob.text() : undefined,
   });
@@ -93,7 +97,8 @@ interface Snapshot { lines: TimedLine[]; cursor: number }
 function LyricTimingEditor({ request }: { request: Request }) {
   const layer = useStore((s) => s.project.layers.find((l) => l.id === request.layerId));
   const offset = layer?.type === 'lyrics' ? layer.props.offset : 0;
-  const track = useStore((s) => (s.project.audioAssetId ? s.assets[s.project.audioAssetId]?.track : undefined));
+  const audioId = useStore((s) => s.project.audioAssetId);
+  const track = useStore((s) => (audioId ? s.assets[audioId]?.track : undefined));
   const playing = usePlayer((s) => s.playing);
 
   const initial = useMemo(() => (request.cues ? linesFromCues(request.cues) : linesFromText(request.text ?? '')), [request]);
@@ -105,6 +110,8 @@ function LyricTimingEditor({ request }: { request: Request }) {
   const [rate, setRate] = useState<number>(1);
   const [paste, setPaste] = useState<string | null>(initial.length ? null : '');
   const [saving, setSaving] = useState(false);
+  const [aligning, setAligning] = useState(() => !!request.align && initial.length > 0);
+  const [note, setNote] = useState<string | null>(null);
   const [t, setT] = useState(currentTime);
   useEffect(() => {
     const id = setInterval(() => setT(currentTime()), 50);
@@ -174,6 +181,18 @@ function LyricTimingEditor({ request }: { request: Request }) {
     setPaste(null);
     setSelected(0);
     setMode('tap');
+    if (request.align) setAligning(true);
+  };
+  /** Takes the aligned lines for review. Times are song times; the layer's sync offset is taken off. */
+  const aligned = (r: AlignResult) => {
+    const shift = (t: number) => Math.max(0, Math.round((t - offset) * 100) / 100);
+    const next = linesFromCues(r.cues.map((c) => ({ ...c, start: shift(c.start), end: shift(c.end), words: c.words?.map((w) => ({ ...w, t: shift(w.t) })) })));
+    commit(next, next.length);
+    setAligning(false);
+    setSelected(0);
+    setMode('adjust');
+    const unsure = r.cues.reduce((n, c) => n + (c.words?.filter((w) => w.uncertain).length ?? 0), 0);
+    setNote(`Aligned: ${r.matched} of ${r.words} words timed from the song.${unsure ? ` ${unsure} underlined word${unsure === 1 ? ' is a guess' : 's are guesses'}; check those lines.` : ''} Undo goes back.`);
   };
 
   // ---- playback ----
@@ -232,7 +251,7 @@ function LyricTimingEditor({ request }: { request: Request }) {
     else if (e.key === ' ') {
       // Also on keyup, where a focused button would otherwise take Space as a click.
       e.preventDefault();
-      if (e.type !== 'keydown' || e.repeat || paste !== null) return;
+      if (e.type !== 'keydown' || e.repeat || paste !== null || aligning) return;
       if (mode === 'tap') stamp(); else usePlayer.getState().toggle();
     }
   };
@@ -255,7 +274,7 @@ function LyricTimingEditor({ request }: { request: Request }) {
         <div className="tabs" role="tablist" aria-label="Mode">
           {(['tap', 'adjust'] as const).map((m) => (
             <button key={m} type="button" role="tab" aria-selected={mode === m} className={mode === m ? 'active' : ''}
-              disabled={paste !== null} onClick={() => setMode(m)}>{m === 'tap' ? 'Tap' : 'Adjust'}</button>
+              disabled={paste !== null || aligning} onClick={() => setMode(m)}>{m === 'tap' ? 'Tap' : 'Adjust'}</button>
           ))}
         </div>
         <span className="grow" />
@@ -281,6 +300,9 @@ function LyricTimingEditor({ request }: { request: Request }) {
             {lines.length > 0 && <button type="button" onClick={() => setPaste(null)}>Keep current lines</button>}
           </div>
         </div>
+      ) : aligning ? (
+        <LyricAlignPanel assetId={audioId ?? undefined} track={track} text={lines.map((l) => l.text).join('\n')} lineCount={lines.length}
+          onDone={aligned} onClose={() => setAligning(false)} />
       ) : mode === 'tap' ? (
         <TapPanel lines={lines} cursor={cursor} playingLine={playingLine} hasSong={!!track} onPick={pickLine} onStamp={stamp} />
       ) : (
@@ -290,7 +312,7 @@ function LyricTimingEditor({ request }: { request: Request }) {
             lineOf={(i) => lines[i]} onSeek={seek} onPlay={playFrom} onNudge={nudge} />
           {sel ? (
             <div className="lyric-selected">
-              <span className="lyric-selected-text"><strong>Line {selected + 1}</strong> {sel.text}</span>
+              <span className="lyric-selected-text"><strong>Line {selected + 1}</strong> <LineText line={lines[selected]} /></span>
               <TimeField label="Start" value={sel.start} onCommit={(v) => setTime('start', v)} />
               <TimeField label="End" value={sel.end} onCommit={(v) => setTime('end', v)} />
               <button type="button" onClick={() => nudge(-0.01)}>−10 ms</button>
@@ -298,6 +320,7 @@ function LyricTimingEditor({ request }: { request: Request }) {
               <button type="button" onClick={() => playFrom(selected)}><Icon name="play" size={12} /> Play line</button>
             </div>
           ) : <p className="hint">Pick a line on the timeline.</p>}
+          {note && <p className="hint" role="status">{note}</p>}
           <p className="hint" id="lyric-timeline-help">
             Drag a line to move it, or drag its ends. Click a line to play from it. With the timeline focused, ↑ and ↓ pick a line
             and ← and → move it by 10 ms (100 ms with Shift). Ctrl or ⌘ with the scroll wheel zooms.
@@ -308,7 +331,9 @@ function LyricTimingEditor({ request }: { request: Request }) {
 
       <div className="buttons end lyric-editor-foot">
         <button type="button" onClick={undo} disabled={!history.length}><Icon name="undo" size={14} /> Undo</button>
-        <button type="button" onClick={() => setPaste('')} disabled={paste !== null}>Paste lines…</button>
+        <button type="button" onClick={() => setPaste('')} disabled={paste !== null || aligning}>Paste lines…</button>
+        <button type="button" title="Time the lines and words from the song with a speech model that runs in this browser"
+          onClick={() => setAligning(true)} disabled={paste !== null || aligning || !lines.length}>Align automatically…</button>
         <button type="button" onClick={download} disabled={!cues.length}><Icon name="download" size={14} /> Download .lrc</button>
         <span className="grow" />
         <button type="button" onClick={() => void cancel()}>Cancel</button>
@@ -331,7 +356,7 @@ function TapPanel({ lines, cursor, playingLine, hasSong, onPick, onStamp }: {
           <li key={i} className={`${i === cursor ? 'next' : ''} ${i === playingLine ? 'playing' : ''}`}>
             <button type="button" aria-current={i === cursor ? 'step' : undefined} onClick={() => onPick(i)}>
               <span className="lyric-time">{l.start === null ? '–' : fmt(l.start)}</span>
-              <span className="lyric-text">{l.text}</span>
+              <span className="lyric-text"><LineText line={l} /></span>
             </button>
           </li>
         ))}
@@ -347,6 +372,14 @@ function TapPanel({ lines, cursor, playingLine, hasSong, onPick, onStamp }: {
       </div>
     </div>
   );
+}
+
+/** A line's text, with words that automatic alignment only guessed underlined. */
+function LineText({ line }: { line: { text: string; words?: LyricWord[] } }) {
+  if (!line.words?.some((w) => w.uncertain)) return <>{line.text}</>;
+  return <>{line.words.map((w, i) => w.uncertain
+    ? <span key={i}><span className="lyric-unsure" title="Timing guessed: check this word">{w.text.trimEnd()}</span>{w.text.slice(w.text.trimEnd().length)}</span>
+    : <span key={i}>{w.text}</span>)}</>;
 }
 
 function TimeField({ label, value, onCommit }: { label: string; value: number; onCommit: (v: number) => void }) {

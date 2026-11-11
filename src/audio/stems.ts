@@ -26,8 +26,8 @@ export const STEM_MODEL = {
   sha256: '212eaaa684c8fe8c18f8666d6d05cde1ce8766d8c55d300896d28d950092691d',
   sampleRate: 44100,
 } as const;
-/** onnxruntime-web's WebAssembly runtime (ort-wasm-simd-threaded.wasm 1.30.0), fetched with the model. */
-export const STEM_RUNTIME_BYTES = 14_239_897;
+/** onnxruntime-web's WebAssembly runtime (ort-wasm-simd-threaded.wasm 1.31.1), fetched with the model. */
+export const STEM_RUNTIME_BYTES = 14_848_852;
 
 /** Layer types that react to the audio and so can follow a stem. */
 export const REACTIVE_TYPES: readonly LayerType[] = ['video', 'particles', 'milkdrop', 'image', 'waveform', 'spectrum', 'vu'];

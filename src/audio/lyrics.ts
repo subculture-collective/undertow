@@ -1,4 +1,5 @@
-export interface LyricWord { t: number; text: string }
+/** `uncertain` marks a word that automatic alignment could not time from the song; LRC does not store it. */
+export interface LyricWord { t: number; text: string; uncertain?: boolean }
 export interface LyricCue { start: number; end: number; text: string; words?: LyricWord[] }
 
 const LRC_TIME = /\[(\d+):(\d+(?:[.:]\d+)?)\]/g;

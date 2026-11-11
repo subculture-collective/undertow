@@ -49,6 +49,11 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   layer at it (undoable) and leaves the original untouched; the file can also be
   downloaded. Other code opens it with `openLyricEditor()` in
   `src/ui/LyricTimingEditor.tsx`.
+- **Automatic lyric alignment** ("Align to song…" on a lyrics layer, or "Align
+  automatically…" in the timing editor): a Whisper model with word timestamps
+  listens to the song in a worker, and the lyric text is aligned to what it
+  heard. The result opens in the timing editor for review. See
+  [Lyric alignment](#lyric-alignment) below.
 - **Export**: MP4 (H.264 with AAC audio where the browser can encode them) or WebM (VP9 or AV1 with Opus,
   offered where the browser can encode VP9 or AV1), 720p to 4K, 24/30/60 fps, whole song or
   a 15-second preview. Several formats can be rendered in one go.
@@ -92,6 +97,7 @@ that disposable database for you. Install the root and server dependencies first
 | `src/audio/analysis.ts` | Decoding, FFT, per-frame levels, whole-song overview |
 | `src/audio/lyrics.ts` | LRC/SRT/VTT parsing and LRC writing (`toLrc`) |
 | `src/audio/lyricTiming.ts`, `src/ui/LyricTimingEditor.tsx` | Lyric timing editor: editing rules, dialog, waveform timeline |
+| `src/audio/lyricAlign.ts`, `src/audio/lyricRecognise.ts`, `src/audio/lyricAlign.worker.ts`, `src/audio/lyricAlignClient.ts`, `src/ui/LyricAlignPanel.tsx` | Automatic lyric alignment: text-to-recognition alignment, windowed Whisper recognition, the worker and the editor step |
 | `src/audio/stems.ts`, `src/audio/unmix.ts`, `src/audio/stems.worker.ts`, `src/audio/stemSeparation.ts` | Stem sources per layer, the separation DSP, its worker, and model/stem caching |
 | `src/audio/tempo.ts`, `src/audio/tempoDetection.ts` | Single-tempo beat grid (BPM and first beat) found in a worker after a song loads |
 | `src/render/compositor.ts` | Draws a project frame; shared by preview and export |
@@ -161,6 +167,86 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
 | Safari 27.0 | 6/6 pass | 19–65 | AAC audio, fast frame-copy path; glow- and shadow-heavy layouts are slowest |
 | Chromium 152 (Electron) | 6/6 pass | 3–10 | |
 
+## Lyric alignment
+
+"Align to song…" times plain lyrics from the song itself. The pieces:
+
+1. `src/audio/lyricAlignClient.ts` resamples the song to mono 16 kHz with an
+   `OfflineAudioContext` and starts `src/audio/lyricAlign.worker.ts`. With
+   "Listen to: The vocals only", `src/ui/LyricAlignPanel.tsx` first separates
+   the stems (see "Stem separation"; they stay on the song) and passes the
+   vocals stem instead of the song.
+2. The worker loads [transformers.js](https://github.com/huggingface/transformers.js)
+   (Apache-2.0) with a dynamic import, so the editor's main bundle doesn't carry
+   it, and runs `onnx-community/whisper-{tiny,base,small}_timestamped` (OpenAI
+   Whisper weights, MIT): fp32 encoder, 8-bit decoder. The ONNX runtime's
+   WebAssembly file is served from this site; the model files come from Hugging
+   Face and the browser caches them. It uses WebGPU when the browser offers a
+   hardware adapter and WebAssembly otherwise. The site sends no COEP header, so
+   WebAssembly runs on one thread.
+3. `src/audio/lyricRecognise.ts` feeds Whisper overlapping 30-second windows
+   and keeps each word from the window where it falls in the middle. When a
+   window comes back as one word repeated over and over (Whisper does this
+   over long instrumental stretches), it hears the window again as two halves
+   and drops a half that is still stuck.
+4. `src/audio/lyricAlign.ts` aligns the user's text to the heard words letter
+   by letter (case, accents and punctuation ignored; affine gaps that prefer
+   word boundaries). A lyric word with at least half its letters matched takes
+   its time from the heard word; the rest are spread between matched
+   neighbours by letter count. Words under 80% matched are marked
+   `uncertain` and underlined in the timing editor. The text is never changed:
+   each word keeps the spaces after it, so the words join back into the line.
+5. The result opens in the timing editor (Adjust mode) and saves as enhanced
+   LRC like any other edit.
+
+### Accuracy, measured 2026-11-10
+
+Reference set: the 11 songs of Earl Sweatshirt, *Live Laugh Love* (2025), with
+their community LRC files (420 lines, 24.1 minutes). It is all rap, a hard case
+for speech recognition. The LRC times were stripped, the text aligned with the
+pipeline above in Node (transformers.js 4.3.2, onnxruntime-node, same files and
+code as the browser), and each line start compared with the reference.
+
+| Model | Download | Line starts within 300 ms | Median line error | Node run time, 24.1 min of audio |
+|---|---|---|---|---|
+| tiny | 64 MB | 258/420 (61.4%) | 0.26 s | 648 s |
+| base (default) | 136 MB | 325/420 (77.4%) | 0.12 s | 613 s |
+| small | 510 MB | 349/420 (83.1%) | 0.12 s | 901 s |
+
+Run times are from a busy 24-core machine (load average 35–58) and only
+compare the models with each other. Per song, base ranged from 62% to 100%, and
+small from 72% to 100%. No model reached the 90% target from the issue. Most misses are
+whole sections Whisper did not hear (ad-libs, layered or heavily processed
+vocals, intros over loud music): the words there are interpolated and marked,
+so they show up underlined for review. A constant time shift gained only two
+points and was not applied.
+
+Aligning on the UMX-HQ vocals stem instead of the whole song, same set and
+code, measured 2026-11-11: base 317/420 (75.5%), small 332/420 (79.0%), both
+with a 0.12 s median error. That is slightly worse overall than the whole song.
+Per song it went both ways: with base, the vocals stem did better on 4 songs
+(up to +10 points), worse on 6 (down to −20 points) and the same on one.
+Separation artefacts in heavily processed rap vocals seem to cost as much as
+removing the music gains. So the whole song is the default, and the vocals
+are an option to try when a result is poor. Separation in Node took 96 s
+for the 24.1 minutes of audio.
+
+In headless Chromium 158 (WebAssembly, one thread, same busy machine) on a
+40-second excerpt, 11 of 12 line starts were within 300 ms with both base and
+small. Recognition took about 17–20 s with base and 52–56 s with small, not
+counting the download. The browser cached all model files with an on-disk
+profile. In a private-style browser context the 353 MB small encoder failed to
+cache and downloaded again next time. The WebGPU path was only run on
+SwiftShader, Chromium's software adapter, where it took about 8 minutes for the
+same clip; the worker now ignores fallback adapters. WebGPU on a real GPU is
+not measured.
+
+To repeat the measurement, decode each song to mono 16 kHz float samples, run
+`recogniseSong` from `src/audio/lyricRecognise.ts` with a transformers.js
+pipeline (`return_timestamps: 'word'`), pass the stripped text and the heard
+words to `alignLyrics`, and compare line starts. Don't commit songs or lyrics;
+they are copyrighted.
+
 ## Stem separation
 
 The model is Open-Unmix UMX-HQ: four networks (drums, bass, other, vocals)
@@ -191,7 +277,7 @@ holds the file's URL, size and SHA-256; the worker refuses a file that doesn't
 match. A new model needs a new release tag, `STEM_MODEL` and the script updated
 together. The editor caches the model with the
 Cache API (`undertow-models-v1`). onnxruntime-web's WebAssembly runtime
-(14.2 MB, 3.7 MB gzipped) is part of the build and loads only when someone
+(14.8 MB, 3.8 MB gzipped) is part of the build and loads only when someone
 separates a song. The site isn't cross-origin isolated, so it runs on one
 thread.
 

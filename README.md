@@ -21,8 +21,9 @@ Open the editor at <https://undertow.subcult.tv>. Product page:
   blend them, hide the ones you don't want.
 - **Lyrics:** LRC, SRT or VTT, with a sync offset. Enhanced LRC word timings
   give word-by-word karaoke. No timed file? Paste the words into the timing
-  editor, tap along to the song, then drag lines on the waveform to fix them.
-  It saves a new LRC file and leaves the original alone.
+  editor and let it align them to the song automatically, line by line and
+  word by word, or tap along yourself. Then drag lines on the waveform to fix
+  them. It saves a new LRC file and leaves the original alone.
 - **Three frames from one project:** every layer keeps its own position in
   16:9, 9:16 and 1:1, so the landscape cut, the vertical and the square all come
   out of the same file.
@@ -39,7 +40,9 @@ Open the editor at <https://undertow.subcult.tv>. Product page:
 ### It renders on your machine
 
 A local export analyzes, draws and encodes the video in your browser. Your
-audio doesn't leave it. Export the whole song or a 15-second preview as MP4
+audio doesn't leave it. Automatic lyric alignment also runs in the browser; it
+downloads a speech model (64 to 510 MB) from Hugging Face the first time, and
+your song stays on your device. Export the whole song or a 15-second preview as MP4
 or WebM, from 720p to 4K at 24, 30 or 60 frames per second.
 
 Codec support and render speed depend on your browser and hardware. The
