@@ -97,7 +97,8 @@ interface Snapshot { lines: TimedLine[]; cursor: number }
 function LyricTimingEditor({ request }: { request: Request }) {
   const layer = useStore((s) => s.project.layers.find((l) => l.id === request.layerId));
   const offset = layer?.type === 'lyrics' ? layer.props.offset : 0;
-  const track = useStore((s) => (s.project.audioAssetId ? s.assets[s.project.audioAssetId]?.track : undefined));
+  const audioId = useStore((s) => s.project.audioAssetId);
+  const track = useStore((s) => (audioId ? s.assets[audioId]?.track : undefined));
   const playing = usePlayer((s) => s.playing);
 
   const initial = useMemo(() => (request.cues ? linesFromCues(request.cues) : linesFromText(request.text ?? '')), [request]);
@@ -300,7 +301,7 @@ function LyricTimingEditor({ request }: { request: Request }) {
           </div>
         </div>
       ) : aligning ? (
-        <LyricAlignPanel track={track} text={lines.map((l) => l.text).join('\n')} lineCount={lines.length}
+        <LyricAlignPanel assetId={audioId ?? undefined} track={track} text={lines.map((l) => l.text).join('\n')} lineCount={lines.length}
           onDone={aligned} onClose={() => setAligning(false)} />
       ) : mode === 'tap' ? (
         <TapPanel lines={lines} cursor={cursor} playingLine={playingLine} hasSong={!!track} onPick={pickLine} onStamp={stamp} />

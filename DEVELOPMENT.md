@@ -172,7 +172,10 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
 "Align to song…" times plain lyrics from the song itself. The pieces:
 
 1. `src/audio/lyricAlignClient.ts` resamples the song to mono 16 kHz with an
-   `OfflineAudioContext` and starts `src/audio/lyricAlign.worker.ts`.
+   `OfflineAudioContext` and starts `src/audio/lyricAlign.worker.ts`. With
+   "Listen to: The vocals only", `src/ui/LyricAlignPanel.tsx` first separates
+   the stems (see "Stem separation"; they stay on the song) and passes the
+   vocals stem instead of the song.
 2. The worker loads [transformers.js](https://github.com/huggingface/transformers.js)
    (Apache-2.0) with a dynamic import, so the editor's main bundle doesn't carry
    it, and runs `onnx-community/whisper-{tiny,base,small}_timestamped` (OpenAI
@@ -215,9 +218,18 @@ compare the models with each other. Per song, base ranged from 62% to 100%, and
 small from 72% to 100%. No model reached the 90% target from the issue. Most misses are
 whole sections Whisper did not hear (ad-libs, layered or heavily processed
 vocals, intros over loud music): the words there are interpolated and marked,
-so they show up underlined for review. Separating the vocals first (issue #6)
-is the likeliest way to raise accuracy; a constant time shift gained only two
+so they show up underlined for review. A constant time shift gained only two
 points and was not applied.
+
+Aligning on the UMX-HQ vocals stem instead of the whole song, same set and
+code, measured 2026-11-11: base 317/420 (75.5%), small 332/420 (79.0%), both
+with a 0.12 s median error. That is slightly worse overall than the whole song.
+Per song it went both ways: with base, the vocals stem did better on 4 songs
+(up to +10 points), worse on 6 (down to −20 points) and the same on one.
+Separation artefacts in heavily processed rap vocals seem to cost as much as
+removing the music gains. So the whole song is the default, and the vocals
+are an option to try when a result is poor. Separation in Node took 96 s
+for the 24.1 minutes of audio.
 
 In headless Chromium 158 (WebAssembly, one thread, same busy machine) on a
 40-second excerpt, 11 of 12 line starts were within 300 ms with both base and
@@ -265,7 +277,7 @@ holds the file's URL, size and SHA-256; the worker refuses a file that doesn't
 match. A new model needs a new release tag, `STEM_MODEL` and the script updated
 together. The editor caches the model with the
 Cache API (`undertow-models-v1`). onnxruntime-web's WebAssembly runtime
-(14.2 MB, 3.7 MB gzipped) is part of the build and loads only when someone
+(14.8 MB, 3.8 MB gzipped) is part of the build and loads only when someone
 separates a song. The site isn't cross-origin isolated, so it runs on one
 thread.
 
