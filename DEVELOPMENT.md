@@ -24,6 +24,14 @@ the Undertow API (`server/`), which is also usable by other apps with API keys.
   mirrored, radial ring, line; bar count or 1/3- and 1/6-octave bands) and VU meter
   (LED, bar, analogue needles), looping video backgrounds (MP4, MOV, WebM) and
   particles (dust, bokeh, embers, snow, starfield warp).
+- **Stem-reactive layers**: spectrum, waveform, VU, particles, Milkdrop, image
+  and video layers can follow one stem (drums, bass, vocals, other) instead of
+  the mix ("Reacts to" in the inspector). "Separate stems" splits the song in a
+  Web Worker on WebAssembly, saves the stems in IndexedDB under the song's
+  asset id and reuses them after a reload. Layers without a separated stem
+  follow the mix and the inspector says so. Export uses the same stems; the
+  exported audio is the original mix. Cloud renders don't have stems yet, so
+  they use the mix. See [Stem separation](#stem-separation).
 - **Effects** over the whole frame, after all layers: film grain, colour split
   (chromatic aberration, optionally widened by bass), scanlines with CRT
   curvature, and vignette. One WebGL2 pass, the same in preview and export.
@@ -84,6 +92,7 @@ that disposable database for you. Install the root and server dependencies first
 | `src/audio/analysis.ts` | Decoding, FFT, per-frame levels, whole-song overview |
 | `src/audio/lyrics.ts` | LRC/SRT/VTT parsing and LRC writing (`toLrc`) |
 | `src/audio/lyricTiming.ts`, `src/ui/LyricTimingEditor.tsx` | Lyric timing editor: editing rules, dialog, waveform timeline |
+| `src/audio/stems.ts`, `src/audio/unmix.ts`, `src/audio/stems.worker.ts`, `src/audio/stemSeparation.ts` | Stem sources per layer, the separation DSP, its worker, and model/stem caching |
 | `src/audio/tempo.ts`, `src/audio/tempoDetection.ts` | Single-tempo beat grid (BPM and first beat) found in a worker after a song loads |
 | `src/render/compositor.ts` | Draws a project frame; shared by preview and export |
 | `src/render/layers.ts` | Drawing code for each layer type |
@@ -151,6 +160,53 @@ Last run on 2026-09-29, macOS 26.5 on Apple M3, 720p30:
 |---|---|---|---|
 | Safari 27.0 | 6/6 pass | 19–65 | AAC audio, fast frame-copy path; glow- and shadow-heavy layouts are slowest |
 | Chromium 152 (Electron) | 6/6 pass | 3–10 | |
+
+## Stem separation
+
+The model is Open-Unmix UMX-HQ: four networks (drums, bass, other, vocals)
+that estimate magnitude spectrograms. `src/audio/unmix.ts` turns the
+estimates into ratio masks on the song's STFT (4096-point, hop 1024), so the
+four stems add up to the mix, and runs the model 512 frames at a time with 64
+frames of context on each side. The weights are MIT-licensed on the authors'
+Zenodo record ([3370489](https://zenodo.org/records/3370489)); Demucs v4 and
+UMX-L were ruled out because their weights aren't licensed for commercial use.
+UMX-HQ was trained on MUSDB18-HQ, whose songs carry their own licences.
+
+`scripts/stems/export-umxhq.py` downloads those weights, checks their hashes
+and writes the int8 ONNX file the editor loads (35.9 MB; two runs produced the
+same bytes):
+
+```sh
+uv run scripts/stems/export-umxhq.py public/models/umxhq-int8.onnx
+```
+
+The file is published as a GitHub release asset
+([`models-umxhq-int8-v1`](https://github.com/subculture-collective/undertow/releases/tag/models-umxhq-int8-v1))
+rather than committed. `sh scripts/stems/fetch-model.sh` downloads it into
+`public/models/` and checks its SHA-256; the Docker build runs the same script,
+so the site serves the model from its own origin at `/models/umxhq-int8.onnx`.
+Run the script once for local work. The licence and attribution ship beside it
+as `public/models/umxhq-int8.LICENSE.txt`. `STEM_MODEL` in `src/audio/stems.ts`
+holds the file's URL, size and SHA-256; the worker refuses a file that doesn't
+match. A new model needs a new release tag, `STEM_MODEL` and the script updated
+together. The editor caches the model with the
+Cache API (`undertow-models-v1`). onnxruntime-web's WebAssembly runtime
+(14.2 MB, 3.7 MB gzipped) is part of the build and loads only when someone
+separates a song. The site isn't cross-origin isolated, so it runs on one
+thread.
+
+Measured 2026-11-10 in headless Chromium 158 on Kvant (Ryzen 9 9900X, busy:
+load average 40–55), single-threaded WebAssembly, a 3:41 song. In the editor,
+separating took 34 s (38 s including loading the model from a local server
+and saving), and
+the browser's memory grew by about 760 MB. A standalone benchmark of the same
+song took 30 s with the int8 model and 35–46 s with the float32 one (142.5 MB).
+WebGPU offered only SwiftShader on that machine, where the model ran slower
+than on WebAssembly, so it isn't used. Phones are untested.
+
+Each separated song stores about 0.7 MB per second of audio (four stereo
+16-bit stems) in IndexedDB, one Blob per stem: Chrome rejects single records
+over about 133 MB, which a four-minute song's stems exceed.
 
 ## Notes
 

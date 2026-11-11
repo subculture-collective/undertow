@@ -26,6 +26,7 @@
     "butterchurn": "^2.6.7",
     "butterchurn-presets": "^2.4.7",
     "mediabunny": "^1.60.0",
+    "onnxruntime-web": "^1.30.0",
     "openapi-fetch": "^0.17.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

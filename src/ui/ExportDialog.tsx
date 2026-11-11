@@ -4,6 +4,7 @@ import { loadUsage, submitRender, useRenders, type RenderJob, type Usage } from 
 import { getFirstEncodableVideoCodec } from 'mediabunny';
 import type { Container } from '../export/blobOutput';
 import { CONTAINER_CODECS, exportVideo, type ExportOptions, type ExportProgress } from '../export/exportVideo';
+import { layerSource } from '../audio/stems';
 import { useStore } from '../store';
 import { ASPECTS, ASPECT_IDS, type AspectId } from '../types';
 import { BRAND, visibleLink } from '../brand';
@@ -43,6 +44,8 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
   const current = useStore((s) => s.aspect);
   const track = project.audioAssetId ? assets[project.audioAssetId]?.track ?? null : null;
   const duration = track?.duration ?? 15;
+  const stemLayers = project.layers.filter((l) => l.visible && layerSource(l) !== 'mix').length;
+  const stemsReady = !!(project.audioAssetId && assets[project.audioAssetId]?.stems);
 
   const [aspects, setAspects] = useState<AspectId[]>([current]);
   const [shortSide, setShortSide] = useState<ExportOptions['shortSide']>(1080);
@@ -168,6 +171,12 @@ export function ExportDialog({ onClose, onSignIn, onBilling }: { onClose: () => 
         </p>
       )}
       {!track && <p className="warn">No song loaded. The video will be silent and 15 seconds long.</p>}
+      {track && stemLayers > 0 && where === 'local' && !stemsReady && (
+        <p className="warn">{stemLayers === 1 ? 'A layer follows a stem' : `${stemLayers} layers follow stems`}, but this song's stems aren't separated, so they react to the whole song. Separate stems from the layer's settings first.</p>
+      )}
+      {track && stemLayers > 0 && where === 'cloud' && (
+        <p className="warn">Cloud renders don't use stems yet: layers set to a stem react to the whole song.</p>
+      )}
       <Row label="Formats" group>
         <span className="checks">
           {ASPECT_IDS.map((a) => (
