@@ -3,7 +3,7 @@ const BINS = WINDOW / 2;
 const OVERVIEW_BUCKETS = 4096;
 
 /** In-place iterative radix-2 FFT for a fixed size. */
-class FFT {
+export class FFT {
   private rev: Uint32Array;
   private cos: Float32Array;
   private sin: Float32Array;

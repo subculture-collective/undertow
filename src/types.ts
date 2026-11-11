@@ -15,6 +15,11 @@ export interface Rect { x: number; y: number; w: number; h: number }
 export type LayerType =
   | 'solid' | 'video' | 'particles' | 'milkdrop' | 'image' | 'text' | 'lyrics' | 'socials' | 'waveform' | 'spectrum' | 'vu';
 
+/** A separated part of the song (see src/audio/stems.ts). */
+export type StemId = 'drums' | 'bass' | 'other' | 'vocals';
+/** What a reactive layer follows. Absent in layers saved before stems existed; that means the whole song. */
+export type StemSource = 'mix' | StemId;
+
 export type BlendMode = 'source-over' | 'screen' | 'lighter' | 'multiply' | 'overlay' | 'soft-light' | 'difference';
 
 export interface LayerBase<T extends LayerType, P> {
@@ -40,6 +45,8 @@ export interface VideoProps {
   offset: number;
   /** Brightness boost driven by bass, 0 disables. */
   pulse: number;
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 export type ParticleStyle = 'dust' | 'bokeh' | 'embers' | 'snow' | 'starfield';
@@ -56,6 +63,8 @@ export interface ParticlesProps {
   /** How much the bass speeds up and enlarges particles. */
   react: number;
   seed: number;
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 export interface MilkdropProps {
@@ -73,6 +82,8 @@ export interface MilkdropProps {
   pool: 'all' | 'favourites';
   /** The favourites pool, saved with the project so another browser renders the same sequence. */
   favourites: string[];
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 export interface ImageProps {
@@ -85,6 +96,8 @@ export interface ImageProps {
   /** Rotations per minute, e.g. a spinning vinyl label. */
   spin: number;
   circle: boolean;
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 /** Bundled with the app (see fonts.ts), so text looks the same on every platform. */
@@ -134,6 +147,8 @@ export interface WaveformProps {
   thickness: number;
   glow: number;
   gain: number;
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 export interface SpectrumProps {
@@ -157,6 +172,8 @@ export interface SpectrumProps {
   reflection: number;
   /** 'count' spaces `bars` evenly on a log scale; octave options use ISO band centres and derive the count. */
   spacing: SpectrumSpacing;
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 export type SpectrumSpacing = 'count' | 'octave-1/3' | 'octave-1/6';
@@ -170,6 +187,8 @@ export interface VuProps {
   segments: number;
   peakHold: boolean;
   sensitivity: number;
+  /** The whole song (default) or one stem. */
+  source?: StemSource;
 }
 
 export type SolidLayer = LayerBase<'solid', SolidProps>;
