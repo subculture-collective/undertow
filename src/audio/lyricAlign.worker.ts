@@ -14,9 +14,17 @@ import type { AlignRequest, AlignMessage } from './lyricAlignClient';
 const scope = self as unknown as { onmessage: ((e: MessageEvent<AlignRequest>) => void) | null; postMessage: (m: AlignMessage) => void };
 const post = (m: AlignMessage) => scope.postMessage(m);
 
+/**
+ * Whether a hardware GPU is available through WebGPU. A fallback adapter is a
+ * software renderer (SwiftShader in Chromium): on it a 40-second clip took
+ * about 8 minutes, against 20 seconds on the WebAssembly CPU path.
+ */
 async function webgpu(): Promise<boolean> {
-  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
-  try { return !!gpu && !!(await gpu.requestAdapter()); } catch { return false; }
+  const gpu = (navigator as Navigator & { gpu?: { requestAdapter(): Promise<{ info?: { isFallbackAdapter?: boolean } } | null> } }).gpu;
+  try {
+    const adapter = await gpu?.requestAdapter();
+    return !!adapter && !adapter.info?.isFallbackAdapter;
+  } catch { return false; }
 }
 
 scope.onmessage = async (e) => {

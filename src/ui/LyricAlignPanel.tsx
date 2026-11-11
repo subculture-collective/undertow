@@ -12,11 +12,22 @@ import { Select } from './controls';
  * model, says what it downloads, and runs alignment with progress and cancel.
  * The result goes back to the editor for review.
  */
+const MODEL_KEY = 'undertow.alignModel';
+/** The model picked last in this browser, so a downloaded larger model stays the choice. */
+function savedModel(): AlignModel {
+  try {
+    const m = localStorage.getItem(MODEL_KEY);
+    if (ALIGN_MODELS.some((x) => x.id === m)) return m as AlignModel;
+  } catch { /* storage unavailable */ }
+  return DEFAULT_ALIGN_MODEL;
+}
+const saveModel = (m: AlignModel) => { try { localStorage.setItem(MODEL_KEY, m); } catch { /* storage unavailable */ } };
+
 export function LyricAlignPanel({ track, text, lineCount, onDone, onClose }: {
   track: AudioTrack | undefined; text: string; lineCount: number;
   onDone: (result: AlignResult) => void; onClose: () => void;
 }) {
-  const [model, setModel] = useState<AlignModel>(DEFAULT_ALIGN_MODEL);
+  const [model, setModel] = useState<AlignModel>(savedModel);
   const [cached, setCached] = useState<Partial<Record<AlignModel, boolean>>>({});
   const [progress, setProgress] = useState<AlignProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,13 +79,13 @@ export function LyricAlignPanel({ track, text, lineCount, onDone, onClose }: {
       </p>
       {unsupported ? <p className="warn">{unsupported}</p> : !track ? <p className="warn">Add your song first; alignment listens to it.</p> : (
         <>
-          <Select label="Model" value={model} onChange={setModel} options={ALIGN_MODELS.map((m) => [m.id, `${m.label} (${m.id}, ${cached[m.id] ? 'downloaded' : `${m.mb} MB`})`] as const)} />
+          <Select label="Model" value={model} onChange={(m) => { setModel(m); saveModel(m); }} options={ALIGN_MODELS.map((m) => [m.id, `${m.label} (${m.id}, ${cached[m.id] ? 'downloaded' : `${m.mb} MB`})`] as const)} />
           <p className="hint">
             {cached[model]
               ? 'This model is already in this browser.'
               : `The model downloads once from Hugging Face (about ${info.mb} MB) and stays in this browser’s cache.`}
-            {' '}The song never leaves your device: recognition runs here, in the browser. It takes a while, roughly as long as the song or
-            more on the CPU.
+            {' '}The song never leaves your device: recognition runs here, in the browser. It takes a while: on a fast computer about half
+            the song’s length with Balanced, longer than the song with Accurate.
           </p>
           {progress && (
             <div className="progress" role="status">
