@@ -11,6 +11,8 @@ import { newDoc } from '../cloud/documents';
 import { useStore } from '../store';
 import { applyTemplate, TEMPLATES, type Template } from '../templates';
 import { ASPECTS, type AspectId, type Project } from '../types';
+import { BRAND } from '../brand';
+import { BrandLockup } from './Brand';
 import { Modal } from './Modal';
 
 let demo: AudioTrack | null = null;
@@ -99,7 +101,11 @@ function build(t: Template, current: Project, assets: Record<string, RuntimeAsse
   return d.applyToNewProjects ? applyDefaults(p, d) : p;
 }
 
-export function TemplateGallery({ onClose }: { onClose: () => void }) {
+/**
+ * `onAddSong` makes this the first-run dialog: it opens with what the editor is and a way straight to the file
+ * picker, above the templates. Opened from the Project menu it is the template list alone.
+ */
+export function TemplateGallery({ onClose, onAddSong }: { onClose: () => void; onAddSong?: () => void }) {
   const aspect = useStore((s) => s.aspect);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
@@ -130,7 +136,21 @@ export function TemplateGallery({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal className="gallery" labelledBy="gallery-title" onClose={onClose}>
-      <h3 id="gallery-title">Start from a template</h3>
+      {onAddSong && (
+        <div className="gallery-intro">
+          <BrandLockup />
+          <h2 className="tagline">{BRAND.tagline}.</h2>
+          <p>
+            {BRAND.name} is a layered music visualizer editor. Stack Milkdrop, a spectrum, VU meters, artwork and timed lyrics
+            over your track, lay it out in 16:9, 9:16 and 1:1, then render MP4 in your browser.
+          </p>
+          <div className="gallery-start">
+            <button className="primary" onClick={onAddSong}>Add your song</button>
+            <span className="hint">Or drop it anywhere. It renders on your machine, so speed depends on the browser and the device.</span>
+          </div>
+        </div>
+      )}
+      <h3 id="gallery-title">{onAddSong ? 'Or start from a template' : 'Start from a template'}</h3>
       <p className="hint">
         Pick a starting point. It opens as a new project with your song, artwork, clip and lyrics, plus your defaults, and every
         layer is yours to move. The current project stays in Projects. Previews show {ASPECTS[aspect].label}.

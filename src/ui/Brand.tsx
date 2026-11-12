@@ -26,6 +26,19 @@ export function BrandLogo({ size }: { size?: number }) {
   );
 }
 
+/**
+ * The horizontal lockup for first-run and promotional surfaces: mark and name with no colour split or animation.
+ * Keep it at least 220px wide; below that, use BrandMark alone.
+ */
+export function BrandLockup() {
+  return (
+    <span className="brand lockup">
+      <BrandMark size={48} />
+      <span className="brand-name">{BRAND.name}</span>
+    </span>
+  );
+}
+
 const external = { target: '_blank', rel: 'noopener noreferrer' } as const;
 const unsetTitle = 'Placeholder link: set it in src/brand.ts. Hidden in production builds until then.';
 

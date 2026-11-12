@@ -1,4 +1,5 @@
 /* Glitch design tokens. Components use semantic names from this file. */
+@import './fonts.css';
 :root {
   color-scheme: dark;
   --surface-app: #0f0c1c;
@@ -31,7 +32,7 @@
   --line-hover: var(--lilac);
   --track: var(--line-field);
   --accent-line: color-mix(in srgb, var(--accent) 50%, transparent);
-  --font-brand: var(--font-mono);
+  --font-brand: var(--font-display);
   --brand-weight: 800;
   --brand-case: uppercase;
   --brand-tracking: 0.04em;
@@ -44,9 +45,10 @@
   --shadow-panel: 6px 6px 0 var(--shadow-c);
   /* Neutral on purpose: no colour next to the video being judged. */
   --shadow-stage: 0 0 0 2px var(--ink), 0 0 0 3px var(--line-strong);
-  --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: var(--font-mono);
-  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  /* The faces are in fonts.css. Body, then the wordmark and headlines, then labels and numbers. */
+  --font-ui: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Liberation Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --text-2xs: 11px;
   --text-xs: 12px;
   --text-sm: 13px;
