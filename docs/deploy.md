@@ -94,10 +94,25 @@ environment, never in Git or the browser bundle.
 
 `STRIPE_LIVE_MODE=false` is the default. Account → Billing clearly labels sandbox
 mode. Price and webhook environment checks reject live/test mismatches. Register
-the HTTPS destination `/v1/billing/webhook` with Checkout, subscription and invoice
-events listed in [billing-work.md](billing-work.md). Keep delivery disabled until
-the app is deployed, then enable it and exercise lifecycle events. A successful
-Checkout return does not itself grant access.
+the HTTPS destination `/v1/billing/webhook` for these events: Checkout completion
+and asynchronous payment success and failure; subscription creation, update,
+deletion, pause and resume; invoice paid and invoice payment failed. Keep delivery
+disabled until the app is deployed, then enable it and exercise lifecycle events.
+A successful Checkout return does not itself grant access.
+
+Checkout sessions turn Managed Payments off explicitly, because this sandbox
+defaults to it. The preview uses the SUBCULT.TV sandbox `acct_1ULZACIOX2zV9jxz`.
+Live payments and tax collection are not enabled.
+
+| Sandbox object | Id |
+|---|---|
+| Product | `prod_VMIMN4KfmtBDwK` |
+| Monthly price, USD 12.00 | `price_1ULZlWIOX2zV9jxzoSP11UiE` |
+| Portal configuration, cancels at period end | `bpc_1ULZlXIOX2zV9jxzCH20bbSM` |
+| Webhook, snapshot event version `2026-08-26.dahlia` | `we_1ULZlYIOX2zV9jxzDSEMbd1S` |
+
+An earlier sandbox under the subculture-collective account still holds its
+objects, with webhook delivery disabled.
 
 Creator access requires an active subscription, a paid latest invoice and an
 unexpired paid period. Cancellation at period end preserves that period. A past
