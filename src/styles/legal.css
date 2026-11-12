@@ -25,7 +25,7 @@ body.legal { overflow: auto; background: var(--surface-app); font-size: var(--te
 
 .legal main, .legal footer { max-width: 44rem; margin: 0 auto; padding: var(--space-9) var(--space-7); }
 .legal h1 {
-  font: 800 var(--text-2xl) / 1.15 var(--font-mono); text-transform: uppercase; letter-spacing: 0.02em;
+  font: 800 var(--text-2xl) / 1.15 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em;
   text-shadow: var(--split-text);
 }
 .legal-date { margin-top: var(--space-4); color: var(--text-dim); font-size: var(--text-sm); }
@@ -41,7 +41,7 @@ body.legal { overflow: auto; background: var(--surface-app); font-size: var(--te
 .legal main { counter-reset: section; }
 .legal h2 {
   counter-increment: section; margin: var(--space-9) 0 var(--space-4); padding-top: var(--space-7); border-top: 2px solid var(--line);
-  font: 700 var(--text-md) / 1.3 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em;
+  font: 700 var(--text-md) / 1.3 var(--font-display); text-transform: uppercase; letter-spacing: 0.06em;
 }
 .legal h2::before { content: counter(section, decimal-leading-zero) '  '; color: var(--lilac); white-space: pre; }
 /* The summary's heading is a label, not a numbered section. */

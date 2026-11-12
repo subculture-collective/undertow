@@ -9,13 +9,14 @@ To inspect the components, open `/styleguide.html` on the deployed site or local
 | File | Contents |
 |---|---|
 | `src/styles/tokens.css` | Glitch palette, semantic and derived tokens on `:root` |
+| `src/styles/fonts.css` | The interface typefaces: Public Sans, Liberation Mono and JetBrains Mono, self-hosted |
 | `src/styles/glitch.css` | Glitch component treatments and animations |
 | `src/styles/base.css` | Element defaults: type, links, focus ring, scrollbars |
 | `src/styles/components.css` | Buttons, fields, sliders, tabs, menus, modals, progress bars, brand pieces |
 | `src/styles/app.css` | Editor layout and editor-only parts |
 | `src/styles/legal.css` | The terms and privacy pages (`terms.html`, `privacy.html`): long-form text, no JavaScript |
 | `src/brand.ts` | Name, tagline, Patreon and social links, site URL |
-| `src/ui/Brand.tsx` | Logomark, wordmark, social icons, Patreon button, terms and privacy links |
+| `src/ui/Brand.tsx` | Logomark, wordmark, lockup, social icons, Patreon button, terms and privacy links |
 | `src/ui/icons.tsx` | Layer, file and control icons |
 | `src/ui/Modal.tsx` | The dialog every modal uses |
 | `src/ui/ask.tsx` | Confirm, rename and notice dialogs |
@@ -35,10 +36,14 @@ To inspect the components, open `/styleguide.html` on the deployed site or local
 11. Dialogs use `Modal`, a native `<dialog>` opened with `showModal()`. It moves focus in, keeps it in, closes on Escape and returns focus to the control that opened it. Use `confirmAsk`, `promptAsk` and `noticeAsk` from `ask.tsx` in place of the browser's `confirm()`, `prompt()` and `alert()`.
 12. Icons come from `icons.tsx`: one 24-unit grid and one square stroke. Add to that file; text glyphs such as ▶ or ✕ render differently in each system font. An icon-only button needs an `aria-label`.
 13. The frame around the stage has no colour, so nothing tints the video being judged.
+14. Type follows the Studio brand pack (`studio/brands/undertow` in subcult-tv). `--font-ui` is Public Sans for body text and controls. `--font-display` is Liberation Mono bold for the wordmark and headings. `--font-mono` is JetBrains Mono for labels, button caps, timecodes and hex values. Each falls back to the system stack while it loads. These faces style the editor only; text on the stage uses the fonts in `src/fonts.ts`.
+15. The colour split is for the toolbar wordmark and for headlines (`.tagline`, `h3`). `BrandLockup`, the mark beside the name, has no split or animation and stays 220px wide or more; below that, use `BrandMark` alone. Body text never gets a split.
 
 ## Words
 
 The editor's labels are the ones audio and video tools already use: Layers, Export, Resolution, Frame rate, Loop. Leave them short. The voice belongs in the page description, template descriptions, empty states, the first-run gallery, export notes and error messages.
+
+A first visit opens the template gallery with the lockup, the tagline, one sentence on what the editor does and "Add your song", above the templates. Opened from the Project menu, the gallery is the template list alone. The page's `<h1>` is in the header and is not drawn.
 
 1. Open with one line about the track, then give specifics: layer names, formats, numbers. "Give the track something to look at", then Milkdrop, spectrum, VU meters, LRC/SRT/VTT, 16:9, 9:16, 1:1, 720p to 4K.
 2. Local export happens in the browser and uploads nothing. Say so where someone is about to render.

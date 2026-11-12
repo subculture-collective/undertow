@@ -6,7 +6,7 @@
 import { StrictMode, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BRAND } from './brand';
-import { BrandLogo, BrandMark, PatreonButton, SocialLinks } from './ui/Brand';
+import { BrandLockup, BrandLogo, BrandMark, PatreonButton, SocialLinks } from './ui/Brand';
 import { Color, NumberInput, Select, Slider, Toggle } from './ui/controls';
 import { Menu } from './ui/Menu';
 import { Icon, LayerIcon } from './ui/icons';
@@ -68,6 +68,9 @@ function StyleGuide() {
           <BrandMark size={24} />
           <span className="brand-name" style={{ fontSize: 'var(--text-2xl)' }}>{BRAND.name}</span>
         </div>
+        <div className="sg-row"><BrandLockup /></div>
+        <h2 className="tagline">{BRAND.tagline}.</h2>
+        <p className="hint">The lockup has no colour split and stays 220px wide or more. The split is for headlines like the one above.</p>
         <div className="sg-row"><PatreonButton /><PatreonButton small label="Support" /><SocialLinks /></div>
         <p className="hint">Links outlined in dashed amber are still placeholders in src/brand.ts. Production builds leave them out.</p>
       </Section>
@@ -78,8 +81,9 @@ function StyleGuide() {
         {TYPE.map((t) => (
           <div key={t} className="sg-type"><code>{t} · {css(t)}</code><span style={{ fontSize: `var(${t})` }}>The quick brown fox syncs to the beat</span></div>
         ))}
-        <div className="sg-type"><code>--font-display</code><span className="brand-name" style={{ fontSize: 'var(--text-xl)' }}>Display caps</span></div>
-        <div className="sg-type"><code>--font-mono</code><span style={{ fontFamily: 'var(--font-mono)' }}>0:42 / 3:15 · #ff2bd6</span></div>
+        <div className="sg-type"><code>--font-ui · Public Sans</code><span>Body text and controls</span></div>
+        <div className="sg-type"><code>--font-display · Liberation Mono</code><span className="brand-name" style={{ fontSize: 'var(--text-xl)' }}>Display caps</span></div>
+        <div className="sg-type"><code>--font-mono · JetBrains Mono</code><span style={{ fontFamily: 'var(--font-mono)' }}>0:42 / 3:15 · #ff2bd6</span></div>
         <div className="sg-type"><code>h4 / .eyebrow</code><span><h4>Section heading</h4><span className="eyebrow">Eyebrow</span></span></div>
       </Section>
 

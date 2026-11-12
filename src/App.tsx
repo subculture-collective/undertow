@@ -74,7 +74,9 @@ function AspectLabel({ label }: { label: string }) {
 }
 
 type Dialog =
-  | { kind: 'export' | 'gallery' | 'about' | 'projects' | 'renders' }
+  | { kind: 'export' | 'about' | 'projects' | 'renders' }
+  /** `intro` is the first visit: the gallery opens with what the editor is, above the templates. */
+  | { kind: 'gallery'; intro?: boolean }
   | { kind: 'auth'; mode: AuthMode; token?: string }
   | { kind: 'account'; tab: AccountTab };
 
@@ -128,7 +130,7 @@ export default function App() {
   const future = useStore((s) => s.future.length);
   const { setAspect, undo, redo, importFiles, registerAssets, change } = useStore.getState();
   const signedIn = useAccount((s) => s.status === 'signed-in');
-  const [dialog, setDialog] = useState<Dialog | null>(() => (hasSavedProject() ? null : { kind: 'gallery' }));
+  const [dialog, setDialog] = useState<Dialog | null>(() => (hasSavedProject() ? null : { kind: 'gallery', intro: true }));
   const [toast, setToast] = useState('');
   const close = () => setDialog(null);
   const [dragOver, setDragOver] = useState(false);
@@ -215,6 +217,8 @@ export default function App() {
       onDrop={(e) => { e.preventDefault(); setDragOver(false); void onFiles([...e.dataTransfer.files]); }}
     >
       <header>
+        {/* The page's heading. The header shows the wordmark instead, which narrow screens drop. */}
+        <h1 className="sr-only">{BRAND.name}: free music visualizer video editor</h1>
         <button className="ghost brand-button" onClick={() => setDialog({ kind: 'about' })} aria-label={`About ${BRAND.name}`}><BrandLogo /></button>
         <label className="project-field" title="Project name">
           <span className="pencil"><Icon name="pencil" size={12} /></span>
@@ -284,7 +288,9 @@ export default function App() {
       <Inspector />
       {dialog?.kind === 'export' && <ExportDialog onClose={close} onSignIn={() => setDialog({ kind: 'auth', mode: 'sign-in' })} onBilling={() => setDialog({ kind: 'account', tab: 'billing' })} />}
       {dialog?.kind === 'renders' && <RendersDialog onClose={close} />}
-      {dialog?.kind === 'gallery' && <TemplateGallery onClose={close} />}
+      {dialog?.kind === 'gallery' && (
+        <TemplateGallery onClose={close} onAddSong={dialog.intro ? () => { close(); fileInput.current?.click(); } : undefined} />
+      )}
       {dialog?.kind === 'about' && <AboutDialog onClose={close} />}
       {dialog?.kind === 'auth' && <AuthDialog initial={dialog.mode} resetToken={dialog.token} onClose={close} />}
       {dialog?.kind === 'account' && <AccountDialog initialTab={dialog.tab} onClose={close} />}

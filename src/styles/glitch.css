@@ -39,7 +39,7 @@
   color: var(--ink); background: var(--lilac); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--shadow-c);
 }
 :root .eyebrow { font-family: var(--font-mono); }
-:root h3 { font-family: var(--font-mono); text-transform: uppercase; text-shadow: var(--split-text); }
+:root h3 { font-family: var(--font-display); text-transform: uppercase; text-shadow: var(--split-text); }
 
 /* Selection states: sky means "current" everywhere (tab, layer, preset, palette). Pink is kept for actions. */
 :root .layer-list li { border-width: 2px; }
@@ -58,6 +58,7 @@
 /* Wordmark: a static colour split, plus sky and pink slices that glitch briefly every few seconds.
    The slices are copies of the text from data-text (set by BrandLogo). */
 :root .brand-name { position: relative; text-shadow: -1px 0 0 var(--chroma-a), 1px 0 0 var(--chroma-b); }
+:root .lockup .brand-name { text-shadow: none; }
 :root .brand-name[data-text]::before,
 :root .brand-name[data-text]::after {
   /* The second declaration gives the copies empty alt text, so the name is read out once. */
