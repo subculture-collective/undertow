@@ -1,5 +1,5 @@
 {
-  "name": "vizstudio",
+  "name": "undertow",
   "version": "1.0.0",
   "description": "Layered music visualizer video editor that renders in the browser",
   "scripts": {
