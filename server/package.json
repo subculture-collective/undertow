@@ -16,17 +16,17 @@
     "worker:start": "node --env-file-if-exists=.env dist/worker/index.js"
   },
   "dependencies": {
-    "@better-auth/api-key": "^1.7.25",
-    "@hono/node-server": "^2.1.8",
+    "@better-auth/api-key": "^1.7.27",
+    "@hono/node-server": "^2.1.11",
     "@hono/zod-openapi": "^1.6.3",
-    "@scalar/hono-api-reference": "^0.12.20",
+    "@scalar/hono-api-reference": "^0.12.24",
     "better-auth": "^1.7.15",
     "drizzle-orm": "^0.45.3",
-    "hono": "^4.13.11",
-    "nodemailer": "^10.6.0",
+    "hono": "^4.13.20",
+    "nodemailer": "^10.6.1",
     "pg": "^8.23.0",
     "playwright-core": "^1.65.1",
-    "stripe": "^23.0.0",
+    "stripe": "^23.2.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
